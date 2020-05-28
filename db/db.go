@@ -13,6 +13,7 @@ const (
 	ASSETS_COLLECTION        = "assets"
 	EVENT_LOGS_COLLECTION    = "eventlogs"
 	NOTIFICATIONS_COLLECTION = "notifications"
+	ACCOUNTS_COLLECTION      = "accounts"
 )
 
 func NewMongoQueryContext() context.Context {

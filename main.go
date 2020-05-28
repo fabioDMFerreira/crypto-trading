@@ -6,6 +6,7 @@ import (
 	"os"
 
 	krakenapi "github.com/beldur/kraken-go-api-client"
+	"github.com/fabiodmferreira/crypto-trading/accounts"
 	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 	"github.com/fabiodmferreira/crypto-trading/db"
@@ -50,15 +51,16 @@ func main() {
 	assetsCollection := mongoDatabase.Collection(db.ASSETS_COLLECTION)
 	eventLogsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
 	notificationsCollection := mongoDatabase.Collection(db.NOTIFICATIONS_COLLECTION)
+	accountsCollection := mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)
 
 	// instantiate repositories
 	assetsRepository := assets.NewAssetsRepository(assetsCollection)
 	eventLogsRepository := eventlogs.NewEventLogsRepository(eventLogsCollection)
 	notificationsRepository := notifications.NewNotificationsRepository(notificationsCollection)
+	accountsRepository := accounts.NewAccountsRepository(accountsCollection)
 
 	// instantiate services
 	dbTrader := trader.NewDBTrader(assetsRepository, eventLogsRepository)
-	decisionMaker := decisionmaker.NewDecisionMaker(dbTrader)
 	notificationsService := notifications.NewNotificationsService(
 		notificationsRepository,
 		eventLogsRepository,
@@ -66,6 +68,19 @@ func main() {
 		notificationsSender,
 		notificationsSenderPassword,
 	)
+
+	var account *accounts.AccountService
+	accountDocument, err := accountsRepository.FindByBroker("kraken")
+	if err != nil {
+		accountDocument, err = accountsRepository.Create("kraken", 5000)
+
+		if err != nil {
+			log.Fatal("creating account", err)
+		}
+	}
+
+	account = accounts.NewAccountService(accountDocument.ID, accountsRepository)
+	decisionMaker := decisionmaker.NewDecisionMaker(dbTrader, account)
 
 	var lastPrice float32
 

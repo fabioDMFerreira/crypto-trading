@@ -41,10 +41,35 @@ func (t *TraderSpy) Reset() {
 	t.Sells = []SellArgs{}
 }
 
+type AccountSpy struct {
+	Withdraws []float32
+	Deposits  []float32
+}
+
+func (a *AccountSpy) Withdraw(amount float32) error {
+	a.Withdraws = append(a.Withdraws, amount)
+	return nil
+}
+
+func (a *AccountSpy) Deposit(amount float32) error {
+	a.Deposits = append(a.Deposits, amount)
+	return nil
+}
+
+func (a *AccountSpy) Reset() {
+	a.Deposits = []float32{}
+	a.Withdraws = []float32{}
+}
+
+func NewAccountSpy() *AccountSpy {
+	return &AccountSpy{}
+}
+
 func TestDecisionMaker(t *testing.T) {
 	t.Run("DecideToSell should sell if order returns the gains pretended", func(t *testing.T) {
 		trader := NewTraderSpy()
-		decisionMaker := &DecisionMaker{trader}
+		account := NewAccountSpy()
+		decisionMaker := &DecisionMaker{trader, account}
 
 		tests := []struct {
 			askPrice        float32
@@ -88,7 +113,8 @@ func TestDecisionMaker(t *testing.T) {
 
 	t.Run("DecideToBuy should buy if there is no asset or if ask price dropped", func(t *testing.T) {
 		trader := NewTraderSpy()
-		decisionMaker := &DecisionMaker{trader}
+		account := NewAccountSpy()
+		decisionMaker := &DecisionMaker{trader, account}
 
 		tests := []struct {
 			ask                  float32

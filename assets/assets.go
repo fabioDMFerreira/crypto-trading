@@ -13,11 +13,11 @@ import (
 // Asset
 type Asset struct {
 	ID        primitive.ObjectID `bson:"_id" json:"_id"`
-	Amount    float32            `json:"amount"`
+	Amount    float32            `bson:"amount,truncate" json:"amount"`
 	BuyTime   time.Time          `json:"buyTime"`
 	SellTime  time.Time          `json:"sellTime"`
-	BuyPrice  float32            `json:"buyPrice"`
-	SellPrice float32            `json:"sellPrice"`
+	BuyPrice  float32            `bson:"buyPrice,truncate" json:"buyPrice"`
+	SellPrice float32            `bson:"sellPrice,truncate" json:"sellPrice"`
 	Sold      bool               `json:"sold"`
 }
 
