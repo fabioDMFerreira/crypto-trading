@@ -23,7 +23,7 @@ func write(date, price string, wg *sync.WaitGroup) {
 
 func (bhc *BitcoinHistoricalCollector) Start() {
 	// Open the file
-	filename, err := filepath.Abs("./collector/btc-historical-data-2012-2020.csv")
+	filename, err := filepath.Abs("./collectors/btc-historical-data-2012-2020.csv")
 
 	if err != nil {
 		log.Fatalln(err)
