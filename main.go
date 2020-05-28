@@ -26,7 +26,7 @@ func main() {
 	// load environment variables
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		fmt.Println(".env file does not exist")
 	}
 
 	krakenKey := os.Getenv("KRAKEN_API_KEY")
