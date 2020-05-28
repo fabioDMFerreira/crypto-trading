@@ -1,1 +1,1 @@
-web: ./bin/crypto-trading
+cmd: ./bin/crypto-trading

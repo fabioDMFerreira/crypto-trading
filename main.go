@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	MaximumBuyAmount       = 0.01
-	PretendedProfitPerSold = 0.1
-	PriceDropToBuy         = 0.1
+	MaximumBuyAmount        = 0.01
+	PretendedProfitPerSold  = 0.1
+	PriceDropToBuy          = 0.1
+	PriceVariationDetection = 0.01
 )
 
 func main() {
@@ -66,19 +67,26 @@ func main() {
 		notificationsSenderPassword,
 	)
 
+	var lastPrice float32
+
 	onTickerChange := func(ask, bid float32) {
-		fmt.Printf("ASK: %v BID: %v\n", ask, bid)
+		if lastPrice == 0 ||
+			ask > lastPrice+(lastPrice*PriceVariationDetection) ||
+			ask < lastPrice-(lastPrice*PriceVariationDetection) {
+			lastPrice = ask
+			eventLogsRepository.Create("btc price change", fmt.Sprintf("BTC PRICE: %v", lastPrice))
 
-		assets, err := assetsRepository.FindAll()
-		if err == nil {
-			decisionMaker.DecideToSell(ask, assets, PretendedProfitPerSold)
-		}
+			assets, err := assetsRepository.FindAll()
+			if err == nil {
+				decisionMaker.DecideToSell(ask, assets, PretendedProfitPerSold)
+			}
 
-		cheaperAssetPrice, err := assetsRepository.FindCheaperAssetPrice()
-		if err == nil {
-			decisionMaker.DecideToBuy(ask, cheaperAssetPrice, PriceDropToBuy, MaximumBuyAmount)
-		} else {
-			log.Fatal(err)
+			cheaperAssetPrice, err := assetsRepository.FindCheaperAssetPrice()
+			if err == nil {
+				decisionMaker.DecideToBuy(ask, cheaperAssetPrice, PriceDropToBuy, MaximumBuyAmount)
+			} else {
+				log.Fatal(err)
+			}
 		}
 
 		notificationsService.CheckEventLogs()
