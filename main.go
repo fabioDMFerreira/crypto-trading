@@ -9,6 +9,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/accounts"
 	"github.com/fabiodmferreira/crypto-trading/app"
 	"github.com/fabiodmferreira/crypto-trading/assets"
+	"github.com/fabiodmferreira/crypto-trading/broker"
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/decisionmaker"
@@ -32,6 +33,10 @@ func main() {
 	notificationsSenderPassword := os.Getenv("NOTIFICATIONS_SENDER_PASSWORD")
 
 	// initialize third party instances
+	krakenKey := os.Getenv("KRAKEN_API_KEY")
+	krakenPrivateKey := os.Getenv("KRAKEN_PRIVATE_KEY")
+	krakenAPI := krakenapi.New(krakenKey, krakenPrivateKey)
+
 	dbClient, err := db.ConnectDB(mongoURL)
 
 	if err != nil {
@@ -51,7 +56,8 @@ func main() {
 	accountsRepository := accounts.NewAccountsRepository(accountsCollection)
 
 	// instantiate services
-	dbTrader := trader.NewDBTrader(assetsRepository, eventLogsRepository)
+	krakenBroker := broker.NewKrakenBroker(krakenAPI)
+	dbTrader := trader.NewTrader(assetsRepository, eventLogsRepository, krakenBroker)
 	notificationsService := notifications.NewNotificationsService(
 		notificationsRepository,
 		eventLogsRepository,
@@ -74,10 +80,6 @@ func main() {
 
 	account = accounts.NewAccountService(accountDocument.ID, accountsRepository)
 	decisionMaker := decisionmaker.NewDecisionMaker(dbTrader, account, assetsRepository, decisionmakerOptions)
-
-	krakenKey := os.Getenv("KRAKEN_API_KEY")
-	krakenPrivateKey := os.Getenv("KRAKEN_PRIVATE_KEY")
-	krakenAPI := krakenapi.New(krakenKey, krakenPrivateKey)
 
 	krakenCollector := collectors.NewKrakenCollector(krakenAPI)
 	application := app.NewApp(notificationsService, decisionMaker, eventLogsRepository, 0.01)

@@ -3,6 +3,7 @@ package decisionmaker
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/assets"
 )
@@ -17,6 +18,7 @@ type SellArgs struct {
 type BuyArgs struct {
 	amount   float32
 	buyPrice float32
+	buyTime  time.Time
 }
 
 type TraderSpy struct {
@@ -28,8 +30,8 @@ func NewTraderSpy() *TraderSpy {
 	return &TraderSpy{}
 }
 
-func (t *TraderSpy) Buy(amount, price float32) {
-	t.Buys = append(t.Buys, BuyArgs{amount, price})
+func (t *TraderSpy) Buy(amount, price float32, buyTime time.Time) {
+	t.Buys = append(t.Buys, BuyArgs{amount, price, buyTime})
 }
 
 func (t *TraderSpy) Sell(asset *Asset, price float32) {
@@ -65,22 +67,44 @@ func NewAccountSpy() *AccountSpy {
 	return &AccountSpy{}
 }
 
+type AssetRepositorySpy struct {
+	FindAllCalls               int
+	FindCheaperAssetPriceCalls int
+}
+
+func (ar *AssetRepositorySpy) FindAll() (*[]assets.Asset, error) {
+	ar.FindAllCalls++
+	return &[]Asset{}, nil
+}
+
+func (ar *AssetRepositorySpy) FindCheaperAssetPrice() (float32, error) {
+	ar.FindCheaperAssetPriceCalls++
+	return 0, nil
+}
+
+func NewAssertRepositorySpy() *AssetRepositorySpy {
+	return &AssetRepositorySpy{}
+}
+
 func TestDecisionMaker(t *testing.T) {
+	decisionMakerOptionsStub := DecisionMakerOptions{0.1, 0.1, 0.1}
+
 	t.Run("DecideToSell should sell if order returns the gains pretended", func(t *testing.T) {
 		trader := NewTraderSpy()
 		account := NewAccountSpy()
-		decisionMaker := &DecisionMaker{trader, account}
+		assetRepository := NewAssertRepositorySpy()
+		decisionMaker := &DecisionMaker{trader, account, assetRepository, decisionMakerOptionsStub}
 
 		tests := []struct {
 			askPrice        float32
-			orders          []*Asset
+			orders          *[]Asset
 			pretendedProfit float32
 			sells           []SellArgs
 		}{
 			{
 				12,
-				[]*Asset{
-					&Asset{Amount: 100, BuyPrice: 10},
+				&[]Asset{
+					Asset{Amount: 100, BuyPrice: 10},
 				},
 				0.1,
 				[]SellArgs{
@@ -89,8 +113,8 @@ func TestDecisionMaker(t *testing.T) {
 			},
 			{
 				10.5,
-				[]*Asset{
-					&Asset{Amount: 100, BuyPrice: 10},
+				&[]Asset{
+					Asset{Amount: 100, BuyPrice: 10},
 				},
 				0.1,
 				[]SellArgs{},
@@ -114,7 +138,10 @@ func TestDecisionMaker(t *testing.T) {
 	t.Run("DecideToBuy should buy if there is no asset or if ask price dropped", func(t *testing.T) {
 		trader := NewTraderSpy()
 		account := NewAccountSpy()
-		decisionMaker := &DecisionMaker{trader, account}
+		assetRepository := NewAssertRepositorySpy()
+		decisionMaker := &DecisionMaker{trader, account, assetRepository, decisionMakerOptionsStub}
+
+		now := time.Now()
 
 		tests := []struct {
 			ask                  float32
@@ -129,7 +156,7 @@ func TestDecisionMaker(t *testing.T) {
 				0.1,
 				100,
 				[]BuyArgs{
-					{100, 8.9},
+					{100, 8.9, now},
 				},
 			},
 			{
@@ -138,7 +165,7 @@ func TestDecisionMaker(t *testing.T) {
 				0.1,
 				20,
 				[]BuyArgs{
-					{20, 10},
+					{20, 10, now},
 				},
 			},
 			{
@@ -151,7 +178,7 @@ func TestDecisionMaker(t *testing.T) {
 		}
 
 		for index, tt := range tests {
-			decisionMaker.DecideToBuy(tt.ask, tt.minimumAssetBuyPrice, tt.dropToBuy, tt.buyAmount)
+			decisionMaker.DecideToBuy(tt.ask, tt.minimumAssetBuyPrice, tt.dropToBuy, tt.buyAmount, now)
 			got := trader.Buys
 			want := tt.buys
 

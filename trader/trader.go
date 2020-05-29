@@ -10,21 +10,28 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type DBTrader struct {
+type Trader struct {
 	assetsRepository    domain.AssetsRepository
 	eventLogsRepository domain.EventsLog
+	broker              domain.Broker
 }
 
-func NewDBTrader(assetsRepository domain.AssetsRepository, eventLogsRepository domain.EventsLog) *DBTrader {
-	return &DBTrader{
+func NewTrader(assetsRepository domain.AssetsRepository, eventLogsRepository domain.EventsLog, broker domain.Broker) *Trader {
+	return &Trader{
 		assetsRepository,
 		eventLogsRepository,
+		broker,
 	}
 }
 
-func (t *DBTrader) Sell(asset *assets.Asset, price float32) {
+func (t *Trader) Sell(asset *assets.Asset, price float32) {
 	err := t.assetsRepository.Sell(asset.ID, price)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = t.broker.AddSellOrder(asset.Amount, price)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,10 +43,15 @@ func (t *DBTrader) Sell(asset *assets.Asset, price float32) {
 	}
 }
 
-func (t *DBTrader) Buy(amount, price float32, buyTime time.Time) {
+func (t *Trader) Buy(amount, price float32, buyTime time.Time) {
 	asset := &assets.Asset{ID: primitive.NewObjectID(), Amount: amount, BuyPrice: price, BuyTime: buyTime}
 	err := t.assetsRepository.Create(asset)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = t.broker.AddBuyOrder(asset.Amount, price)
 	if err != nil {
 		log.Fatal(err)
 	}

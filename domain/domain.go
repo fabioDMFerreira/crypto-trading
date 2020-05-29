@@ -22,9 +22,18 @@ type Account interface {
 	Deposit(amount float32) error
 }
 
-type AssetsRepository interface {
+type AssetsRepositoryReader interface {
 	FindAll() (*[]assets.Asset, error)
 	FindCheaperAssetPrice() (float32, error)
+}
+
+type AssetsRepository interface {
+	AssetsRepositoryReader
 	Sell(id primitive.ObjectID, price float32) error
 	Create(asset *assets.Asset) error
+}
+
+type Broker interface {
+	AddBuyOrder(amount, price float32) error
+	AddSellOrder(amount, price float32) error
 }

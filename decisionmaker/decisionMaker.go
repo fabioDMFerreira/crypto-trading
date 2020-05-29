@@ -18,11 +18,11 @@ type DecisionMakerOptions struct {
 type DecisionMaker struct {
 	trader           domain.Trader
 	account          domain.Account
-	assetsRepository domain.AssetsRepository
+	assetsRepository domain.AssetsRepositoryReader
 	options          DecisionMakerOptions
 }
 
-func NewDecisionMaker(trader domain.Trader, account domain.Account, assetsRepository domain.AssetsRepository, options DecisionMakerOptions) *DecisionMaker {
+func NewDecisionMaker(trader domain.Trader, account domain.Account, assetsRepository domain.AssetsRepositoryReader, options DecisionMakerOptions) *DecisionMaker {
 	return &DecisionMaker{trader, account, assetsRepository, options}
 }
 
