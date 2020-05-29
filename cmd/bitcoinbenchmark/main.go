@@ -96,6 +96,21 @@ func (ar *AssetsRepositoryMock) Sell(id primitive.ObjectID, price float32) error
 	return nil
 }
 
+type BrokerMock struct {
+}
+
+func NewBrokerMock() *BrokerMock {
+	return &BrokerMock{}
+}
+
+func (bm *BrokerMock) AddBuyOrder(amount, price float32) error {
+	return nil
+}
+
+func (bm *BrokerMock) AddSellOrder(amount, price float32) error {
+	return nil
+}
+
 func RoundDown(input float64, places int) (newVal float32) {
 	var round float64
 	pow := math.Pow(10, float64(places))
@@ -111,8 +126,9 @@ func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, PriceVar
 	notificationsService := &NotificationsMock{}
 	logService := &LogMock{}
 	account := &AccountMock{5000}
+	broker := NewBrokerMock()
 	assetsRepository := &AssetsRepositoryMock{}
-	trader := trader.NewDBTrader(assetsRepository, logService)
+	trader := trader.NewTrader(assetsRepository, logService, broker)
 
 	decisionMaker := decisionmaker.NewDecisionMaker(trader, account, assetsRepository, decisionMakerOptions)
 
