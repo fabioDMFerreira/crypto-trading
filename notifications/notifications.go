@@ -5,6 +5,7 @@ import (
 	"net/smtp"
 	"time"
 
+	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/eventlogs"
 	"go.mongodb.org/mongo-driver/bson"
@@ -43,7 +44,10 @@ func (n *NotificationsService) SendEmail(subject, body string) error {
 
 	msg := "From: " + from + "\n" +
 		"To: " + to + "\n" +
-		"Subject: " + subject + "\n\n" +
+		"Subject: " + subject + "\n" +
+		"MIME-Version: 1.0;\n" +
+		"Content-Type: text/html;\n\n" +
+
 		body
 
 	err := smtp.SendMail("smtp.gmail.com:587",
@@ -66,19 +70,19 @@ func (n *NotificationsService) CheckEventLogs() error {
 		}
 
 		subject := "Crypto-Trading: Report"
-		var message string
 		var eventLogsIds []primitive.ObjectID
 
-		if len(eventLogs) > 0 {
-			for _, eventLog := range eventLogs {
-				message += fmt.Sprintf("%v (%v) - %v:%v\n", eventLog.DateCreated, eventLog.ID, eventLog.EventName, eventLog.Message)
-				eventLogsIds = append(eventLogsIds, eventLog.ID)
-			}
-		} else {
-			message += "No EventLogs entries found"
+		for _, event := range *eventLogs {
+			eventLogsIds = append(eventLogsIds, event.ID)
 		}
 
-		err = n.SendEmail(subject, message)
+		message, err := GenerateEventlogReportEmail(5000, 10, eventLogs, &[]assets.Asset{})
+
+		if err != nil {
+			return err
+		}
+
+		err = n.SendEmail(subject, message.String())
 		if err != nil {
 			return err
 		}
@@ -87,7 +91,7 @@ func (n *NotificationsService) CheckEventLogs() error {
 			ID:                  primitive.NewObjectID(),
 			To:                  n.Receiver,
 			Title:               subject,
-			Message:             message,
+			Message:             message.String(),
 			DateCreated:         time.Now(),
 			NotificationType:    "eventlogs",
 			NotificationChannel: "email",

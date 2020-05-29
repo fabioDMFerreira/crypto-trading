@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -39,5 +40,9 @@ func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 		a.decisionMaker.MakeDecisions(ask, buyTime)
 	}
 
-	a.notificationsService.CheckEventLogs()
+	err := a.notificationsService.CheckEventLogs()
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }

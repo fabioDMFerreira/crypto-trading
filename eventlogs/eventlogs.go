@@ -48,7 +48,7 @@ func (or *EventLogsRepository) Create(eventName, message string) error {
 }
 
 // FindAllToNotify returns every event log that needs to be notified
-func (or *EventLogsRepository) FindAllToNotify() ([]*EventLog, error) {
+func (or *EventLogsRepository) FindAllToNotify() (*[]EventLog, error) {
 	ctx := db.NewMongoQueryContext()
 	cur, err := or.collection.Find(ctx, bson.D{{"notified", false}})
 
@@ -57,12 +57,12 @@ func (or *EventLogsRepository) FindAllToNotify() ([]*EventLog, error) {
 	}
 
 	defer cur.Close(ctx)
-	var results []*EventLog
+	var results []EventLog
 	if err = cur.All(ctx, &results); err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	return &results, nil
 }
 
 // MarkNotified marks every eventLog as notified
