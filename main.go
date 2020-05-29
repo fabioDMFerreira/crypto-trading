@@ -13,6 +13,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/decisionmaker"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/eventlogs"
 	"github.com/fabiodmferreira/crypto-trading/notifications"
 	"github.com/fabiodmferreira/crypto-trading/trader"
@@ -31,6 +32,7 @@ func main() {
 	notificationsReceiver := os.Getenv("NOTIFICATIONS_RECEIVER")
 	notificationsSender := os.Getenv("NOTIFICATIONS_SENDER")
 	notificationsSenderPassword := os.Getenv("NOTIFICATIONS_SENDER_PASSWORD")
+	appEnv := os.Getenv("APP_ENV")
 
 	// initialize third party instances
 	krakenKey := os.Getenv("KRAKEN_API_KEY")
@@ -56,8 +58,15 @@ func main() {
 	accountsRepository := accounts.NewAccountsRepository(accountsCollection)
 
 	// instantiate services
-	krakenBroker := broker.NewKrakenBroker(krakenAPI)
-	dbTrader := trader.NewTrader(assetsRepository, eventLogsRepository, krakenBroker)
+	var brokerService domain.Broker
+	if appEnv == "production" {
+		brokerService = broker.NewKrakenBroker(krakenAPI)
+	} else {
+		fmt.Println("Broker mocked!")
+		brokerService = broker.NewBrokerMock()
+	}
+
+	dbTrader := trader.NewTrader(assetsRepository, eventLogsRepository, brokerService)
 	notificationsService := notifications.NewNotificationsService(
 		notificationsRepository,
 		eventLogsRepository,

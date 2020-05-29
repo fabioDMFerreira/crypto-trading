@@ -28,3 +28,18 @@ func (kb *KrakenBroker) AddBuyOrder(amount, price float32) error {
 func (kb *KrakenBroker) AddSellOrder(amount, price float32) error {
 	return kb.addOrder(amount, price, "sell")
 }
+
+type BrokerMock struct {
+}
+
+func NewBrokerMock() *BrokerMock {
+	return &BrokerMock{}
+}
+
+func (bm *BrokerMock) AddBuyOrder(amount, price float32) error {
+	return nil
+}
+
+func (bm *BrokerMock) AddSellOrder(amount, price float32) error {
+	return nil
+}
