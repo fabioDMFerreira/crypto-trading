@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/assets"
-	"github.com/fabiodmferreira/crypto-trading/eventlogs"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type DBTrader struct {
-	assetsRepository    *assets.AssetsRepository
-	eventLogsRepository *eventlogs.EventLogsRepository
+	assetsRepository    domain.AssetsRepository
+	eventLogsRepository domain.EventsLog
 }
 
-func NewDBTrader(assetsRepository *assets.AssetsRepository, eventLogsRepository *eventlogs.EventLogsRepository) *DBTrader {
+func NewDBTrader(assetsRepository domain.AssetsRepository, eventLogsRepository domain.EventsLog) *DBTrader {
 	return &DBTrader{
 		assetsRepository,
 		eventLogsRepository,
@@ -36,8 +36,8 @@ func (t *DBTrader) Sell(asset *assets.Asset, price float32) {
 	}
 }
 
-func (t *DBTrader) Buy(amount, price float32) {
-	asset := &assets.Asset{ID: primitive.NewObjectID(), Amount: amount, BuyPrice: price, BuyTime: time.Now()}
+func (t *DBTrader) Buy(amount, price float32, buyTime time.Time) {
+	asset := &assets.Asset{ID: primitive.NewObjectID(), Amount: amount, BuyPrice: price, BuyTime: buyTime}
 	err := t.assetsRepository.Create(asset)
 
 	if err != nil {

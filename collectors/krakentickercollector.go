@@ -6,10 +6,13 @@ import (
 	"log"
 	"net/url"
 	"strconv"
+	"time"
 
 	krakenapi "github.com/beldur/kraken-go-api-client"
 	"github.com/gorilla/websocket"
 )
+
+type OnTickerChange = func(float32, float32, time.Time)
 
 type SocketEvent struct {
 	Event string
@@ -20,7 +23,15 @@ type TickerMessage struct {
 	B []interface{}
 }
 
-func KrakenTickerCollector(api *krakenapi.KrakenAPI, onChange func(float32, float32)) {
+type KrakenCollector struct {
+	krakenAPI *krakenapi.KrakenAPI
+}
+
+func NewKrakenCollector(krakenAPI *krakenapi.KrakenAPI) *KrakenCollector {
+	return &KrakenCollector{krakenAPI}
+}
+
+func (kc *KrakenCollector) Start(onChange OnTickerChange) {
 	u := url.URL{
 		Scheme: "wss",
 		Host:   "ws.kraken.com",
@@ -84,7 +95,7 @@ func KrakenTickerCollector(api *krakenapi.KrakenAPI, onChange func(float32, floa
 				bid, err2 := strconv.ParseFloat(bidStr, 32)
 
 				if err1 == nil && err2 == nil {
-					onChange(float32(ask), float32(bid))
+					onChange(float32(ask), float32(bid), time.Now())
 				} else {
 					fmt.Printf("%v %v", err1, err2)
 				}

@@ -35,7 +35,7 @@ func NewAssetsRepository(collection *mongo.Collection) *AssetsRepository {
 }
 
 // FindAll returns every order
-func (or *AssetsRepository) FindAll() ([]*Asset, error) {
+func (or *AssetsRepository) FindAll() (*[]Asset, error) {
 	ctx := db.NewMongoQueryContext()
 	cur, err := or.collection.Find(ctx, bson.D{{"sold", false}})
 
@@ -44,12 +44,12 @@ func (or *AssetsRepository) FindAll() ([]*Asset, error) {
 	}
 
 	defer cur.Close(ctx)
-	var results []*Asset
+	var results []Asset
 	if err = cur.All(ctx, &results); err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	return &results, nil
 }
 
 // FindCheaperAssetPrice returns the asset with the lower buy price
