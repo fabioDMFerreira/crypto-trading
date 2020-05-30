@@ -113,7 +113,7 @@ func (ar *AssetsRepository) GetBalance(startDate, endDate time.Time) (float32, e
 		return 0, err
 	}
 
-	filter = bson.M{"sold": false, "buytime": bson.M{"$gte": startDate, "$lte": endDate}}
+	filter = bson.M{"sold": true, "selltime": bson.M{"$gte": startDate, "$lte": endDate}}
 	assetsSold, err := ar.Find(filter)
 
 	if err != nil {
