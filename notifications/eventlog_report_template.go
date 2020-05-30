@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/eventlogs"
@@ -22,7 +23,15 @@ type PendingAssetsEmailFormat struct {
 	ID       string
 }
 
-func GenerateEventlogReportEmail(amount float32, totalAssetsPending int, eventsLog *[]eventlogs.EventLog, assets *[]assets.Asset) (*bytes.Buffer, error) {
+func GenerateEventlogReportEmail(
+	amount float32,
+	totalAssetsPending int,
+	balance float32,
+	startDate time.Time,
+	endDate time.Time,
+	eventsLog *[]eventlogs.EventLog,
+	assets *[]assets.Asset,
+) (*bytes.Buffer, error) {
 	eventLogFormatted := []EventsLogEmailFormat{}
 
 	for _, event := range *eventsLog {
@@ -47,11 +56,17 @@ func GenerateEventlogReportEmail(amount float32, totalAssetsPending int, eventsL
 	err = t.Execute(buf, struct {
 		AccountAmount      string
 		TotalAssetsPending string
+		Balance            string
+		StartDate          string
+		EndDate            string
 		EventsLog          []EventsLogEmailFormat
 		AssetsPending      []PendingAssetsEmailFormat
 	}{
 		AccountAmount:      fmt.Sprintf("%.2f€", amount),
 		TotalAssetsPending: fmt.Sprintf("%d", totalAssetsPending),
+		Balance:            fmt.Sprintf("%.2f€", balance),
+		StartDate:          startDate.Format("02-Jan-2006 15:04"),
+		EndDate:            endDate.Format("02-Jan-2006 15:04"),
 		EventsLog:          eventLogFormatted,
 		AssetsPending:      pendingAssetsFormatted,
 	})

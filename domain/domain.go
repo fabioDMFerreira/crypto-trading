@@ -25,6 +25,7 @@ type Account interface {
 type AssetsRepositoryReader interface {
 	FindAll() (*[]assets.Asset, error)
 	FindCheaperAssetPrice() (float32, error)
+	GetBalance(startDate, endDate time.Time) (float32, error)
 }
 
 type AssetsRepository interface {
@@ -36,4 +37,16 @@ type AssetsRepository interface {
 type Broker interface {
 	AddBuyOrder(amount, price float32) error
 	AddSellOrder(amount, price float32) error
+}
+
+type AccountServiceReader interface {
+	GetAmount() (float32, error)
+	GetPendingAssets() (*[]assets.Asset, error)
+	GetBalance(startDate, endDate time.Time) (float32, error)
+}
+
+type AccountService interface {
+	AccountServiceReader
+	Withdraw(amount float32) error
+	Deposit(amount float32) error
 }

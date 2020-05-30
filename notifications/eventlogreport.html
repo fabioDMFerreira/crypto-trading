@@ -7,14 +7,18 @@
 
 <body>
   <p style="margin-top: 20px;">
+    <b>Report {{.StartDate}} - {{.EndDate}}</b>
+  </p>
+  <p style="margin-top: 20px;">
     <label>Current Amount:</label> {{.AccountAmount}}<br />
     <label>Total Orders:</label> {{.TotalAssetsPending}}<br />
+    <label>Balance:</label> {{.Balance}}<br />
   </p>
 
   <h2>Events Log</h2>
   <table class="table table-bordered table-striped">
     <tr>
-      <th>Id</th>
+      <th>ID</th>
       <th>Date</th>
       <th>Event</th>
     </tr>
@@ -30,6 +34,7 @@
   <h2>Assets waiting to be sold</h2>
   <table class="table table-bordered table-striped">
     <tr>
+      <th>ID</th>
       <th>Date</th>
       <th>Amount</th>
       <th>Buy Price</th>

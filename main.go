@@ -66,16 +66,7 @@ func main() {
 		brokerService = broker.NewBrokerMock()
 	}
 
-	dbTrader := trader.NewTrader(assetsRepository, eventLogsRepository, brokerService)
-	notificationsService := notifications.NewNotificationsService(
-		notificationsRepository,
-		eventLogsRepository,
-		notificationsReceiver,
-		notificationsSender,
-		notificationsSenderPassword,
-	)
-
-	var account *accounts.AccountService
+	var accountService *accounts.AccountService
 	accountDocument, err := accountsRepository.FindByBroker("kraken")
 	if err != nil {
 		accountDocument, err = accountsRepository.Create("kraken", 5000)
@@ -84,11 +75,21 @@ func main() {
 			log.Fatal("creating account", err)
 		}
 	}
+	accountService = accounts.NewAccountService(accountDocument.ID, accountsRepository, assetsRepository)
+
+	dbTrader := trader.NewTrader(assetsRepository, eventLogsRepository, brokerService)
+	notificationsService := notifications.NewNotificationsService(
+		notificationsRepository,
+		eventLogsRepository,
+		accountService,
+		notificationsReceiver,
+		notificationsSender,
+		notificationsSenderPassword,
+	)
 
 	decisionmakerOptions := decisionmaker.DecisionMakerOptions{0.01, 0.01, 0.1}
 
-	account = accounts.NewAccountService(accountDocument.ID, accountsRepository)
-	decisionMaker := decisionmaker.NewDecisionMaker(dbTrader, account, assetsRepository, decisionmakerOptions)
+	decisionMaker := decisionmaker.NewDecisionMaker(dbTrader, accountService, assetsRepository, decisionmakerOptions)
 
 	krakenCollector := collectors.NewKrakenCollector(krakenAPI)
 	application := app.NewApp(notificationsService, decisionMaker, eventLogsRepository, 0.01)

@@ -1,7 +1,11 @@
 package accounts
 
 import (
+	"time"
+
+	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/db"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,6 +23,19 @@ type AccountsRepository struct {
 
 func NewAccountsRepository(collection *mongo.Collection) *AccountsRepository {
 	return &AccountsRepository{collection}
+}
+
+func (r *AccountsRepository) FindById(id primitive.ObjectID) (*Account, error) {
+	ctx := db.NewMongoQueryContext()
+
+	var foundDocument Account
+	err := r.collection.FindOne(ctx, bson.D{{"_id", id}}).Decode(&foundDocument)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &foundDocument, nil
 }
 
 func (r *AccountsRepository) FindByBroker(broker string) (*Account, error) {
@@ -65,12 +82,13 @@ func (r *AccountsRepository) Deposit(id primitive.ObjectID, amount float32) erro
 }
 
 type AccountService struct {
-	ID         primitive.ObjectID
-	repository *AccountsRepository
+	ID               primitive.ObjectID
+	repository       *AccountsRepository
+	assetsRepository domain.AssetsRepositoryReader
 }
 
-func NewAccountService(ID primitive.ObjectID, repository *AccountsRepository) *AccountService {
-	return &AccountService{ID, repository}
+func NewAccountService(ID primitive.ObjectID, repository *AccountsRepository, assetsRepository domain.AssetsRepositoryReader) *AccountService {
+	return &AccountService{ID, repository, assetsRepository}
 }
 
 func (a *AccountService) Withdraw(amount float32) error {
@@ -79,4 +97,22 @@ func (a *AccountService) Withdraw(amount float32) error {
 
 func (a *AccountService) Deposit(amount float32) error {
 	return a.repository.Deposit(a.ID, amount)
+}
+
+func (a *AccountService) GetAmount() (float32, error) {
+	account, err := a.repository.FindById(a.ID)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return account.Amount, nil
+}
+
+func (a *AccountService) GetPendingAssets() (*[]assets.Asset, error) {
+	return a.assetsRepository.FindAll()
+}
+
+func (a *AccountService) GetBalance(startDate, endDate time.Time) (float32, error) {
+	return a.assetsRepository.GetBalance(startDate, endDate)
 }

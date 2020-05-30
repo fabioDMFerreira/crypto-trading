@@ -5,8 +5,8 @@ import (
 	"net/smtp"
 	"time"
 
-	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/db"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/eventlogs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -28,13 +28,21 @@ type Notification struct {
 type NotificationsService struct {
 	NotificationsRepository *NotificationsRepository
 	EventLogsRepository     *eventlogs.EventLogsRepository
+	accountService          domain.AccountServiceReader
 	Receiver                string
 	Sender                  string
 	SenderPassword          string
 }
 
-func NewNotificationsService(notificationsRepository *NotificationsRepository, eventLogsRepository *eventlogs.EventLogsRepository, receiver string, sender string, senderPassword string) *NotificationsService {
-	return &NotificationsService{notificationsRepository, eventLogsRepository, receiver, sender, senderPassword}
+func NewNotificationsService(
+	notificationsRepository *NotificationsRepository,
+	eventLogsRepository *eventlogs.EventLogsRepository,
+	accountService domain.AccountServiceReader,
+	receiver string,
+	sender string,
+	senderPassword string,
+) *NotificationsService {
+	return &NotificationsService{notificationsRepository, eventLogsRepository, accountService, receiver, sender, senderPassword}
 }
 
 func (n *NotificationsService) SendEmail(subject, body string) error {
@@ -69,6 +77,25 @@ func (n *NotificationsService) CheckEventLogs() error {
 			return err
 		}
 
+		pendingAssets, err := n.accountService.GetPendingAssets()
+
+		if err != nil {
+			return err
+		}
+
+		accountAmount, err := n.accountService.GetAmount()
+
+		if err != nil {
+			return err
+		}
+
+		startDate, endDate := lastNotificationTime, time.Now()
+		balance, err := n.accountService.GetBalance(startDate, endDate)
+
+		if err != nil {
+			return err
+		}
+
 		subject := "Crypto-Trading: Report"
 		var eventLogsIds []primitive.ObjectID
 
@@ -76,7 +103,7 @@ func (n *NotificationsService) CheckEventLogs() error {
 			eventLogsIds = append(eventLogsIds, event.ID)
 		}
 
-		message, err := GenerateEventlogReportEmail(5000, 10, eventLogs, &[]assets.Asset{})
+		message, err := GenerateEventlogReportEmail(accountAmount, len(*pendingAssets), balance, startDate, endDate, eventLogs, pendingAssets)
 
 		if err != nil {
 			return err
@@ -136,10 +163,7 @@ func (or *NotificationsRepository) FindLastEventLogsNotificationDate() (time.Tim
 	err := or.collection.FindOne(ctx, bson.D{{"notificationtype", "eventlogs"}}, opts).Decode(&foundDocument)
 
 	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			return time.Now(), mongo.ErrNoDocuments
-		}
-		return time.Now(), err
+		return time.Now().AddDate(-1, 0, 0), err
 	}
 
 	return foundDocument.DateCreated, nil
