@@ -78,6 +78,10 @@ func (ar *AssetsRepositoryMock) FindCheaperAssetPrice() (float32, error) {
 	return minimumPrice, nil
 }
 
+func (ar *AssetsRepositoryMock) GetBalance(startDate, endDate time.Time) (float32, error) {
+	return 0, nil
+}
+
 func (ar *AssetsRepositoryMock) Create(asset *assets.Asset) error {
 	ar.Assets = append(ar.Assets, *asset)
 	return nil
