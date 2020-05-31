@@ -77,11 +77,12 @@ func main() {
 	}
 	accountService = accounts.NewAccountService(accountDocument.ID, accountsRepository, assetsRepository)
 
-	dbTrader := trader.NewTrader(assetsRepository, eventLogsRepository, brokerService)
+	dbTrader := trader.NewTrader(assetsRepository, accountService, eventLogsRepository, brokerService)
 	notificationsService := notifications.NewNotificationsService(
 		notificationsRepository,
 		eventLogsRepository,
 		accountService,
+		assetsRepository,
 		notificationsReceiver,
 		notificationsSender,
 		notificationsSenderPassword,
@@ -89,10 +90,10 @@ func main() {
 
 	decisionmakerOptions := decisionmaker.DecisionMakerOptions{0.01, 0.01, 0.01}
 
-	decisionMaker := decisionmaker.NewDecisionMaker(dbTrader, accountService, assetsRepository, decisionmakerOptions)
+	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions)
 
 	krakenCollector := collectors.NewKrakenCollector(krakenAPI)
-	application := app.NewApp(notificationsService, decisionMaker, eventLogsRepository, 0.01)
+	application := app.NewApp(notificationsService, decisionMaker, eventLogsRepository, 0.01, assetsRepository, dbTrader, accountService)
 
 	krakenCollector.Start(application.OnTickerChange)
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 )
 
@@ -15,7 +16,9 @@ type NotificationsService interface {
 }
 
 type DecisionMaker interface {
-	MakeDecisions(price float32, buyTime time.Time)
+	ShouldBuy(price float32, buyTime time.Time) (bool, error)
+	ShouldSell(asset *assets.Asset, price float32, buyTime time.Time) (bool, error)
+	HowMuchAmountShouldBuy(price float32) (float32, error)
 }
 
 type App struct {
@@ -24,10 +27,21 @@ type App struct {
 	decisionMaker           DecisionMaker
 	eventLogsRepository     domain.EventsLog
 	PriceVariationDetection float32
+	assetsRepository        domain.AssetsRepositoryReader
+	trader                  domain.Trader
+	accountService          domain.AccountService
 }
 
-func NewApp(notificationsService NotificationsService, decisionMaker DecisionMaker, log domain.EventsLog, priceVariationDetection float32) *App {
-	return &App{0, notificationsService, decisionMaker, log, priceVariationDetection}
+func NewApp(
+	notificationsService NotificationsService,
+	decisionMaker DecisionMaker,
+	log domain.EventsLog,
+	priceVariationDetection float32,
+	assetsRepository domain.AssetsRepositoryReader,
+	trader domain.Trader,
+	accountService domain.AccountService,
+) *App {
+	return &App{0, notificationsService, decisionMaker, log, priceVariationDetection, assetsRepository, trader, accountService}
 }
 
 func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
@@ -37,7 +51,38 @@ func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 		a.lastTickerPrice = ask
 		a.eventLogsRepository.Create("btc price change", fmt.Sprintf("BTC PRICE: %v", a.lastTickerPrice))
 
-		a.decisionMaker.MakeDecisions(ask, buyTime)
+		ok, err := a.decisionMaker.ShouldBuy(ask, buyTime)
+		if ok && err == nil {
+			amount, err := a.decisionMaker.HowMuchAmountShouldBuy(ask)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			accountAmount, err := a.accountService.GetAmount()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if accountAmount > amount*ask {
+				a.trader.Buy(amount, ask, buyTime)
+			} else {
+				a.eventLogsRepository.Create("Insuffucient Funds", fmt.Sprintf("want to spend %.4fBTC*%.2f$=%v, have %.2f in account", amount, ask, amount*ask, accountAmount))
+			}
+		}
+
+		assets, err := a.assetsRepository.FindAll()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, asset := range *assets {
+			if ok, err := a.decisionMaker.ShouldSell(&asset, ask, buyTime); ok && err == nil {
+				a.trader.Sell(&asset, ask)
+			}
+		}
 	}
 
 	err := a.notificationsService.CheckEventLogs()

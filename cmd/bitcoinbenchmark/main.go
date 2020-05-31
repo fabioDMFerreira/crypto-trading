@@ -35,11 +35,11 @@ func (l *LogMock) Create(logType, message string) error {
 	return nil
 }
 
-type AccountMock struct {
+type AccountServiceMock struct {
 	Amount float32
 }
 
-func (a *AccountMock) Deposit(amount float32) error {
+func (a *AccountServiceMock) Deposit(amount float32) error {
 	a.Amount += amount
 	// if a.Amount < 5000 {
 	// 	fmt.Printf("%v ", a.Amount)
@@ -47,7 +47,7 @@ func (a *AccountMock) Deposit(amount float32) error {
 	return nil
 }
 
-func (a *AccountMock) Withdraw(amount float32) error {
+func (a *AccountServiceMock) Withdraw(amount float32) error {
 	if amount > a.Amount {
 		return errors.New("Insufficient Funds")
 	}
@@ -58,6 +58,10 @@ func (a *AccountMock) Withdraw(amount float32) error {
 	// }
 
 	return nil
+}
+
+func (a *AccountServiceMock) GetAmount() (float32, error) {
+	return a.Amount, nil
 }
 
 type AssetsRepositoryMock struct {
@@ -144,14 +148,14 @@ func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, priceVar
 
 	notificationsService := &NotificationsMock{}
 	logService := &LogMock{}
-	account := &AccountMock{5000}
+	accountService := &AccountServiceMock{5000}
 	broker := broker.NewBrokerMock()
 	assetsRepository := &AssetsRepositoryMock{}
-	trader := trader.NewTrader(assetsRepository, logService, broker)
+	trader := trader.NewTrader(assetsRepository, accountService, logService, broker)
 
-	decisionMaker := decisionmaker.NewDecisionMaker(trader, account, assetsRepository, decisionMakerOptions)
+	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionMakerOptions)
 
-	application := app.NewApp(notificationsService, decisionMaker, logService, priceVariationDetection)
+	application := app.NewApp(notificationsService, decisionMaker, logService, priceVariationDetection, assetsRepository, trader, accountService)
 
 	bitcoinHistoryCollector.Start(func(ask, bid float32, buyTime time.Time) {
 		application.OnTickerChange(ask, bid, buyTime)
@@ -173,8 +177,8 @@ func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, priceVar
 		sells,
 		len(assetsRepository.Assets) - sells,
 		5000,
-		account.Amount,
-		RoundDown(((float64(account.Amount)-5000)*100)/5000, 2),
+		accountService.Amount,
+		RoundDown(((float64(accountService.Amount)-5000)*100)/5000, 2),
 	}
 
 	done <- benchmarkResult
@@ -189,7 +193,7 @@ func main() {
 	maximumBuyAmount := []float32{0.01}
 	pretendedProfitPerSold := []float32{0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6}
 	priceDropToBuy := []float32{0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1}
-	priceVariationDetection := []float32{0.0005, 0.001, 0.002, 0.005, 0.007}
+	priceVariationDetection := []float32{0.005, 0.007}
 
 	cases := []BenchmarkInputArgs{}
 
@@ -221,7 +225,7 @@ func main() {
 
 	for i := 0; i < len(cases); i++ {
 		br := <-reportsCh
-		fmt.Printf("\r%d/%d", i, len(cases))
+		fmt.Printf("\r%d/%d", i+1, len(cases))
 		f.WriteString(fmt.Sprintf("%+v,%d,%d,%d,%.2f,%.2f,%.2f%%\n", br.input, br.buys, br.sells, br.sellsPending, br.initialAmount, br.finalAmount, br.profit))
 	}
 

@@ -1,9 +1,6 @@
 package accounts
 
 import (
-	"time"
-
-	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
@@ -107,12 +104,4 @@ func (a *AccountService) GetAmount() (float32, error) {
 	}
 
 	return account.Amount, nil
-}
-
-func (a *AccountService) GetPendingAssets() (*[]assets.Asset, error) {
-	return a.assetsRepository.FindAll()
-}
-
-func (a *AccountService) GetBalance(startDate, endDate time.Time) (float32, error) {
-	return a.assetsRepository.GetBalance(startDate, endDate)
 }

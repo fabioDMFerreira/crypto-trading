@@ -29,6 +29,7 @@ type NotificationsService struct {
 	NotificationsRepository *NotificationsRepository
 	EventLogsRepository     *eventlogs.EventLogsRepository
 	accountService          domain.AccountServiceReader
+	assetsRepository        domain.AssetsRepositoryReader
 	Receiver                string
 	Sender                  string
 	SenderPassword          string
@@ -38,11 +39,12 @@ func NewNotificationsService(
 	notificationsRepository *NotificationsRepository,
 	eventLogsRepository *eventlogs.EventLogsRepository,
 	accountService domain.AccountServiceReader,
+	assetsRepository domain.AssetsRepositoryReader,
 	receiver string,
 	sender string,
 	senderPassword string,
 ) *NotificationsService {
-	return &NotificationsService{notificationsRepository, eventLogsRepository, accountService, receiver, sender, senderPassword}
+	return &NotificationsService{notificationsRepository, eventLogsRepository, accountService, assetsRepository, receiver, sender, senderPassword}
 }
 
 func (n *NotificationsService) SendEmail(subject, body string) error {
@@ -77,8 +79,7 @@ func (n *NotificationsService) CheckEventLogs() error {
 			return err
 		}
 
-		pendingAssets, err := n.accountService.GetPendingAssets()
-
+		pendingAssets, err := n.assetsRepository.FindAll()
 		if err != nil {
 			return err
 		}
@@ -90,7 +91,7 @@ func (n *NotificationsService) CheckEventLogs() error {
 		}
 
 		startDate, endDate := lastNotificationTime, time.Now()
-		balance, err := n.accountService.GetBalance(startDate, endDate)
+		balance, err := n.assetsRepository.GetBalance(startDate, endDate)
 
 		if err != nil {
 			return err

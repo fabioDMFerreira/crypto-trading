@@ -1,7 +1,6 @@
 package decisionmaker
 
 import (
-	"log"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/assets"
@@ -16,53 +15,28 @@ type DecisionMakerOptions struct {
 
 // DecisionMaker decides to buy or sell
 type DecisionMaker struct {
-	trader           domain.Trader
-	account          domain.Account
 	assetsRepository domain.AssetsRepositoryReader
 	options          DecisionMakerOptions
 }
 
-func NewDecisionMaker(trader domain.Trader, account domain.Account, assetsRepository domain.AssetsRepositoryReader, options DecisionMakerOptions) *DecisionMaker {
-	return &DecisionMaker{trader, account, assetsRepository, options}
+func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options DecisionMakerOptions) *DecisionMaker {
+	return &DecisionMaker{assetsRepository, options}
 }
 
-func (dm *DecisionMaker) MakeDecisions(price float32, buyTime time.Time) {
-	assets, err := dm.assetsRepository.FindAll()
-	if err == nil {
-		dm.DecideToSell(price, assets, dm.options.PretendedProfitPerSold)
-	}
-
+func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, error) {
 	cheaperAssetPrice, err := dm.assetsRepository.FindCheaperAssetPrice()
-	if err == nil {
-		dm.DecideToBuy(price, cheaperAssetPrice, dm.options.PriceDropToBuy, dm.options.MaximumBuyAmount, buyTime)
-	} else {
-		log.Fatal(err)
+
+	if err != nil {
+		return false, err
 	}
 
+	return cheaperAssetPrice == 0 || cheaperAssetPrice-(cheaperAssetPrice*dm.options.PriceDropToBuy) > price, nil
 }
 
-// DecideToSell decides to sell
-func (dm *DecisionMaker) DecideToSell(ask float32, assets *[]assets.Asset, pretendedProfit float32) {
-	for _, asset := range *assets {
-		if asset.BuyPrice+(asset.BuyPrice*pretendedProfit) < ask {
-
-			dm.trader.Sell(&asset, ask)
-
-			amountToDeposit := asset.Amount * ask
-			dm.account.Deposit(amountToDeposit)
-		}
-	}
+func (dm *DecisionMaker) ShouldSell(asset *assets.Asset, price float32, byTime time.Time) (bool, error) {
+	return asset.BuyPrice+(asset.BuyPrice*dm.options.PretendedProfitPerSold) < price, nil
 }
 
-// DecideToBuy decides to buy
-func (dm *DecisionMaker) DecideToBuy(ask float32, minimumAssetBuyPrice float32, dropToBuy float32, buyAmount float32, buyTime time.Time) {
-	if minimumAssetBuyPrice == 0 ||
-		minimumAssetBuyPrice-(minimumAssetBuyPrice*dropToBuy) > ask {
-		amountToWithdraw := buyAmount * ask
-		err := dm.account.Withdraw(amountToWithdraw)
-
-		if err == nil {
-			dm.trader.Buy(buyAmount, ask, buyTime)
-		}
-	}
+func (dm *DecisionMaker) HowMuchAmountShouldBuy(price float32) (float32, error) {
+	return dm.options.MaximumBuyAmount, nil
 }
