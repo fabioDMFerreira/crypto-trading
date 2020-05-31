@@ -74,7 +74,7 @@ func (or *AssetsRepository) Find(filter bson.M) (*[]Asset, error) {
 func (or *AssetsRepository) FindCheaperAssetPrice() (float32, error) {
 	ctx := db.NewMongoQueryContext()
 
-	opts := options.FindOne().SetSort(bson.D{{"buyprice", 1}})
+	opts := options.FindOne().SetSort(bson.D{{"buyPrice", 1}})
 	var foundDocument Asset
 	err := or.collection.FindOne(ctx, bson.D{{"sold", false}}, opts).Decode(&foundDocument)
 
@@ -99,7 +99,7 @@ func (or *AssetsRepository) Sell(id primitive.ObjectID, price float32) error {
 	ctx := db.NewMongoQueryContext()
 
 	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"sellprice", price}, {"sold", true}, {"selltime", time.Now()}}}}
+	update := bson.D{{"$set", bson.D{{"sellPrice", price}, {"sold", true}, {"selltime", time.Now()}}}}
 	_, err := or.collection.UpdateOne(ctx, filter, update)
 
 	return err

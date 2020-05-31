@@ -87,7 +87,7 @@ func main() {
 		notificationsSenderPassword,
 	)
 
-	decisionmakerOptions := decisionmaker.DecisionMakerOptions{0.01, 0.01, 0.1}
+	decisionmakerOptions := decisionmaker.DecisionMakerOptions{0.01, 0.01, 0.01}
 
 	decisionMaker := decisionmaker.NewDecisionMaker(dbTrader, accountService, assetsRepository, decisionmakerOptions)
 

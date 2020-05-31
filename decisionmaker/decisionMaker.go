@@ -63,8 +63,6 @@ func (dm *DecisionMaker) DecideToBuy(ask float32, minimumAssetBuyPrice float32, 
 
 		if err == nil {
 			dm.trader.Buy(buyAmount, ask, buyTime)
-		} else {
-			log.Fatal(err)
 		}
 	}
 }

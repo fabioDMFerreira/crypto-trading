@@ -3,7 +3,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
+	"os"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/app"
@@ -101,6 +103,21 @@ func (ar *AssetsRepositoryMock) Sell(id primitive.ObjectID, price float32) error
 	return nil
 }
 
+type BenchmarkInputArgs struct {
+	decisionMakerOptions    decisionmaker.DecisionMakerOptions
+	PriceVariationDetection float32
+}
+
+type BenchmarkResult struct {
+	input         BenchmarkInputArgs
+	buys          int
+	sells         int
+	sellsPending  int
+	initialAmount float32
+	finalAmount   float32
+	profit        float32
+}
+
 func RoundDown(input float64, places int) (newVal float32) {
 	var round float64
 	pow := math.Pow(10, float64(places))
@@ -110,7 +127,19 @@ func RoundDown(input float64, places int) (newVal float32) {
 	return
 }
 
-func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, PriceVariationDetection float32) {
+func WriteResult(br BenchmarkResult) {
+	fmt.Println("======")
+	fmt.Printf("%+v %+v\n", br.input.decisionMakerOptions, br.input.PriceVariationDetection)
+	fmt.Printf("Buys %v\n", br.buys)
+	fmt.Printf("Sells %v\n", br.sells)
+	fmt.Printf("Sells Pending %v\n", br.sellsPending)
+	fmt.Printf("Initial amount %v\n", br.initialAmount)
+	fmt.Printf("Final amount %v\n", br.finalAmount)
+	fmt.Printf("Returns %0.2f%% \n", br.profit)
+	fmt.Println("=======")
+}
+
+func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, priceVariationDetection float32, done chan BenchmarkResult) {
 	bitcoinHistoryCollector := collectors.NewBitcoinHistoryCollector()
 
 	notificationsService := &NotificationsMock{}
@@ -122,10 +151,9 @@ func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, PriceVar
 
 	decisionMaker := decisionmaker.NewDecisionMaker(trader, account, assetsRepository, decisionMakerOptions)
 
-	application := app.NewApp(notificationsService, decisionMaker, logService, PriceVariationDetection)
+	application := app.NewApp(notificationsService, decisionMaker, logService, priceVariationDetection)
 
 	bitcoinHistoryCollector.Start(func(ask, bid float32, buyTime time.Time) {
-		// fmt.Printf("* %v\n", ask)
 		application.OnTickerChange(ask, bid, buyTime)
 	})
 
@@ -139,15 +167,17 @@ func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, PriceVar
 		}
 	}
 
-	fmt.Println("======")
-	fmt.Printf("%+v %+v\n", decisionMakerOptions, PriceVariationDetection)
-	fmt.Printf("Buys %v\n", len(assetsRepository.Assets))
-	fmt.Printf("Sells %v\n", sells)
-	fmt.Printf("Sells Pending %v\n", len(assetsRepository.Assets)-sells)
-	fmt.Printf("Initial amount 5000\n")
-	fmt.Printf("Final amount %v\n", account.Amount)
-	fmt.Printf("Returns %0.2f%% \n", RoundDown(((float64(account.Amount)-5000)*100)/5000, 2))
-	fmt.Println("=======")
+	benchmarkResult := BenchmarkResult{
+		BenchmarkInputArgs{decisionMakerOptions, priceVariationDetection},
+		len(assetsRepository.Assets),
+		sells,
+		len(assetsRepository.Assets) - sells,
+		5000,
+		account.Amount,
+		RoundDown(((float64(account.Amount)-5000)*100)/5000, 2),
+	}
+
+	done <- benchmarkResult
 	// for _, asset := range assetsRepository.Assets {
 	// 	fmt.Printf("%v %v\n", asset.BuyTime, asset.BuyPrice)
 	// }
@@ -156,28 +186,45 @@ func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, PriceVar
 func main() {
 	start := time.Now()
 
-	cases := []struct {
-		decisionMakerOptions    decisionmaker.DecisionMakerOptions
-		PriceVariationDetection float32
-	}{
-		{
-			decisionmaker.DecisionMakerOptions{0.01, 0.01, 0.1},
-			float32(0.01),
-		},
-		{
-			decisionmaker.DecisionMakerOptions{0.01, 0.001, 0.1},
-			float32(0.001),
-		},
-		{
-			decisionmaker.DecisionMakerOptions{0.01, 0.001, 0.1},
-			float32(0.0001),
-		},
+	maximumBuyAmount := []float32{0.01}
+	pretendedProfitPerSold := []float32{0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6}
+	priceDropToBuy := []float32{0.005, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1}
+	priceVariationDetection := []float32{0.0005, 0.001, 0.002, 0.005, 0.007}
+
+	cases := []BenchmarkInputArgs{}
+
+	for _, mba := range maximumBuyAmount {
+		for _, pfps := range pretendedProfitPerSold {
+			for _, pdtb := range priceDropToBuy {
+				for _, pvd := range priceVariationDetection {
+					cases = append(cases, BenchmarkInputArgs{decisionmaker.DecisionMakerOptions{mba, pfps, pdtb}, pvd})
+				}
+			}
+		}
 	}
+
+	reportsCh := make(chan BenchmarkResult)
 
 	for _, options := range cases {
-		benchmark(options.decisionMakerOptions, options.PriceVariationDetection)
+		go benchmark(options.decisionMakerOptions, options.PriceVariationDetection, reportsCh)
 	}
 
-	fmt.Println(time.Since(start))
+	f, err := os.Create(fmt.Sprintf("./benchmark-reports/benchmark-%v.csv", time.Now().Format("2006-01-02T15:04:05Z07:00")))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f.Write([]byte("Case,Buys,Sells,Sells Pending,Initial Amount,Final Amount,Profit\n"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for i := 0; i < len(cases); i++ {
+		br := <-reportsCh
+		fmt.Printf("\r%d/%d", i, len(cases))
+		f.WriteString(fmt.Sprintf("%+v,%d,%d,%d,%.2f,%.2f,%.2f%%\n", br.input, br.buys, br.sells, br.sellsPending, br.initialAmount, br.finalAmount, br.profit))
+	}
+
+	fmt.Printf("\n%v", time.Since(start))
 
 }
