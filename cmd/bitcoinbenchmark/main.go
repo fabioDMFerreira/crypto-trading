@@ -151,7 +151,7 @@ func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, priceVar
 	accountService := &AccountServiceMock{5000}
 	broker := broker.NewBrokerMock()
 	assetsRepository := &AssetsRepositoryMock{}
-	trader := trader.NewTrader(assetsRepository, accountService, logService, broker)
+	trader := trader.NewTrader(assetsRepository, accountService, broker)
 
 	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionMakerOptions)
 

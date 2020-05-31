@@ -13,8 +13,8 @@ type EventsLog interface {
 
 // Trader buys and sells
 type Trader interface {
-	Buy(amount, price float32, buyTime time.Time)
-	Sell(asset *assets.Asset, price float32)
+	Buy(amount, price float32, buyTime time.Time) error
+	Sell(asset *assets.Asset, price float32) error
 }
 
 type AssetsRepositoryReader interface {

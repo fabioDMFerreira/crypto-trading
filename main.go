@@ -77,7 +77,7 @@ func main() {
 	}
 	accountService = accounts.NewAccountService(accountDocument.ID, accountsRepository, assetsRepository)
 
-	dbTrader := trader.NewTrader(assetsRepository, accountService, eventLogsRepository, brokerService)
+	dbTrader := trader.NewTrader(assetsRepository, accountService, brokerService)
 	notificationsService := notifications.NewNotificationsService(
 		notificationsRepository,
 		eventLogsRepository,

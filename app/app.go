@@ -66,7 +66,17 @@ func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 			}
 
 			if accountAmount > amount*ask {
-				a.trader.Buy(amount, ask, buyTime)
+				err := a.trader.Buy(amount, ask, buyTime)
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				message := fmt.Sprintf("Asset bought: {Price: %v Amount: %v Value: %v}", ask, amount, amount*ask)
+				err = a.eventLogsRepository.Create("buy", message)
+				if err != nil {
+					log.Fatal(err)
+				}
 			} else {
 				a.eventLogsRepository.Create("Insuffucient Funds", fmt.Sprintf("want to spend %.4fBTC*%.2f$=%v, have %.2f in account", amount, ask, amount*ask, accountAmount))
 			}
@@ -80,7 +90,18 @@ func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 
 		for _, asset := range *assets {
 			if ok, err := a.decisionMaker.ShouldSell(&asset, ask, buyTime); ok && err == nil {
-				a.trader.Sell(&asset, ask)
+				err := a.trader.Sell(&asset, ask)
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				message := fmt.Sprintf("Asset sold: {Price: %v Amount: %v Value: %v}", ask, asset.Amount, ask*asset.Amount)
+				err = a.eventLogsRepository.Create("sell", message)
+				if err != nil {
+					log.Fatal(err)
+				}
+
 			}
 		}
 	}
