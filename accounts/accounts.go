@@ -8,11 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Account struct {
-	ID     primitive.ObjectID `bson:"_id" json:"_id"`
-	Amount float32            `bson:"amount,truncate" json:"amount"`
-	Broker string             `json:"broker"`
-}
+type Account domain.Account
 
 type AccountsRepository struct {
 	collection *mongo.Collection

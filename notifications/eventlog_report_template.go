@@ -6,8 +6,7 @@ import (
 	"html/template"
 	"time"
 
-	"github.com/fabiodmferreira/crypto-trading/assets"
-	"github.com/fabiodmferreira/crypto-trading/eventlogs"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 )
 
 type EventsLogEmailFormat struct {
@@ -29,8 +28,8 @@ func GenerateEventlogReportEmail(
 	balance float32,
 	startDate time.Time,
 	endDate time.Time,
-	eventsLog *[]eventlogs.EventLog,
-	assets *[]assets.Asset,
+	eventsLog *[]domain.EventLog,
+	assets *[]domain.Asset,
 ) (*bytes.Buffer, error) {
 	eventLogFormatted := []EventsLogEmailFormat{}
 

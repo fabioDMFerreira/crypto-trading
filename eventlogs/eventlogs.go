@@ -5,19 +5,13 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/db"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // EventLog
-type EventLog struct {
-	ID          primitive.ObjectID `bson:"_id" json:"_id"`
-	EventName   string             `json:"eventName"`
-	Message     string             `json:"message"`
-	Notified    bool               `json:"notified"`
-	DateCreated time.Time          `json:"dateCreated"`
-}
 
 type EventLogsRepository struct {
 	collection *mongo.Collection
@@ -32,7 +26,7 @@ func NewEventLogsRepository(collection *mongo.Collection) *EventLogsRepository {
 
 // Create inserts a new asset in collection
 func (or *EventLogsRepository) Create(eventName, message string) error {
-	event := &EventLog{
+	event := &domain.EventLog{
 		ID:          primitive.NewObjectID(),
 		EventName:   eventName,
 		Message:     message,
@@ -48,7 +42,7 @@ func (or *EventLogsRepository) Create(eventName, message string) error {
 }
 
 // FindAllToNotify returns every event log that needs to be notified
-func (or *EventLogsRepository) FindAllToNotify() (*[]EventLog, error) {
+func (or *EventLogsRepository) FindAllToNotify() (*[]domain.EventLog, error) {
 	ctx := db.NewMongoQueryContext()
 	cur, err := or.collection.Find(ctx, bson.D{{"notified", false}})
 
@@ -57,7 +51,7 @@ func (or *EventLogsRepository) FindAllToNotify() (*[]EventLog, error) {
 	}
 
 	defer cur.Close(ctx)
-	var results []EventLog
+	var results []domain.EventLog
 	if err = cur.All(ctx, &results); err != nil {
 		return nil, err
 	}

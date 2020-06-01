@@ -1,35 +1,21 @@
 package notifications
 
 import (
-	"fmt"
 	"net/smtp"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/domain"
-	"github.com/fabiodmferreira/crypto-trading/eventlogs"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Notification
-type Notification struct {
-	ID                  primitive.ObjectID `bson:"_id" json:"_id"`
-	Title               string             `json:"title"`
-	Message             string             `json:"message"`
-	To                  string             `json:"to"`
-	DateCreated         time.Time          `json:"dateCreated"`
-	NotificationType    string             `json:"notificationType"`
-	NotificationChannel string             `json:"notificationChannel"`
-}
+type Notification domain.Notification
 
 type NotificationsService struct {
 	NotificationsRepository *NotificationsRepository
-	EventLogsRepository     *eventlogs.EventLogsRepository
-	accountService          domain.AccountServiceReader
-	assetsRepository        domain.AssetsRepositoryReader
 	Receiver                string
 	Sender                  string
 	SenderPassword          string
@@ -37,14 +23,11 @@ type NotificationsService struct {
 
 func NewNotificationsService(
 	notificationsRepository *NotificationsRepository,
-	eventLogsRepository *eventlogs.EventLogsRepository,
-	accountService domain.AccountServiceReader,
-	assetsRepository domain.AssetsRepositoryReader,
 	receiver string,
 	sender string,
 	senderPassword string,
 ) *NotificationsService {
-	return &NotificationsService{notificationsRepository, eventLogsRepository, accountService, assetsRepository, receiver, sender, senderPassword}
+	return &NotificationsService{notificationsRepository, receiver, sender, senderPassword}
 }
 
 func (n *NotificationsService) SendEmail(subject, body string) error {
@@ -64,78 +47,42 @@ func (n *NotificationsService) SendEmail(subject, body string) error {
 		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
 		from, []string{to}, []byte(msg))
 
-	n.EventLogsRepository.Create("email", fmt.Sprintf("\"%v\" sent to %v", subject, n.Receiver))
-
 	return err
 }
 
-func (n *NotificationsService) CheckEventLogs() error {
-	lastNotificationTime, err := n.NotificationsRepository.FindLastEventLogsNotificationDate()
+func (n *NotificationsService) FindLastEventLogsNotificationDate() (time.Time, error) {
+	return n.NotificationsRepository.FindLastEventLogsNotificationDate()
+}
 
-	if err != nil || time.Now().Sub(lastNotificationTime).Hours() > 12 {
-		eventLogs, err := n.EventLogsRepository.FindAllToNotify()
-
-		if err != nil {
-			return err
-		}
-
-		pendingAssets, err := n.assetsRepository.FindAll()
-		if err != nil {
-			return err
-		}
-
-		accountAmount, err := n.accountService.GetAmount()
-
-		if err != nil {
-			return err
-		}
-
-		startDate, endDate := lastNotificationTime, time.Now()
-		balance, err := n.assetsRepository.GetBalance(startDate, endDate)
-
-		if err != nil {
-			return err
-		}
-
-		subject := "Crypto-Trading: Report"
-		var eventLogsIds []primitive.ObjectID
-
-		for _, event := range *eventLogs {
-			eventLogsIds = append(eventLogsIds, event.ID)
-		}
-
-		message, err := GenerateEventlogReportEmail(accountAmount, len(*pendingAssets), balance, startDate, endDate, eventLogs, pendingAssets)
-
-		if err != nil {
-			return err
-		}
-
-		err = n.SendEmail(subject, message.String())
-		if err != nil {
-			return err
-		}
-
-		notification := &Notification{
-			ID:                  primitive.NewObjectID(),
-			To:                  n.Receiver,
-			Title:               subject,
-			Message:             message.String(),
-			DateCreated:         time.Now(),
-			NotificationType:    "eventlogs",
-			NotificationChannel: "email",
-		}
-		err = n.NotificationsRepository.Create(notification)
-		if err != nil {
-			return err
-		}
-
-		err = n.EventLogsRepository.MarkNotified(eventLogsIds)
-		if err != nil {
-			return err
-		}
+func (n *NotificationsService) CreateEmailNotification(subject, message, notificationType string) error {
+	notification := &Notification{
+		ID:                  primitive.NewObjectID(),
+		To:                  n.Receiver,
+		Title:               subject,
+		Message:             message,
+		DateCreated:         time.Now(),
+		NotificationType:    notificationType,
+		NotificationChannel: "email",
 	}
 
-	return nil
+	err := n.NotificationsRepository.Create(notification)
+
+	if err != nil {
+		return err
+	}
+
+	err = n.SendEmail(subject, message)
+	if err != nil {
+		return err
+	}
+
+	err = n.NotificationsRepository.Sent(notification.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 type NotificationsRepository struct {
@@ -168,4 +115,14 @@ func (or *NotificationsRepository) FindLastEventLogsNotificationDate() (time.Tim
 	}
 
 	return foundDocument.DateCreated, nil
+}
+
+func (or *NotificationsRepository) Sent(id primitive.ObjectID) error {
+	ctx := db.NewMongoQueryContext()
+
+	filter := bson.D{{"_id", id}}
+	update := bson.D{{"$set", bson.D{{"send", true}}}}
+	_, err := or.collection.UpdateOne(ctx, filter, update)
+
+	return err
 }

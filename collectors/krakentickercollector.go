@@ -24,11 +24,13 @@ type TickerMessage struct {
 }
 
 type KrakenCollector struct {
-	krakenAPI *krakenapi.KrakenAPI
+	krakenAPI               *krakenapi.KrakenAPI
+	priceVariationDetection float32
+	lastTickerPrice         float32
 }
 
-func NewKrakenCollector(krakenAPI *krakenapi.KrakenAPI) *KrakenCollector {
-	return &KrakenCollector{krakenAPI}
+func NewKrakenCollector(krakenAPI *krakenapi.KrakenAPI, priceVariationDetection float32) *KrakenCollector {
+	return &KrakenCollector{krakenAPI, priceVariationDetection, 0}
 }
 
 func (kc *KrakenCollector) Start(onChange OnTickerChange) {
@@ -87,17 +89,24 @@ func (kc *KrakenCollector) Start(onChange OnTickerChange) {
 			msg := []interface{}{0, &TickerMessage{}, "", ""}
 			err = json.Unmarshal(message, &msg)
 			if err == nil {
-				// fmt.Printf("%v", msg)
-				// fmt.Printf("ASK: %v BID: %v\n", msg[1].(*TickerMessage).A[0], msg[1].(*TickerMessage).B[0])
 				askStr := msg[1].(*TickerMessage).A[0].(string)
-				bidStr := msg[1].(*TickerMessage).B[0].(string)
+				// bidStr := msg[1].(*TickerMessage).B[0].(string)
 				ask, err1 := strconv.ParseFloat(askStr, 32)
-				bid, err2 := strconv.ParseFloat(bidStr, 32)
+				// bid, err2 := strconv.ParseFloat(bidStr, 32)
 
-				if err1 == nil && err2 == nil {
-					onChange(float32(ask), float32(bid), time.Now())
+				if err1 == nil {
+					price := float32(ask)
+
+					changeVariance := kc.lastTickerPrice * kc.priceVariationDetection
+
+					if kc.lastTickerPrice == 0 ||
+						price > kc.lastTickerPrice+changeVariance ||
+						price < kc.lastTickerPrice-changeVariance {
+						kc.lastTickerPrice = price
+						onChange(price, price, time.Now())
+					}
 				} else {
-					fmt.Printf("%v %v", err1, err2)
+					fmt.Printf("%v", err1)
 				}
 
 			}

@@ -5,8 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/fabiodmferreira/crypto-trading/assets"
-	"github.com/fabiodmferreira/crypto-trading/eventlogs"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -22,7 +21,7 @@ func TestGenerateEventlogReportEmail(t *testing.T) {
 			-20,
 			date,
 			date,
-			&[]eventlogs.EventLog{
+			&[]domain.EventLog{
 				{
 					ID:          id1,
 					EventName:   "bought",
@@ -31,7 +30,7 @@ func TestGenerateEventlogReportEmail(t *testing.T) {
 					DateCreated: date,
 				},
 			},
-			&[]assets.Asset{
+			&[]domain.Asset{
 				{
 					ID:       id2,
 					Amount:   0.01,

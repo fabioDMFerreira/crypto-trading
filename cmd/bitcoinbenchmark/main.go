@@ -9,21 +9,26 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/app"
-	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/broker"
 	"github.com/fabiodmferreira/crypto-trading/collectors"
+	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
 	"github.com/fabiodmferreira/crypto-trading/decisionmaker"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/trader"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type NotificationsMock struct {
-	checks int
+	emailsNotifications int
 }
 
-func (n *NotificationsMock) CheckEventLogs() error {
-	n.checks++
+func (n *NotificationsMock) CreateEmailNotification(subject, message, notificationType string) error {
+	n.emailsNotifications++
 	return nil
+}
+
+func (n *NotificationsMock) FindLastEventLogsNotificationDate() (time.Time, error) {
+	return time.Now(), nil
 }
 
 type LogMock struct {
@@ -32,6 +37,14 @@ type LogMock struct {
 
 func (l *LogMock) Create(logType, message string) error {
 	l.logs = append(l.logs, []string{logType, message})
+	return nil
+}
+
+func (l *LogMock) FindAllToNotify() (*[]domain.EventLog, error) {
+	return &[]domain.EventLog{}, nil
+}
+
+func (l *LogMock) MarkNotified(ids []primitive.ObjectID) error {
 	return nil
 }
 
@@ -65,10 +78,10 @@ func (a *AccountServiceMock) GetAmount() (float32, error) {
 }
 
 type AssetsRepositoryMock struct {
-	Assets []assets.Asset
+	Assets []domain.Asset
 }
 
-func (ar *AssetsRepositoryMock) FindAll() (*[]assets.Asset, error) {
+func (ar *AssetsRepositoryMock) FindAll() (*[]domain.Asset, error) {
 	return &ar.Assets, nil
 }
 
@@ -88,7 +101,7 @@ func (ar *AssetsRepositoryMock) GetBalance(startDate, endDate time.Time) (float3
 	return 0, nil
 }
 
-func (ar *AssetsRepositoryMock) Create(asset *assets.Asset) error {
+func (ar *AssetsRepositoryMock) Create(asset *domain.Asset) error {
 	ar.Assets = append(ar.Assets, *asset)
 	return nil
 }
@@ -144,7 +157,7 @@ func WriteResult(br BenchmarkResult) {
 }
 
 func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, priceVariationDetection float32, done chan BenchmarkResult) {
-	bitcoinHistoryCollector := collectors.NewBitcoinHistoryCollector()
+	bitcoinHistoryCollector := collectors.NewBitcoinHistoryCollector(priceVariationDetection)
 
 	notificationsService := &NotificationsMock{}
 	logService := &LogMock{}
@@ -155,9 +168,15 @@ func benchmark(decisionMakerOptions decisionmaker.DecisionMakerOptions, priceVar
 
 	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionMakerOptions)
 
-	application := app.NewApp(notificationsService, decisionMaker, logService, priceVariationDetection, assetsRepository, trader, accountService)
+	application := app.NewApp(notificationsService, decisionMaker, logService, assetsRepository, trader, accountService)
 
-	bitcoinHistoryCollector.Start(func(ask, bid float32, buyTime time.Time) {
+	historyFile, err := collectors.GetCsv(fmt.Sprintf("./data-history/btc/%v", btcdatahistory.May2020))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bitcoinHistoryCollector.Start(historyFile, func(ask, bid float32, buyTime time.Time) {
 		application.OnTickerChange(ask, bid, buyTime)
 	})
 

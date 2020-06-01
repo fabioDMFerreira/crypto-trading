@@ -3,7 +3,6 @@ package trader
 import (
 	"time"
 
-	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -22,7 +21,7 @@ func NewTrader(assetsRepository domain.AssetsRepository, accountService domain.A
 	}
 }
 
-func (t *Trader) Sell(asset *assets.Asset, price float32) error {
+func (t *Trader) Sell(asset *domain.Asset, price float32) error {
 	err := t.assetsRepository.Sell(asset.ID, price)
 
 	if err != nil {
@@ -52,7 +51,7 @@ func (t *Trader) Buy(amount, price float32, buyTime time.Time) error {
 		return err
 	}
 
-	asset := &assets.Asset{ID: primitive.NewObjectID(), Amount: amount, BuyPrice: price, BuyTime: buyTime}
+	asset := &domain.Asset{ID: primitive.NewObjectID(), Amount: amount, BuyPrice: price, BuyTime: buyTime}
 	err = t.assetsRepository.Create(asset)
 
 	if err != nil {

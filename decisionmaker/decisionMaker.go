@@ -3,7 +3,6 @@ package decisionmaker
 import (
 	"time"
 
-	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 )
 
@@ -33,7 +32,7 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 	return cheaperAssetPrice == 0 || cheaperAssetPrice-(cheaperAssetPrice*dm.options.PriceDropToBuy) > price, nil
 }
 
-func (dm *DecisionMaker) ShouldSell(asset *assets.Asset, price float32, byTime time.Time) (bool, error) {
+func (dm *DecisionMaker) ShouldSell(asset *domain.Asset, price float32, byTime time.Time) (bool, error) {
 	return asset.BuyPrice+(asset.BuyPrice*dm.options.PretendedProfitPerSold) < price, nil
 }
 

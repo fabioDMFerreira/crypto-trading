@@ -11,28 +11,25 @@ import (
 	"time"
 )
 
-type BitcoinHistoryCollector struct{}
-
-func NewBitcoinHistoryCollector() *BitcoinHistoryCollector {
-	return &BitcoinHistoryCollector{}
+type BitcoinHistoryCollector struct {
+	priceVariationDetection float32
+	lastTickerPrice         float32
 }
 
-func (bhc *BitcoinHistoryCollector) Start(onChange OnTickerChange) {
-	bitcoinHistoryFile, err := GetBitcoinHistoryFile()
+func NewBitcoinHistoryCollector(priceVariationDetection float32) *BitcoinHistoryCollector {
+	return &BitcoinHistoryCollector{priceVariationDetection, 0}
+}
 
-	if err != nil {
-		log.Fatalf("Error on getting bitcoin history file", err)
-	}
-
+func (bhc *BitcoinHistoryCollector) Start(historyFile *csv.Reader, onChange OnTickerChange) {
 	// read header
-	_, err = bitcoinHistoryFile.Read()
+	_, err := historyFile.Read()
 	if err == io.EOF {
 		log.Fatalf("Error on reading bitcoin history file", err)
 	}
 
 	for {
 		// Read each record from csv
-		record, err := bitcoinHistoryFile.Read()
+		record, err := historyFile.Read()
 		if err == io.EOF {
 			break
 		}
@@ -52,13 +49,19 @@ func (bhc *BitcoinHistoryCollector) Start(onChange OnTickerChange) {
 			log.Fatal(err)
 		}
 
-		onChange(float32(price), float32(price), time.Unix(unixTime/1000, 0))
+		changeVariance := float32(bhc.lastTickerPrice * bhc.priceVariationDetection)
+
+		if bhc.lastTickerPrice == 0 ||
+			float32(price) > bhc.lastTickerPrice+changeVariance ||
+			float32(price) < bhc.lastTickerPrice-changeVariance {
+			onChange(float32(price), float32(price), time.Unix(unixTime/1000, 0))
+		}
 	}
 }
 
-func GetBitcoinHistoryFile() (*csv.Reader, error) {
+func GetCsv(file string) (*csv.Reader, error) {
 	// Open the file
-	filename, err := filepath.Abs("./collectors/2020.csv")
+	filename, err := filepath.Abs(file)
 
 	if err != nil {
 		log.Fatalln(err)
