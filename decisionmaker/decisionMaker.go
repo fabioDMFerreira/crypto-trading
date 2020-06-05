@@ -22,6 +22,9 @@ func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options De
 	return &DecisionMaker{assetsRepository, options}
 }
 
+// New Value is a mock
+func (db *DecisionMaker) NewValue(price float32) {}
+
 func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, error) {
 	cheaperAssetPrice, err := dm.assetsRepository.FindCheaperAssetPrice()
 

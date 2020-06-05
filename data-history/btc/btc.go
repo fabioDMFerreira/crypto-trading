@@ -7,5 +7,7 @@ const (
 	MarchCrash2020     = "2020-march-crash.csv"
 	March2020          = "2020-mar.csv"
 	May2020            = "2020-may.csv"
-	twentyTwenty       = "2020.csv"
+	TwentyTwenty       = "2020.csv"
+	TwentyTwentyMinute = "2020-minute.csv"
+	LastYearMinute     = "last-year-minute.csv"
 )

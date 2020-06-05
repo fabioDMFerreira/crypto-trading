@@ -32,6 +32,7 @@ func NewApp(
 
 func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 
+	a.decisionMaker.NewValue(ask)
 	a.eventLogsRepository.Create("btc price change", fmt.Sprintf("BTC PRICE: %v", ask))
 
 	ok, err := a.decisionMaker.ShouldBuy(ask, buyTime)
@@ -73,6 +74,11 @@ func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 
 	for _, asset := range *assets {
 		if ok, err := a.decisionMaker.ShouldSell(&asset, ask, buyTime); ok && err == nil {
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
 			err := a.trader.Sell(&asset, ask)
 
 			if err != nil {
