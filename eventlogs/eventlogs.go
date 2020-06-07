@@ -11,20 +11,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// EventLog
-
+// EventLogsRepository fetches and stores events
 type EventLogsRepository struct {
 	collection *mongo.Collection
 }
 
-// NewAssetsRepository returns an instance of OrdersRepository
+// NewEventLogsRepository returns an instance of Repository
 func NewEventLogsRepository(collection *mongo.Collection) *EventLogsRepository {
 	return &EventLogsRepository{
 		collection,
 	}
 }
 
-// Create inserts a new asset in collection
+// Create inserts a new event in collection
 func (or *EventLogsRepository) Create(eventName, message string) error {
 	event := &domain.EventLog{
 		ID:          primitive.NewObjectID(),

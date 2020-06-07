@@ -6,14 +6,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-// Account
+// Account has details about an exchange account
 type Account struct {
 	ID     primitive.ObjectID `bson:"_id" json:"_id"`
 	Amount float32            `bson:"amount,truncate" json:"amount"`
 	Broker string             `json:"broker"`
 }
 
-// Asset
+// Asset is a financial instrument
 type Asset struct {
 	ID        primitive.ObjectID `bson:"_id" json:"_id"`
 	Amount    float32            `bson:"amount,truncate" json:"amount"`
@@ -24,7 +24,7 @@ type Asset struct {
 	Sold      bool               `json:"sold"`
 }
 
-// EventLog
+// EventLog is a regist of an application event
 type EventLog struct {
 	ID          primitive.ObjectID `bson:"_id" json:"_id"`
 	EventName   string             `json:"eventName"`
@@ -33,7 +33,7 @@ type EventLog struct {
 	DateCreated time.Time          `json:"dateCreated"`
 }
 
-// Notification
+// Notification is a message sent to a specific user
 type Notification struct {
 	ID                  primitive.ObjectID `bson:"_id" json:"_id"`
 	Title               string             `json:"title"`
@@ -43,16 +43,4 @@ type Notification struct {
 	NotificationType    string             `json:"notificationType"`
 	NotificationChannel string             `json:"notificationChannel"`
 	Sent                bool               `json:"sent"`
-}
-
-type NotificationsService interface {
-	FindLastEventLogsNotificationDate() (time.Time, error)
-	CreateEmailNotification(subject, message, notificationType string) error
-}
-
-type DecisionMaker interface {
-	NewValue(price float32)
-	ShouldBuy(price float32, buyTime time.Time) (bool, error)
-	ShouldSell(asset *Asset, price float32, buyTime time.Time) (bool, error)
-	HowMuchAmountShouldBuy(price float32) (float32, error)
 }

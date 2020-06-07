@@ -12,7 +12,7 @@ func SubSlices(slice1, slice2 []float64) []float64 {
 	return result
 }
 
-// Ema calculates exponential moving average of a slice for a certain period
+// TransverseEMA calculates exponential moving average of a slice for a certain period
 func TransverseEMA(slice []float64, period int) []float64 {
 
 	var emaSlice []float64
@@ -29,7 +29,7 @@ func TransverseEMA(slice []float64, period int) []float64 {
 	return emaSlice
 }
 
-// MACD stands for moving average convergence divergence.
+// TransverseMACD stands for moving average convergence divergence.
 func TransverseMACD(points []float64, params ...int) ([]float64, []float64) {
 
 	if len(params) < 3 {

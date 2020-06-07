@@ -7,12 +7,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// Trader execute operations to buy and sell assets
 type Trader struct {
 	assetsRepository domain.AssetsRepository
 	accountService   domain.AccountService
 	broker           domain.Broker
 }
 
+// NewTrader returns a Trader instance
 func NewTrader(assetsRepository domain.AssetsRepository, accountService domain.AccountService, broker domain.Broker) *Trader {
 	return &Trader{
 		assetsRepository,
@@ -21,6 +23,7 @@ func NewTrader(assetsRepository domain.AssetsRepository, accountService domain.A
 	}
 }
 
+// Sell updates asset status to sold, requests broker to sell an asset and updates account ammount
 func (t *Trader) Sell(asset *domain.Asset, price float32) error {
 	err := t.assetsRepository.Sell(asset.ID, price)
 
@@ -43,6 +46,7 @@ func (t *Trader) Sell(asset *domain.Asset, price float32) error {
 	return nil
 }
 
+// Buy updates account ammount, creates an asset and requests broker to buy an asset
 func (t *Trader) Buy(amount, price float32, buyTime time.Time) error {
 	amountToWithdraw := amount * price
 	err := t.accountService.Withdraw(amountToWithdraw)

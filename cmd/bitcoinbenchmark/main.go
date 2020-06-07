@@ -134,13 +134,13 @@ func (ar *AssetsRepositoryMock) Sell(id primitive.ObjectID, price float32) error
 }
 
 type Algo0BenchmarkInputArgs struct {
-	decisionMakerOptions    decisionmaker.DecisionMakerOptions
+	decisionMakerOptions    decisionmaker.DecisionMaker0Options
 	PriceVariationDetection float32
 	InitialAmount           float64
 }
 
 type Algo1BenchmarkInputArgs struct {
-	decisionMakerOptions    decisionmaker.DecisionMakerOptions1
+	decisionMakerOptions    decisionmaker.Options
 	PriceVariationDetection float32
 	InitialAmount           float64
 	TotalPointsHolding      int
@@ -189,7 +189,7 @@ func benchmark(decisionMaker domain.DecisionMaker, assetsRepository *AssetsRepos
 
 	application := app.NewApp(notificationsService, decisionMaker, logService, assetsRepository, trader, accountService)
 
-	historyFile, err := collectors.GetCsv(fmt.Sprintf("./data-history/btc/%v", btcdatahistory.TwentyTwentyMinute))
+	historyFile, err := collectors.GetCsv(fmt.Sprintf("./data-history/btc/%v", btcdatahistory.LastYearMinute))
 
 	if err != nil {
 		log.Fatal(err)
@@ -225,7 +225,7 @@ func benchmark(decisionMaker domain.DecisionMaker, assetsRepository *AssetsRepos
 
 func BenchmarkAlgo1(done chan BenchmarkResult) int {
 	initialAmount := []float64{2000}
-	maximumBuyAmount := []float32{0.1}
+	maximumBuyAmount := []float32{0.1, 0.2, 0.3, 0.4, 0.5}
 	pretendedProfitPerSold := []float32{0.01}
 	priceDropToBuy := []float32{0.01}
 	priceVariationDetection := []float32{0.01}
@@ -239,7 +239,7 @@ func BenchmarkAlgo1(done chan BenchmarkResult) int {
 				for _, pdtb := range priceDropToBuy {
 					for _, pvd := range priceVariationDetection {
 						for _, tph := range totalPointsHolding {
-							cases = append(cases, Algo1BenchmarkInputArgs{decisionmaker.DecisionMakerOptions1{mba, pfps, pdtb}, pvd, ia, tph})
+							cases = append(cases, Algo1BenchmarkInputArgs{decisionmaker.Options{mba, pfps, pdtb}, pvd, ia, tph})
 						}
 					}
 				}
@@ -248,11 +248,11 @@ func BenchmarkAlgo1(done chan BenchmarkResult) int {
 	}
 
 	for _, options := range cases {
-		statisticsOptions := statistics.StatisticsOptions{options.TotalPointsHolding}
+		statisticsOptions := statistics.Options{options.TotalPointsHolding}
 		macd := statistics.NewMACDContainer(statistics.MACDParams{12, 26, 9}, []float64{})
 		statisticsService := statistics.NewStatistics(statisticsOptions, macd)
 		assetsRepository := &AssetsRepositoryMock{}
-		decisionMaker := decisionmaker.NewDecisionMaker1(assetsRepository, options.decisionMakerOptions, statisticsService)
+		decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, options.decisionMakerOptions, statisticsService)
 		go benchmark(decisionMaker, assetsRepository, options, options.PriceVariationDetection, options.InitialAmount, done)
 	}
 
@@ -273,7 +273,7 @@ func BenchmarkAlgo0(done chan BenchmarkResult) int {
 			for _, pfps := range pretendedProfitPerSold {
 				for _, pdtb := range priceDropToBuy {
 					for _, pvd := range priceVariationDetection {
-						cases = append(cases, Algo0BenchmarkInputArgs{decisionmaker.DecisionMakerOptions{mba, pfps, pdtb}, pvd, ia})
+						cases = append(cases, Algo0BenchmarkInputArgs{decisionmaker.DecisionMaker0Options{mba, pfps, pdtb}, pvd, ia})
 					}
 				}
 			}
@@ -282,7 +282,7 @@ func BenchmarkAlgo0(done chan BenchmarkResult) int {
 
 	for _, options := range cases {
 		assetsRepository := &AssetsRepositoryMock{}
-		decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, options.decisionMakerOptions)
+		decisionMaker := decisionmaker.NewDecisionMaker0(assetsRepository, options.decisionMakerOptions)
 		go benchmark(decisionMaker, assetsRepository, options, options.PriceVariationDetection, options.InitialAmount, done)
 	}
 

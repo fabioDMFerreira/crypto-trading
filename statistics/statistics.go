@@ -1,158 +1,79 @@
 package statistics
 
-type StatisticsOptions struct {
+import "math"
+
+// Options used in Statistics
+type Options struct {
 	NumberOfPointsHold int
 }
 
+// Statistics receives points and do statitics calculations
 type Statistics struct {
-	options        StatisticsOptions
-	Points         []float64
-	Average        float64
-	NumberOfPoints int
+	options        Options
+	points         []float64
+	average        float64
+	numberOfPoints int
+	variance       float64
 	MACD           *MACDContainer
 }
 
-func NewStatistics(options StatisticsOptions, macd *MACDContainer) *Statistics {
-	return &Statistics{options, []float64{}, 0, 0, macd}
+// NewStatistics returns a Statitics instance
+func NewStatistics(options Options, macd *MACDContainer) *Statistics {
+	return &Statistics{options, []float64{}, 0, 0, 0, macd}
 }
 
+// AddPoint recalculate values of interest
 func (s *Statistics) AddPoint(p float64) {
+	s.RecalculateVariance(p)
 	s.RecalculateAverage(p)
 	s.MACD.AddPoint(p)
 
-	if s.options.NumberOfPointsHold > s.NumberOfPoints {
-		s.NumberOfPoints++
-		s.Points = append(s.Points, p)
+	if s.options.NumberOfPointsHold > s.numberOfPoints {
+		s.numberOfPoints++
+		s.points = append(s.points, p)
 	} else {
-		s.Points = append(s.Points, p)
-		s.Points = s.Points[1:]
+		s.points = append(s.points, p)
+		s.points = s.points[1:]
 	}
 }
 
+// RecalculateAverage calculates new average using the old average and the new sample value
 func (s *Statistics) RecalculateAverage(p float64) {
-	if s.options.NumberOfPointsHold > s.NumberOfPoints {
-		s.Average += (p - s.Average) / (float64(s.NumberOfPoints) + 1)
+	if s.options.NumberOfPointsHold > s.numberOfPoints {
+		s.average += (p - s.average) / (float64(s.numberOfPoints) + 1)
 	} else {
-		s.Average = s.Average + (1/float64(s.options.NumberOfPointsHold))*(p-s.Points[0])
+		s.average = s.average + (1/float64(s.options.NumberOfPointsHold))*(p-s.points[0])
 	}
 }
 
-func Average(xs []float64) float64 {
-	total := 0.0
-	for _, v := range xs {
-		total += v
-	}
-	return total / float64(len(xs))
-}
-
-type MACDParams struct {
-	Fast int
-	Slow int
-	Lag  int
-}
-
-type MACDContainer struct {
-	params     MACDParams
-	FastEMA    []float64
-	SlowEMA    []float64
-	MACD       []float64
-	LagEMA     []float64
-	Histogram  []float64
-	holdPoints []float64
-}
-
-func NewMACDContainer(macdParams MACDParams, holdPoints []float64, params ...[]float64) *MACDContainer {
-
-	var fastEMA, slowEMA, macd, lagEMA, histogram []float64
-
-	switch len(params) {
-	case 1:
-		fastEMA = params[0]
-		break
-	case 2:
-		fastEMA = params[0]
-		slowEMA = params[1]
-		break
-	case 3:
-		fastEMA = params[0]
-		slowEMA = params[1]
-		macd = params[2]
-		break
-	case 4:
-		fastEMA = params[0]
-		slowEMA = params[1]
-		macd = params[2]
-		lagEMA = params[3]
-	case 5:
-		fastEMA = params[0]
-		slowEMA = params[1]
-		macd = params[2]
-		lagEMA = params[3]
-		histogram = params[4]
-	}
-
-	return &MACDContainer{macdParams, fastEMA, slowEMA, macd, lagEMA, histogram, holdPoints}
-}
-
-func (mc *MACDContainer) AddPoint(p float64) {
-	if len(mc.holdPoints) <= mc.params.Slow {
-		mc.holdPoints = append(mc.holdPoints, p)
-	}
-
-	if len(mc.holdPoints) > mc.params.Slow {
-		slow := EMA(p, mc.params.Slow, mc.SlowEMA[len(mc.SlowEMA)-1])
-		mc.SlowEMA = append(mc.SlowEMA, slow)
-	} else if len(mc.holdPoints) == mc.params.Slow {
-		slow := Average(mc.holdPoints)
-		mc.SlowEMA = []float64{slow}
-	}
-
-	if len(mc.holdPoints) > mc.params.Fast {
-		fast := EMA(p, mc.params.Fast, mc.FastEMA[len(mc.FastEMA)-1])
-		mc.FastEMA = append(mc.FastEMA, fast)
-	} else if len(mc.holdPoints) == mc.params.Fast {
-		fast := Average(mc.holdPoints)
-		mc.FastEMA = []float64{fast}
-	}
-
-	if len(mc.SlowEMA) > 0 {
-		macd := mc.FastEMA[len(mc.FastEMA)-1] - mc.SlowEMA[len(mc.SlowEMA)-1]
-		mc.MACD = append(mc.MACD, macd)
-	}
-
-	if len(mc.MACD) > mc.params.Lag {
-		lag := EMA(mc.MACD[len(mc.MACD)-1], mc.params.Lag, mc.LagEMA[len(mc.LagEMA)-1])
-		mc.LagEMA = append(mc.LagEMA, lag)
-		histogram := mc.MACD[len(mc.MACD)-1] - lag
-		mc.Histogram = []float64{histogram}
-	} else if len(mc.MACD) == mc.params.Lag {
-		lag := Average(mc.MACD)
-		mc.LagEMA = append(mc.LagEMA, lag)
-		histogram := mc.MACD[len(mc.MACD)-1] - lag
-		mc.Histogram = []float64{histogram}
+// RecalculateVariance calculates new variance using the old variance and the new sample value
+func (s *Statistics) RecalculateVariance(p float64) {
+	if s.options.NumberOfPointsHold > s.numberOfPoints {
+		// https://math.stackexchange.com/questions/198336/how-to-calculate-standard-deviation-with-streaming-inputs
+		n := s.numberOfPoints + 1
+		mean := s.average
+		delta := p - mean
+		mean += delta / float64(n)
+		m := s.variance * float64(s.numberOfPoints-1)
+		m += delta * (p - mean)
+		if n >= 2 {
+			s.variance = m / float64(n-1)
+		}
+	} else {
+		// https://math.stackexchange.com/questions/3112650/formula-to-recalculate-variance-after-removing-a-value-and-adding-another-one-gi
+		n := s.numberOfPoints
+		oldP := s.points[0]
+		newMean := s.average + ((p - oldP) / float64(n))
+		s.variance = s.variance + math.Pow(newMean-s.average, 2) + ((math.Pow(p-newMean, 2) - math.Pow(oldP-newMean, 2)) / float64(n))
 	}
 }
 
-func (mc *MACDContainer) GetLastMacdAndSignal() (float64, float64) {
-	if len(mc.MACD) == 0 {
-		return 0, 0
-	} else if len(mc.LagEMA) == 0 {
-		return mc.MACD[len(mc.MACD)-1], 0
-	}
-
-	return mc.MACD[len(mc.MACD)-1], mc.LagEMA[len(mc.LagEMA)-1]
+// GetStandardDeviation returns the current standard deviation of data sample
+func (s *Statistics) GetStandardDeviation() float64 {
+	return math.Sqrt(s.variance)
 }
 
-func (mc *MACDContainer) GetLastHistogramPoint() float64 {
-	if len(mc.Histogram) == 0 {
-		return 0
-	}
-
-	return mc.Histogram[len(mc.Histogram)-1]
-}
-
-func EMA(current float64, period int, previousEMA float64) float64 {
-
-	k := 2 / float64(period+1)
-	return (current * k) + (previousEMA * (1 - k))
+// GetAverage returns the current standard deviation of data sample
+func (s *Statistics) GetAverage() float64 {
+	return s.average
 }

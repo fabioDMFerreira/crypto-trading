@@ -16,6 +16,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/eventlogs"
 	"github.com/fabiodmferreira/crypto-trading/notifications"
+	"github.com/fabiodmferreira/crypto-trading/statistics"
 	"github.com/fabiodmferreira/crypto-trading/trader"
 	"github.com/joho/godotenv"
 )
@@ -85,9 +86,19 @@ func main() {
 		notificationsSenderPassword,
 	)
 
-	decisionmakerOptions := decisionmaker.DecisionMakerOptions{0.01, 0.01, 0.01}
+	decisionmakerOptions :=
+		decisionmaker.Options{
+			MaximumBuyAmount:      0.01,
+			MinimumProfitPerSold:  0.01,
+			MinimumPriceDropToBuy: 0.01,
+		}
 
-	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions)
+	statisticsOptions := statistics.Options{NumberOfPointsHold: 38000}
+	macdParams := statistics.MACDParams{Fast: 24, Slow: 12, Lag: 9}
+	macd := statistics.NewMACDContainer(macdParams)
+	statistics := statistics.NewStatistics(statisticsOptions, macd)
+
+	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, statistics)
 
 	krakenCollector := collectors.NewKrakenCollector(krakenAPI, 0.01)
 	application := app.NewApp(notificationsService, decisionMaker, eventLogsRepository, assetsRepository, dbTrader, accountService)
