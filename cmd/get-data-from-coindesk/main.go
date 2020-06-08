@@ -33,8 +33,8 @@ func TransverseDatesRanges(startDate, endDate time.Time, handle func(time.Time, 
 	}
 }
 
-func FetchCoindeskData(startDate, endDate string, target *CoindeskHTTPResponse) error {
-	r, err := http.Get(fmt.Sprintf("https://production.api.coindesk.com/v2/price/values/BTC?start_date=%v&end_date=%v&ohlc=false", startDate, endDate))
+func FetchCoindeskData(startDate, endDate string, coin string, target *CoindeskHTTPResponse) error {
+	r, err := http.Get(fmt.Sprintf("https://production.api.coindesk.com/v2/price/values/%v?start_date=%v&end_date=%v&ohlc=false", coin, startDate, endDate))
 
 	if err != nil {
 		return err
@@ -70,10 +70,10 @@ func WriteCoindeskResponse(response CoindeskResponse, out io.Writer) {
 	}
 }
 
-func GetPrices(startDate, endDate time.Time) (*CoindeskResponse, error) {
+func GetPrices(startDate, endDate time.Time, coin string) (*CoindeskResponse, error) {
 
 	response := CoindeskHTTPResponse{}
-	err := FetchCoindeskData(SerializeDate(startDate), SerializeDate(endDate), &response)
+	err := FetchCoindeskData(SerializeDate(startDate), SerializeDate(endDate), coin, &response)
 
 	time.Sleep(2 * time.Second)
 
@@ -84,10 +84,10 @@ func GetPrices(startDate, endDate time.Time) (*CoindeskResponse, error) {
 	return &response.Data, nil
 }
 
-func GetAndStoreData(f io.Writer) func(time.Time, time.Time) error {
+func GetAndStoreData(f io.Writer, coin string) func(time.Time, time.Time) error {
 	counter := 0
 	return func(startDate, endDate time.Time) error {
-		response, err := GetPrices(startDate, endDate)
+		response, err := GetPrices(startDate, endDate, coin)
 
 		if err != nil {
 			return err
@@ -108,18 +108,38 @@ func main() {
 	startDate, _ := time.Parse(dateLayout, "2019-06-01 00:00:00")
 	endDate, _ := time.Parse(dateLayout, "2020-06-01 23:59:59")
 
-	f, err := os.Create(fmt.Sprintf("./data-history/btc/last-year-minute.csv"))
-
-	if err != nil {
-		log.Fatal(err)
+	iterations := []struct {
+		filePath string
+		coin     string
+	}{
+		// {"ada/last-year-minute.csv", "ADA"},
+		// {"btc/last-year-minute.csv", "BTC"},
+		{"btc-cash/last-year-minute.csv", "BCH"},
+		{"btc-sv/last-year-minute.csv", "BSV"},
+		{"eos/last-year-minute.csv", "EOS"},
+		{"etc/last-year-minute.csv", "ETC"},
+		{"eth/last-year-minute.csv", "ETH"},
+		{"ltc/last-year-minute.csv", "LTC"},
+		{"monero/last-year-minute.csv", "XMR"},
+		{"stellar/last-year-minute.csv", "XLM"},
+		{"xrp/last-year-minute.csv", "XRP"},
 	}
 
-	f.Write([]byte("Date,Price\n"))
+	for _, i := range iterations {
+		fmt.Printf("\nfetching %v...\n", i.coin)
+		f, err := os.Create(fmt.Sprintf("./data-history/%v", i.filePath))
 
-	TransverseDatesRanges(startDate, endDate, GetAndStoreData(f))
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	if err != nil {
-		log.Fatal(err)
+		f.Write([]byte("Date,Price\n"))
+
+		TransverseDatesRanges(startDate, endDate, GetAndStoreData(f, i.coin))
+
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 }
