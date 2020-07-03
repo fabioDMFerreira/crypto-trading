@@ -34,7 +34,7 @@ func GenerateEventlogReportEmail(
 	eventLogFormatted := []EventsLogEmailFormat{}
 
 	for _, event := range *eventsLog {
-		eventLogFormatted = append(eventLogFormatted, EventsLogEmailFormat{event.DateCreated.Format("02-Jan-2006 15:04"), event.Message, event.ID.Hex()})
+		eventLogFormatted = append(eventLogFormatted, EventsLogEmailFormat{event.CreatedAt.Format("02-Jan-2006 15:04"), event.Message, event.ID.Hex()})
 	}
 
 	pendingAssetsFormatted := []PendingAssetsEmailFormat{}

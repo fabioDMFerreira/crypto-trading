@@ -60,7 +60,7 @@ func (n *NotificationsService) CreateEmailNotification(subject, message, notific
 		To:                  n.Receiver,
 		Title:               subject,
 		Message:             message,
-		DateCreated:         time.Now(),
+		CreatedAt:           time.Now(),
 		NotificationType:    notificationType,
 		NotificationChannel: "email",
 	}
@@ -106,7 +106,7 @@ func (or *NotificationsRepository) Create(notification *Notification) error {
 func (or *NotificationsRepository) FindLastEventLogsNotificationDate() (time.Time, error) {
 	ctx := db.NewMongoQueryContext()
 
-	opts := options.FindOne().SetSort(bson.D{{"datecreated", -1}})
+	opts := options.FindOne().SetSort(bson.D{{"createdat", -1}})
 	var foundDocument Notification
 	err := or.collection.FindOne(ctx, bson.D{{"notificationtype", "eventlogs"}}, opts).Decode(&foundDocument)
 
@@ -114,7 +114,7 @@ func (or *NotificationsRepository) FindLastEventLogsNotificationDate() (time.Tim
 		return time.Now().AddDate(-1, 0, 0), err
 	}
 
-	return foundDocument.DateCreated, nil
+	return foundDocument.CreatedAt, nil
 }
 
 func (or *NotificationsRepository) Sent(id primitive.ObjectID) error {

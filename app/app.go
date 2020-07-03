@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// App holds instances of each application dependency and executes program
 type App struct {
 	notificationsService domain.NotificationsService
 	decisionMaker        domain.DecisionMaker
@@ -17,8 +18,10 @@ type App struct {
 	assetsRepository     domain.AssetsRepositoryReader
 	trader               domain.Trader
 	accountService       domain.AccountService
+	collector            domain.Collector
 }
 
+// NewApp returns an instance of App
 func NewApp(
 	notificationsService domain.NotificationsService,
 	decisionMaker domain.DecisionMaker,
@@ -26,16 +29,30 @@ func NewApp(
 	assetsRepository domain.AssetsRepositoryReader,
 	trader domain.Trader,
 	accountService domain.AccountService,
+	collector domain.Collector,
 ) *App {
-	return &App{notificationsService, decisionMaker, log, assetsRepository, trader, accountService}
+	app := &App{notificationsService, decisionMaker, log, assetsRepository, trader, accountService, collector}
+	app.collector.Regist(app.OnTickerChange)
+	return app
 }
 
-func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
+// Start starts collecting data
+func (a *App) Start() {
+	a.collector.Start()
+}
+
+// RegistOnTickerChange executes function when the collector receives a change
+func (a *App) RegistOnTickerChange(observable domain.OnTickerChange) {
+	a.collector.Regist(observable)
+}
+
+// OnTickerChange do operations based on asset new price
+func (a *App) OnTickerChange(ask, bid float32, currentTime time.Time) {
 
 	a.decisionMaker.NewValue(ask)
 	a.eventLogsRepository.Create("btc price change", fmt.Sprintf("BTC PRICE: %v", ask))
 
-	ok, err := a.decisionMaker.ShouldBuy(ask, buyTime)
+	ok, err := a.decisionMaker.ShouldBuy(ask, currentTime)
 	if ok && err == nil {
 		amount, err := a.decisionMaker.HowMuchAmountShouldBuy(ask)
 
@@ -50,7 +67,7 @@ func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 		}
 
 		if accountAmount > amount*ask {
-			err := a.trader.Buy(amount, ask, buyTime)
+			err := a.trader.Buy(amount, ask, currentTime)
 
 			if err != nil {
 				log.Fatal(err)
@@ -66,20 +83,20 @@ func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 		}
 	}
 
-	assets, err := a.assetsRepository.FindAll()
+	assets, err := a.assetsRepository.FindPendingAssets()
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, asset := range *assets {
-		if ok, err := a.decisionMaker.ShouldSell(&asset, ask, buyTime); ok && err == nil {
+		if ok, err := a.decisionMaker.ShouldSell(&asset, ask, currentTime); ok && err == nil {
 
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			err := a.trader.Sell(&asset, ask)
+			err := a.trader.Sell(&asset, ask, currentTime)
 
 			if err != nil {
 				log.Fatal(err)
@@ -101,6 +118,7 @@ func (a *App) OnTickerChange(ask, bid float32, buyTime time.Time) {
 	}
 }
 
+// CheckEventLogs verifies wheter there are log events to notify the user
 func (a *App) CheckEventLogs() error {
 	lastNotificationTime, err := a.notificationsService.FindLastEventLogsNotificationDate()
 
@@ -155,4 +173,14 @@ func (a *App) CheckEventLogs() error {
 	}
 
 	return nil
+}
+
+// FetchAssets returns all assets
+func (a *App) FetchAssets() (*[]domain.Asset, error) {
+	return a.assetsRepository.FindAll()
+}
+
+// GetAccountAmount returns the account service amount
+func (a *App) GetAccountAmount() (float32, error) {
+	return a.accountService.GetAmount()
 }

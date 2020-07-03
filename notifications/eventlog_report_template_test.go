@@ -23,11 +23,11 @@ func TestGenerateEventlogReportEmail(t *testing.T) {
 			date,
 			&[]domain.EventLog{
 				{
-					ID:          id1,
-					EventName:   "bought",
-					Message:     "asset bought",
-					Notified:    false,
-					DateCreated: date,
+					ID:        id1,
+					EventName: "bought",
+					Message:   "asset bought",
+					Notified:  false,
+					CreatedAt: date,
 				},
 			},
 			&[]domain.Asset{

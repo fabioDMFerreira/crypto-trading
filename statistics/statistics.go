@@ -1,15 +1,14 @@
 package statistics
 
-import "math"
+import (
+	"math"
 
-// Options used in Statistics
-type Options struct {
-	NumberOfPointsHold int
-}
+	"github.com/fabiodmferreira/crypto-trading/domain"
+)
 
 // Statistics receives points and do statitics calculations
 type Statistics struct {
-	options        Options
+	options        domain.StatisticsOptions
 	points         []float64
 	average        float64
 	numberOfPoints int
@@ -18,7 +17,7 @@ type Statistics struct {
 }
 
 // NewStatistics returns a Statitics instance
-func NewStatistics(options Options, macd *MACDContainer) *Statistics {
+func NewStatistics(options domain.StatisticsOptions, macd *MACDContainer) *Statistics {
 	return &Statistics{options, []float64{}, 0, 0, 0, macd}
 }
 

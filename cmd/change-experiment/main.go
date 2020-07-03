@@ -7,19 +7,18 @@ import (
 	"time"
 
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/statistics"
 
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 )
 
 func main() {
-	historyFile, err := collectors.GetCsv(fmt.Sprintf("./data-history/btc/%v", btcdatahistory.TwentyTwentyMinute))
+	historyFile, err := collectors.GetCsv(fmt.Sprintf("./data-history/%v", btcdatahistory.TwentyTwentyMinute))
 
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	bitcoinHistoryCollector := collectors.NewBitcoinHistoryCollector(0.1)
 
 	startDate := time.Now().Format("2006-01-02T15:04:05Z07:00")
 	f, err := os.Create(fmt.Sprintf("./reports/change-reports/change-%v.csv", startDate))
@@ -27,7 +26,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	statisticsOptions := statistics.StatisticsOptions{38000}
+	bitcoinHistoryCollector := collectors.NewFileTickerCollector(domain.CollectorOptions{PriceVariationDetection: 0.01, DataSource: historyFile})
+
+	statisticsOptions := domain.StatisticsOptions{NumberOfPointsHold: 38000}
 	macd := statistics.NewMACDContainer(statistics.MACDParams{12, 26, 9}, []float64{})
 	stats := statistics.NewStatistics(statisticsOptions, macd)
 
@@ -39,7 +40,8 @@ func main() {
 	var timesSameVelocityDirection int
 	var accelerationCurrentDirection bool
 	var timesSameAccelerationDirection int
-	bitcoinHistoryCollector.Start(historyFile, func(ask, bid float32, buyTime time.Time) {
+
+	bitcoinHistoryCollector.Regist(func(ask, bid float32, buyTime time.Time) {
 		stats.AddPoint(float64(ask))
 		if lastPrice > 0 {
 			change := ask - lastPrice
@@ -67,4 +69,6 @@ func main() {
 			lastPrice = ask
 		}
 	})
+
+	bitcoinHistoryCollector.Start()
 }

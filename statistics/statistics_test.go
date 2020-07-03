@@ -2,6 +2,8 @@ package statistics
 
 import (
 	"testing"
+
+	"github.com/fabiodmferreira/crypto-trading/domain"
 )
 
 func NewMACDMock() *MACDContainer {
@@ -18,11 +20,11 @@ func TestStatistics(t *testing.T) {
 			wantAverage        float64
 			wantNumberOfPoints int
 		}{
-			{Statistics{Options{10}, []float64{}, 0, 0, 0, macdMock}, 2, 2, 1},
-			{Statistics{Options{10}, []float64{10}, 10, 1, 0, macdMock}, 5, 7.5, 2},
-			{Statistics{Options{10}, []float64{2, 20, 80}, 34, 3, 0, macdMock}, 4, 26.5, 4},
-			{Statistics{Options{2}, []float64{20, 80}, 50, 2, 0, macdMock}, 40, 60, 2},
-			{Statistics{Options{3}, []float64{20, 80}, 50, 2, 0, macdMock}, 50, 50, 3},
+			{Statistics{domain.StatisticsOptions{10}, []float64{}, 0, 0, 0, macdMock}, 2, 2, 1},
+			{Statistics{domain.StatisticsOptions{10}, []float64{10}, 10, 1, 0, macdMock}, 5, 7.5, 2},
+			{Statistics{domain.StatisticsOptions{10}, []float64{2, 20, 80}, 34, 3, 0, macdMock}, 4, 26.5, 4},
+			{Statistics{domain.StatisticsOptions{2}, []float64{20, 80}, 50, 2, 0, macdMock}, 40, 60, 2},
+			{Statistics{domain.StatisticsOptions{3}, []float64{20, 80}, 50, 2, 0, macdMock}, 50, 50, 3},
 		}
 
 		for index, tt := range tests {
@@ -47,7 +49,7 @@ func TestStatistics(t *testing.T) {
 	t.Run("RecalculateVariance should recalculate the variance", func(t *testing.T) {
 		macdMock := NewMACDMock()
 
-		stats := Statistics{Options{10}, []float64{}, 0, 0, 0, macdMock}
+		stats := Statistics{domain.StatisticsOptions{10}, []float64{}, 0, 0, 0, macdMock}
 
 		stats.AddPoint(5)
 		stats.AddPoint(5)
@@ -66,7 +68,7 @@ func TestStatistics(t *testing.T) {
 	t.Run("RecalculateVariance should recalculate the variance of last points", func(t *testing.T) {
 		macdMock := NewMACDMock()
 
-		stats := Statistics{Options{4}, []float64{}, 0, 0, 0, macdMock}
+		stats := Statistics{domain.StatisticsOptions{4}, []float64{}, 0, 0, 0, macdMock}
 
 		stats.AddPoint(5)
 		stats.AddPoint(5)

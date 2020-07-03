@@ -1,1 +1,1 @@
-cmd: ./bin/crypto-trading
+cmd: ./bin/serviced

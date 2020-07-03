@@ -9,31 +9,36 @@ import (
 	"time"
 
 	krakenapi "github.com/beldur/kraken-go-api-client"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/gorilla/websocket"
 )
 
-type OnTickerChange = func(float32, float32, time.Time)
-
+// SocketEvent is a type used to decode kraken websocket messages
 type SocketEvent struct {
 	Event string
 }
 
+// TickerMessage is a type used to decode messages of ticker price change events
 type TickerMessage struct {
 	A []interface{}
 	B []interface{}
 }
 
+// KrakenCollector collects data from kraken exchange
 type KrakenCollector struct {
-	krakenAPI               *krakenapi.KrakenAPI
-	priceVariationDetection float32
-	lastTickerPrice         float32
+	options         domain.CollectorOptions
+	krakenAPI       *krakenapi.KrakenAPI
+	lastTickerPrice float32
+	observables     []domain.OnTickerChange
 }
 
-func NewKrakenCollector(krakenAPI *krakenapi.KrakenAPI, priceVariationDetection float32) *KrakenCollector {
-	return &KrakenCollector{krakenAPI, priceVariationDetection, 0}
+// NewKrakenCollector returns an instance of KrakenCollector
+func NewKrakenCollector(options domain.CollectorOptions, krakenAPI *krakenapi.KrakenAPI) *KrakenCollector {
+	return &KrakenCollector{options, krakenAPI, 0, []domain.OnTickerChange{}}
 }
 
-func (kc *KrakenCollector) Start(onChange OnTickerChange) {
+// Start connects to a kraken websocket that send prices variations
+func (kc *KrakenCollector) Start() {
 	u := url.URL{
 		Scheme: "wss",
 		Host:   "ws.kraken.com",
@@ -97,13 +102,15 @@ func (kc *KrakenCollector) Start(onChange OnTickerChange) {
 				if err1 == nil {
 					price := float32(ask)
 
-					changeVariance := kc.lastTickerPrice * kc.priceVariationDetection
+					changeVariance := kc.lastTickerPrice * kc.options.PriceVariationDetection
 
 					if kc.lastTickerPrice == 0 ||
 						price > kc.lastTickerPrice+changeVariance ||
 						price < kc.lastTickerPrice-changeVariance {
 						kc.lastTickerPrice = price
-						onChange(price, price, time.Now())
+						for _, observable := range kc.observables {
+							observable(price, price, time.Now())
+						}
 					}
 				} else {
 					fmt.Printf("%v", err1)
@@ -118,4 +125,9 @@ func (kc *KrakenCollector) Start(onChange OnTickerChange) {
 			// fmt.Println(string(message))
 		}
 	}
+}
+
+// Regist add function to be executed when ticker price changes
+func (kc *KrakenCollector) Regist(observable domain.OnTickerChange) {
+	kc.observables = append(kc.observables, observable)
 }

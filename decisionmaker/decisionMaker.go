@@ -6,22 +6,15 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/domain"
 )
 
-// Options are used to change DecisionMaker behaviour
-type Options struct {
-	MaximumBuyAmount      float32
-	MinimumProfitPerSold  float32
-	MinimumPriceDropToBuy float32
-}
-
 // DecisionMaker decides to buy or sell
 type DecisionMaker struct {
 	assetsRepository domain.AssetsRepositoryReader
-	options          Options
+	options          domain.DecisionMakerOptions
 	statistics       domain.Statistics
 }
 
 // NewDecisionMaker returns a new instance of DecisionMaker
-func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options Options, statistics domain.Statistics) *DecisionMaker {
+func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics) *DecisionMaker {
 	return &DecisionMaker{assetsRepository, options, statistics}
 }
 
@@ -32,17 +25,17 @@ func (dm *DecisionMaker) NewValue(price float32) {
 
 // ShouldBuy returns true or false if it is a good time to buy
 func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, error) {
-	cheaperAssetPrice, err := dm.assetsRepository.FindCheaperAssetPrice()
+	assetWithCloserPrice, err := dm.assetsRepository.CheckAssetWithCloserPriceExists(price, 0.02)
 
 	if err != nil {
 		return false, err
 	}
 
-	if cheaperAssetPrice > 0 && cheaperAssetPrice-(cheaperAssetPrice*dm.options.MinimumPriceDropToBuy) < price {
+	if assetWithCloserPrice {
 		return false, nil
 	}
 
-	if float32(dm.statistics.GetAverage()) < price {
+	if float32(dm.statistics.GetAverage()-dm.statistics.GetStandardDeviation()) < price {
 		return false, nil
 	}
 
@@ -55,7 +48,7 @@ func (dm *DecisionMaker) ShouldSell(asset *domain.Asset, price float32, byTime t
 		return false, nil
 	}
 
-	if float32(dm.statistics.GetAverage()) > price {
+	if float32(dm.statistics.GetAverage()+dm.statistics.GetStandardDeviation()) > price {
 		return false, nil
 	}
 
@@ -73,6 +66,6 @@ func (dm *DecisionMaker) HowMuchAmountShouldBuy(price float32) (float32, error) 
 	} else if float32(average-1*standardDeviation) < price {
 		return 0.8 * dm.options.MaximumBuyAmount, nil
 	} else {
-		return 0.1 * dm.options.MaximumBuyAmount, nil
+		return 0.5 * dm.options.MaximumBuyAmount, nil
 	}
 }

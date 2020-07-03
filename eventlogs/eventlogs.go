@@ -26,11 +26,11 @@ func NewEventLogsRepository(collection *mongo.Collection) *EventLogsRepository {
 // Create inserts a new event in collection
 func (or *EventLogsRepository) Create(eventName, message string) error {
 	event := &domain.EventLog{
-		ID:          primitive.NewObjectID(),
-		EventName:   eventName,
-		Message:     message,
-		Notified:    false,
-		DateCreated: time.Now(),
+		ID:        primitive.NewObjectID(),
+		EventName: eventName,
+		Message:   message,
+		Notified:  false,
+		CreatedAt: time.Now(),
 	}
 
 	log.Println(message)
