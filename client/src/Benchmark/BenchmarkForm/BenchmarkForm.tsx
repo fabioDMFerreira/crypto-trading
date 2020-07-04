@@ -25,7 +25,7 @@ const benchmarkDefaults: BenchmarkInput = {
   collectorOptions: {
     priceVariationDetection: 0.01,
   },
-  accountInitialAmount: 2000,
+  accountInitialAmount: 5000,
   asset: 'btc',
   dataSourceFilePath: 'btc/last-year-minute.csv',
 };
@@ -157,7 +157,7 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
                 {
                   assets.map(
                     (asset) => (
-                      <option value={asset.value}>{asset.label}</option>
+                      <option key={`${asset.value}:${asset.label}`} value={asset.value}>{asset.label}</option>
                     ),
                   )
                 }
@@ -181,7 +181,7 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
                 {
                   dataSources.map(
                     (dataSource) => (
-                      <option value={dataSource.value}>{dataSource.label}</option>
+                      <option key={`${dataSource.value}:${dataSource.label}`} value={dataSource.value}>{dataSource.label}</option>
                     ),
                   )
                 }

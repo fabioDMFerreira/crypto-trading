@@ -75,6 +75,7 @@ export default ({
     ],
     tooltip: {
       shared: true,
+      xDateFormat: '%Y-%m-%d',
     },
     series: [{
       name: 'Prices',
@@ -110,6 +111,9 @@ export default ({
         radius: 5,
         symbol: 'circle',
       },
+      tooltip: {
+        pointFormat: 'x: <b>{point.x:%d-%m-%y %H:%M}</b><br/>y: <b>{point.y}</b><br/>',
+      },
     }, {
       name: 'Sells',
       type: 'scatter',
@@ -118,6 +122,9 @@ export default ({
       marker: {
         radius: 5,
         symbol: 'circle',
+      },
+      tooltip: {
+        pointFormat: 'x: <b>{point.x:%y-%m-%d %H:%M}</b><br/>y: <b>{point.y}</b><br/>',
       },
     }],
   };

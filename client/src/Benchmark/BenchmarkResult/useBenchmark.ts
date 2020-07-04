@@ -105,10 +105,10 @@ export default (benchmark: Benchmark) => {
         fetch(`/api/assets/${benchmark?.input.asset}/prices?startDate=${startDateFormatted}&endDate=${endDateFormatted}`)
           .then((res) => res.json())
           .then(formatAssetPrices)
-          .then((data) => data.sort((a, b) => b[0] - a[0]))
+          .then((data) => data.sort((a, b) => a[0] - b[0]))
           .then((prices) => {
             setPrices(prices);
-            const growth = derivate(prices.reverse());
+            const growth = derivate(prices);
             setGrowth(growth);
             setGrowthOfGrowth(derivate(growth));
           });
