@@ -4,31 +4,13 @@ import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
 import { useForm } from 'react-hook-form';
 
-interface DecisionMakerOptions {
-  maximumBuyAmount: number,
-  minimumProfitPerSold: number,
-  minimumPriceDropToBuy: number
-}
+import { BenchmarkInput, DataSourceOptions } from '../../types';
+import useDataSourceOptionsParser from './useDataSourceOptionsParser';
 
-interface StatisticsOptions {
-  numberOfPointsHold: number
-}
-
-interface CollectorOptions {
-  priceVariationDetection: number
-}
-
-interface BenchmarkInput {
-  decisionMakerOptions: DecisionMakerOptions,
-  statisticsOptions: StatisticsOptions
-  collectorOptions: CollectorOptions
-  accountInitialAmount: number,
-  dataSourceFilePath: string,
-}
 
 interface Props {
   onSubmit: (data: any) => void,
-  dataSourceOptions: string[]
+  dataSourceOptions: DataSourceOptions
 }
 
 const benchmarkDefaults: BenchmarkInput = {
@@ -44,6 +26,7 @@ const benchmarkDefaults: BenchmarkInput = {
     priceVariationDetection: 0.01,
   },
   accountInitialAmount: 2000,
+  asset: 'btc',
   dataSourceFilePath: 'btc/last-year-minute.csv',
 };
 
@@ -74,8 +57,17 @@ const serializeBenchmarkInput = (fn: any) => (data: any) => {
 export default ({ onSubmit, dataSourceOptions }: Props) => {
   const { register, handleSubmit } = useForm();
 
+  const {
+    assets, dataSources, activeAsset, setActiveAsset,
+  } = useDataSourceOptionsParser(dataSourceOptions);
+
+  const submit = (data: any) => onSubmit({
+    ...data,
+    asset: activeAsset,
+  });
+
   return (
-    <Form onSubmit={handleSubmit(serializeBenchmarkInput(onSubmit))}>
+    <Form onSubmit={handleSubmit(serializeBenchmarkInput(submit))}>
       <Form.Row>
         <Form.Group as={Col} controlId="formGridMaximumBuyAmount">
           <Form.Label>Maximum Buy Amount</Form.Label>
@@ -147,24 +139,56 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
           />
         </Form.Group>
 
-        <Form.Group as={Col} controlId="formGridDataSourceFilePath">
-          <Form.Label>Data Source File Path</Form.Label>
-          <Form.Control
-            defaultValue={benchmarkDefaults.dataSourceFilePath}
-            name="dataSourceFilePath"
-            as="select"
-            placeholder="Enter file path"
-            ref={register}
-          >
-            {
-              dataSourceOptions.map(
-                (dataSource) => (
-                  <option>{dataSource}</option>
-                ),
-              )
-            }
-          </Form.Control>
-        </Form.Group>
+        {
+          assets
+          && (
+            <Form.Group as={Col} controlId="formGridAsset">
+              <Form.Label>Asset</Form.Label>
+              <Form.Control
+                defaultValue={activeAsset}
+                name="asset"
+                as="select"
+                placeholder="Enter asset"
+                ref={register}
+                onChange={(e) => {
+                  setActiveAsset(e.target.value);
+                }}
+              >
+                {
+                  assets.map(
+                    (asset) => (
+                      <option value={asset.value}>{asset.label}</option>
+                    ),
+                  )
+                }
+              </Form.Control>
+            </Form.Group>
+          )
+        }
+
+        {
+          dataSources
+          && (
+            <Form.Group as={Col} controlId="formGridDataSourceFilePath">
+              <Form.Label>Data Source File Path</Form.Label>
+              <Form.Control
+                defaultValue={benchmarkDefaults.dataSourceFilePath}
+                name="dataSourceFilePath"
+                as="select"
+                placeholder="Enter file path"
+                ref={register}
+              >
+                {
+                  dataSources.map(
+                    (dataSource) => (
+                      <option value={dataSource.value}>{dataSource.label}</option>
+                    ),
+                  )
+                }
+              </Form.Control>
+            </Form.Group>
+          )
+        }
       </Form.Row>
 
       <Button variant="primary" type="submit" data-testid="submit-button">

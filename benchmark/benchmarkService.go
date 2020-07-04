@@ -20,15 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
-	btccashdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-cash"
-	btcsvdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-sv"
-	eosdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eos"
-	etcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/etc"
 	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
-	ltcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ltc"
-	monerodatahistory "github.com/fabiodmferreira/crypto-trading/data-history/monero"
-	stellardatahistory "github.com/fabiodmferreira/crypto-trading/data-history/stellar"
-	xrpdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/xrp"
 )
 
 // Input is an alias for BenchmarkInput
@@ -198,22 +190,29 @@ func (s *Service) HandleBenchmark(benchmark *domain.Benchmark) error {
 }
 
 // GetDataSources returns all available data sources
-func (s *Service) GetDataSources() []string {
-	return []string{
-		btcdatahistory.November2019,
-		btcdatahistory.SeptemberCrash2019,
-		btcdatahistory.March2020,
-		btcdatahistory.April2020,
-		btcdatahistory.May2020,
-		btcdatahistory.LastYearMinute,
-		fmt.Sprintf("btc-cash/%v", btccashdatahistory.LastYearMinute),
-		fmt.Sprintf("btc-sv/%v", btcsvdatahistory.LastYearMinute),
-		fmt.Sprintf("eos/%v", eosdatahistory.LastYearMinute),
-		fmt.Sprintf("etc/%v", etcdatahistory.LastYearMinute),
-		fmt.Sprintf("eth/%v", ethdatahistory.LastYearMinute),
-		fmt.Sprintf("ltc/%v", ltcdatahistory.LastYearMinute),
-		fmt.Sprintf("monero/%v", monerodatahistory.LastYearMinute),
-		fmt.Sprintf("stellar/%v", stellardatahistory.LastYearMinute),
-		fmt.Sprintf("xrp/%v", xrpdatahistory.LastYearMinute),
+func (s *Service) GetDataSources() map[string]map[string]string {
+	return map[string]map[string]string{
+		"btc": map[string]string{
+			"Last Year Minute":    btcdatahistory.LastYearMinute,
+			"November 2019":       btcdatahistory.November2019,
+			"Setember Crash 2019": btcdatahistory.SeptemberCrash2019,
+			"Match 2020":          btcdatahistory.March2020,
+			"April 2020":          btcdatahistory.April2020,
+			"May 2020":            btcdatahistory.May2020,
+		},
+		"eth": map[string]string{
+			"Last Year Minute": ethdatahistory.LastYearMinute,
+		},
 	}
+
+	// string{
+	// 	fmt.Sprintf("btc-cash/%v", btccashdatahistory.LastYearMinute),
+	// 	fmt.Sprintf("btc-sv/%v", btcsvdatahistory.LastYearMinute),
+	// 	fmt.Sprintf("eos/%v", eosdatahistory.LastYearMinute),
+	// 	fmt.Sprintf("etc/%v", etcdatahistory.LastYearMinute),
+	// 	fmt.Sprintf("ltc/%v", ltcdatahistory.LastYearMinute),
+	// 	fmt.Sprintf("monero/%v", monerodatahistory.LastYearMinute),
+	// 	fmt.Sprintf("stellar/%v", stellardatahistory.LastYearMinute),
+	// 	fmt.Sprintf("xrp/%v", xrpdatahistory.LastYearMinute),
+	// }
 }

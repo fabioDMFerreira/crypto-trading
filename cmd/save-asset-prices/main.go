@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/collectors"
-	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
+	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,8 +20,8 @@ import (
 
 // bulkUpdateElements is the number of elements that are used on bulk upsert
 const bulkUpdateElements = 1000
-const csvFile = btcdatahistory.LastYearMinute
-const asset = "BTC"
+const csvFile = ethdatahistory.LastYearMinute
+const asset = "ETH"
 
 func main() {
 	// load environment variables
@@ -45,7 +45,7 @@ func main() {
 
 	repo := db.NewRepository(collection)
 
-	err = repo.BulkDelete(bson.M{"asset": "BTC"})
+	err = repo.BulkDelete(bson.M{"asset": asset})
 
 	if err != nil {
 		log.Fatal("error on bulk deleting: ", err)
@@ -92,7 +92,7 @@ func main() {
 
 		documents = append(documents,
 			bson.M{
-				"asset": "BTC",
+				"asset": asset,
 				"value": price,
 				"date":  time.Unix(unixTime/1000, 0),
 			},

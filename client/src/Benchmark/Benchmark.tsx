@@ -3,19 +3,22 @@ import React, { useEffect, useState } from 'react';
 
 import fillDatesGaps from '../formatters/fillDatesGaps';
 import formatAssetPrices from '../formatters/formatAssetPrices';
+import formatDateTime from '../formatters/formatDateTime';
 import formatDateYYYYMMDD from '../formatters/formatDateYYYYMMDD';
-import { Asset, BenchmarkResult } from '../types';
+import {
+  Asset, Benchmark, BenchmarkOutput, DataSourceOptions,
+} from '../types';
 import AssetsTable from './AssetsTable';
 import BenchmarkChart from './BenchmarkChart';
 import BenchmarkFilters from './BenchmarkFilters';
-import BenchmarkForm from './BenchmarkForm';
+import BenchmarkForm from './BenchmarkForm/BenchmarkForm';
 import BenchmarkList from './BenchmarksList';
 import PricesAnalysisTable from './PricesAnalysisTable';
 import PricesStatisticsAnalysisTable from './PricesStatisticsAnalysisTable';
 
-type chartKeys = 'prices' | 'balances' | 'buys' | 'sells'
+type chartKeys = 'balances' | 'buys' | 'sells'
 
-function filterBenchmarkResultByTime(data: BenchmarkResult, start: number | undefined, end: number | undefined) {
+function filterBenchmarkResultByTime(data: BenchmarkOutput, start: number | undefined, end: number | undefined) {
   const keys: chartKeys[] = ['balances', 'buys', 'sells'];
   const newData: any = {};
   keys.forEach((key) => {
@@ -62,7 +65,7 @@ const derivate = (ns: [number, number][]): [number, number][] => {
 
 
 export default () => {
-  const [benchmarkResult, setBenchmarkResult] = useState<BenchmarkResult>();
+  const [benchmarkResult, setBenchmarkResult] = useState<Benchmark>();
   const [prices, setPrices] = useState<[number, number][]>();
   const [assets, setAssets] = useState<Asset[]>();
   const [balances, setBalances] = useState<[number, number][]>();
@@ -73,7 +76,7 @@ export default () => {
 
   const [tableView, setTableView] = useState<string>('assets');
 
-  const [dataSourceOptions, setDataSourceOptions] = useState<string[]>([]);
+  const [dataSourceOptions, setDataSourceOptions] = useState<DataSourceOptions>();
   const [benchmarks, setBenchmarks] = useState<any>([]);
 
   const [startDate, setStartDate] = useState<Date>();
@@ -90,9 +93,9 @@ export default () => {
   }, []);
 
   useEffect(() => {
-    if (benchmarkResult && benchmarkResult.buys && benchmarkResult.sells) {
-      const sellsDates = benchmarkResult.sells.map((sell) => sell[0]);
-      const buysDates = benchmarkResult.buys.map((buy) => buy[0]);
+    if (benchmarkResult && benchmarkResult.output.buys && benchmarkResult.output.sells) {
+      const sellsDates = benchmarkResult.output.sells.map((sell) => sell[0]);
+      const buysDates = benchmarkResult.output.buys.map((buy) => buy[0]);
       const firstBuy = Math.min(...buysDates);
       const firstSell = Math.min(...sellsDates);
       const lastBuy = Math.max(...buysDates);
@@ -103,45 +106,45 @@ export default () => {
       const endDate = lastBuy > lastSell ? lastBuy : lastSell;
 
       if (startDate) {
-        const date = formatDateYYYYMMDD(startDate - 10 * 24 * 60 * 60 * 1000);
-        setStartDate(new Date(date));
+        // const date = formatDateYYYYMMDD(startDate - 10 * 24 * 60 * 60 * 1000);
+        setStartDate(new Date(startDate));
       }
       if (endDate) {
-        const date = formatDateYYYYMMDD(endDate + 10 * 24 * 60 * 60 * 1000);
-        setEndDate(new Date(date));
+        // const date = formatDateYYYYMMDD(endDate + 10 * 24 * 60 * 60 * 1000);
+        setEndDate(new Date(endDate));
       }
     }
 
     if (benchmarkResult) {
       setBalances(
         fillDatesGaps(
-          benchmarkResult.balances,
+          benchmarkResult.output.balances,
         ),
       );
-      setBuys(benchmarkResult.buys);
-      setSells(benchmarkResult.sells);
-      setAssets(benchmarkResult.assets);
+      setBuys(benchmarkResult.output.buys);
+      setSells(benchmarkResult.output.sells);
+      setAssets(benchmarkResult.output.assets);
     }
   }, [benchmarkResult]);
 
   useEffect(() => {
     if (startDate && endDate) {
-      const startDateFormatted = formatDateYYYYMMDD(startDate.getTime());
-      const endDateFormatted = formatDateYYYYMMDD(endDate.getTime());
-
-      fetch(`/api/assets/BTC/prices?startDate=${startDateFormatted}&endDate=${endDateFormatted}`)
-        .then((res) => res.json())
-        .then(formatAssetPrices)
-        .then((data) => data.sort((a, b) => b[0] - a[0]))
-        .then((prices) => {
-          setPrices(prices);
-          const growth = derivate(prices.reverse());
-          setGrowth(growth);
-          setGrowthOfGrowth(derivate(growth));
-        });
+      const startDateFormatted = formatDateTime(startDate.getTime());
+      const endDateFormatted = formatDateTime(endDate.getTime());
 
       if (benchmarkResult) {
-        const data = filterBenchmarkResultByTime(benchmarkResult, new Date(startDate).getTime(), new Date(endDate).getTime());
+        fetch(`/api/assets/${benchmarkResult?.input.asset}/prices?startDate=${startDateFormatted}&endDate=${endDateFormatted}`)
+          .then((res) => res.json())
+          .then(formatAssetPrices)
+          .then((data) => data.sort((a, b) => b[0] - a[0]))
+          .then((prices) => {
+            setPrices(prices);
+            const growth = derivate(prices.reverse());
+            setGrowth(growth);
+            setGrowthOfGrowth(derivate(growth));
+          });
+
+        const data = filterBenchmarkResultByTime(benchmarkResult.output, new Date(startDate).getTime(), new Date(endDate).getTime());
 
         setBalances(
           fillDatesGaps(
@@ -185,7 +188,10 @@ export default () => {
   return (
     <div>
       <div className="mt-3 mb-5">
-        <BenchmarkForm onSubmit={executeBenchmark} dataSourceOptions={dataSourceOptions} />
+        {
+          dataSourceOptions
+          && <BenchmarkForm onSubmit={executeBenchmark} dataSourceOptions={dataSourceOptions} />
+        }
       </div>
       <div className="mt-3 mb-5">
         <BenchmarkList
@@ -194,7 +200,7 @@ export default () => {
             const benchmark = benchmarks.find((b: any) => b._id === id);
 
             if (benchmark) {
-              setBenchmarkResult(JSON.parse(JSON.stringify(benchmark.output)));
+              setBenchmarkResult(JSON.parse(JSON.stringify(benchmark)));
             }
           }}
           deleteBenchmark={(id: string) => {
@@ -212,12 +218,12 @@ export default () => {
             <div className="mb-5">
               <BenchmarkFilters
                 minimumDate={
-                  benchmarkResult.balances && benchmarkResult.balances.length
-                    ? new Date(benchmarkResult.balances[0][0]) : undefined
+                  benchmarkResult.output.balances && benchmarkResult.output.balances.length
+                    ? new Date(benchmarkResult.output.balances[0][0]) : undefined
                 }
                 maximumDate={
-                  benchmarkResult.balances && benchmarkResult.balances.length
-                    ? new Date(benchmarkResult.balances[benchmarkResult.balances.length - 1][0]) : undefined
+                  benchmarkResult.output.balances && benchmarkResult.output.balances.length
+                    ? new Date(benchmarkResult.output.balances[benchmarkResult.output.balances.length - 1][0]) : undefined
                 }
                 startDate={startDate}
                 endDate={endDate}

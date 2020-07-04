@@ -6,12 +6,14 @@ import BenchmarkForm from './BenchmarkForm';
 
 const fnMock = () => { };
 
-const dataSourceOptionsMock = [
-  'btc/last-year-minute.csv',
-  'a',
-  'b',
-  'c',
-];
+const dataSourceOptionsMock = {
+  btc: {
+    'Last Year Minute': 'btc/last-year-minute.csv',
+  },
+  eth: {
+    'Last Year Minute': 'eth/last-year-minute.csv',
+  },
+};
 
 describe('BenchmarkForm', () => {
   it('should render', () => {
@@ -46,6 +48,7 @@ describe('BenchmarkForm', () => {
       },
       accountInitialAmount: 2000,
       dataSourceFilePath: 'btc/last-year-minute.csv',
+      asset: 'btc',
     });
   });
 });

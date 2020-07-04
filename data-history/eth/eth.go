@@ -1,5 +1,5 @@
 package ethdatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "eth/last-year-minute.csv"
 )

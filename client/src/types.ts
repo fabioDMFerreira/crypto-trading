@@ -8,21 +8,12 @@ export interface Asset {
   sold: boolean
 }
 
-export interface BenchmarkResult {
-  prices: [number, number][],
+export interface BenchmarkOutput {
+  finalAmount: number,
   balances: [number, number][],
   buys: [number, number][],
   sells: [number, number][],
   assets: Asset[]
-}
-
-export interface BenchmarkInput {
-  accountInitialAmount: number
-  dataSourceFilePath: string
-}
-
-export interface BenchmarkOutput {
-  finalAmount: number
 }
 
 export interface Benchmark {
@@ -31,4 +22,38 @@ export interface Benchmark {
   output: BenchmarkOutput
   status: string
   createdAt: Date
+}
+
+export interface DecisionMakerOptions {
+  maximumBuyAmount: number,
+  minimumProfitPerSold: number,
+  minimumPriceDropToBuy: number
+}
+
+export interface StatisticsOptions {
+  numberOfPointsHold: number
+}
+
+export interface CollectorOptions {
+  priceVariationDetection: number
+}
+
+export interface BenchmarkInput {
+  decisionMakerOptions: DecisionMakerOptions,
+  statisticsOptions: StatisticsOptions
+  collectorOptions: CollectorOptions
+  accountInitialAmount: number,
+  dataSourceFilePath: string,
+  asset: string,
+}
+
+export interface SelectOption {
+  label: string,
+  value: string,
+}
+
+export interface DataSourceOptions {
+  [asset: string]: {
+    [dataSource: string]: string
+  }
 }

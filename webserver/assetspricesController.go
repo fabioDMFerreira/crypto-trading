@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -34,10 +35,12 @@ func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	asset := strings.ToUpper(vars["asset"])
+
 	// TODO: Validate query parameters.
 
-	startDate, _ := time.Parse("2006-01-02", queryVars["startDate"][0])
-	endDate, _ := time.Parse("2006-01-02", queryVars["endDate"][0])
+	startDate, _ := time.Parse("2006-01-02T15:04:05", queryVars["startDate"][0])
+	endDate, _ := time.Parse("2006-01-02T15:04:05", queryVars["endDate"][0])
 
 	days := endDate.Sub(startDate).Hours() / 24
 	// fmt.Printf("%v %v", startDate, endDate)
@@ -49,7 +52,7 @@ func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.R
 			{{
 				"$match",
 				bson.D{
-					{"asset", vars["asset"]},
+					{"asset", asset},
 					{"date", bson.D{{"$gte", startDate}}},
 					{"date", bson.D{{"$lte", endDate}}},
 				},
@@ -72,7 +75,7 @@ func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.R
 			{{
 				"$match",
 				bson.D{
-					{"asset", vars["asset"]},
+					{"asset", asset},
 					{"date", bson.D{{"$gte", startDate}}},
 					{"date", bson.D{{"$lte", endDate}}},
 				},
@@ -96,7 +99,7 @@ func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.R
 			{{
 				"$match",
 				bson.D{
-					{"asset", vars["asset"]},
+					{"asset", asset},
 					{"date", bson.D{{"$gte", startDate}}},
 					{"date", bson.D{{"$lte", endDate}}},
 				},

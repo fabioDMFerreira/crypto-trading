@@ -14,6 +14,7 @@ type BenchmarkInput struct {
 	CollectorOptions     CollectorOptions     `json:"collectorOptions"`
 	AccountInitialAmount float64              `json:"accountInitialAmount"`
 	DataSourceFilePath   string               `json:"dataSourceFilePath"`
+	Asset                string               `json:"asset"`
 }
 
 // BenchmarkOutput is the output of the benchmark
