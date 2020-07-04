@@ -1,6 +1,7 @@
 package decisionmaker
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -11,11 +12,15 @@ type DecisionMaker struct {
 	assetsRepository domain.AssetsRepositoryReader
 	options          domain.DecisionMakerOptions
 	statistics       domain.Statistics
+
+	lastSell      int
+	sellCumulator int
+	sellsLimit    int
 }
 
 // NewDecisionMaker returns a new instance of DecisionMaker
 func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics) *DecisionMaker {
-	return &DecisionMaker{assetsRepository, options, statistics}
+	return &DecisionMaker{assetsRepository, options, statistics, -1, 0, 500}
 }
 
 // NewValue adds a new price to recalculate statistics
@@ -39,6 +44,16 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 		return false, nil
 	}
 
+	if dm.lastSell < 0 {
+		dm.lastSell = 0
+	} else if dm.lastSell < dm.sellsLimit {
+		dm.sellCumulator++
+		dm.lastSell++
+		return false, nil
+	} else {
+		dm.lastSell = 0
+	}
+
 	return true, nil
 }
 
@@ -60,6 +75,14 @@ func (dm *DecisionMaker) HowMuchAmountShouldBuy(price float32) (float32, error) 
 
 	standardDeviation := dm.statistics.GetStandardDeviation()
 	average := dm.statistics.GetAverage()
+
+	if dm.sellCumulator > 0 {
+		factor := dm.sellCumulator / dm.sellsLimit
+		value := 2 * dm.options.MaximumBuyAmount
+		fmt.Printf("%v %v %v %v\n", dm.sellCumulator, dm.sellsLimit, factor, value)
+		dm.sellCumulator = 0
+		return value, nil
+	}
 
 	if float32(average-2*standardDeviation) < price {
 		return dm.options.MaximumBuyAmount, nil

@@ -16,11 +16,11 @@ interface Props {
 const benchmarkDefaults: BenchmarkInput = {
   decisionMakerOptions: {
     maximumBuyAmount: 0.1,
-    minimumProfitPerSold: 0.03,
+    minimumProfitPerSold: 0.02,
     minimumPriceDropToBuy: 0.01,
   },
   statisticsOptions: {
-    numberOfPointsHold: 2000,
+    numberOfPointsHold: 20000,
   },
   collectorOptions: {
     priceVariationDetection: 0.01,
