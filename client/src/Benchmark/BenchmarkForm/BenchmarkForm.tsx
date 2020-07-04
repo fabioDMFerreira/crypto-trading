@@ -18,6 +18,9 @@ const benchmarkDefaults: BenchmarkInput = {
     maximumBuyAmount: 0.1,
     minimumProfitPerSold: 0.02,
     minimumPriceDropToBuy: 0.01,
+    minutesToCollectNewPoint: 15,
+    growthIncreaseLimit: 100,
+    growthDecreaseLimit: -100,
   },
   statisticsOptions: {
     numberOfPointsHold: 20000,
@@ -36,6 +39,9 @@ const serializeBenchmarkInput = (fn: any) => (data: any) => {
       maximumBuyAmount: +data.decisionMakerOptions.maximumBuyAmount,
       minimumProfitPerSold: +data.decisionMakerOptions.minimumProfitPerSold,
       minimumPriceDropToBuy: +data.decisionMakerOptions.minimumPriceDropToBuy,
+      minutesToCollectNewPoint: +data.decisionMakerOptions.minutesToCollectNewPoint,
+      growthIncreaseLimit: +data.decisionMakerOptions.growthIncreaseLimit,
+      growthDecreaseLimit: +data.decisionMakerOptions.growthDecreaseLimit,
     },
 
     statisticsOptions: {
@@ -59,16 +65,30 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
 
   const {
     assets, dataSources, activeAsset, setActiveAsset,
+    activeDataSource, setActiveDataSource
   } = useDataSourceOptionsParser(dataSourceOptions);
 
-  const submit = (data: any) => onSubmit({
-    ...data,
-    asset: activeAsset,
-  });
+  const submit = (data: any) => {
+    onSubmit({
+      ...data,
+      asset: activeAsset
+    });
+  }
 
   return (
     <Form onSubmit={handleSubmit(serializeBenchmarkInput(submit))}>
       <Form.Row>
+        <Form.Group as={Col} controlId="formGridAmount">
+          <Form.Label>Account Initial Amount</Form.Label>
+          <Form.Control
+            defaultValue={benchmarkDefaults.accountInitialAmount}
+            name="accountInitialAmount"
+            type="number"
+            placeholder="Enter amount"
+            ref={register}
+          />
+        </Form.Group>
+
         <Form.Group as={Col} controlId="formGridMaximumBuyAmount">
           <Form.Label>Maximum Buy Amount</Form.Label>
           <Form.Control
@@ -104,7 +124,9 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
             ref={register}
           />
         </Form.Group>
+      </Form.Row>
 
+      <Form.Row>
         <Form.Group as={Col} controlId="formGridStatisticsPointsToHold">
           <Form.Label>Number of Points to Hold</Form.Label>
           <Form.Control
@@ -115,7 +137,43 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
             ref={register}
           />
         </Form.Group>
+        <Form.Group as={Col} controlId="formMinutesToCollectNewPoint">
+          <Form.Label>Minutes to collect new point</Form.Label>
+          <Form.Control
+            defaultValue={benchmarkDefaults.decisionMakerOptions.minutesToCollectNewPoint}
+            name="decisionMakerOptions.minutesToCollectNewPoint"
+            type="number"
+            placeholder="Enter time in minutes"
+            ref={register}
+          />
+        </Form.Group>
 
+        <Form.Group as={Col} controlId="formGrowthIncreaseLimit">
+          <Form.Label>Growth Increase Limit</Form.Label>
+          <Form.Control
+            defaultValue={benchmarkDefaults.decisionMakerOptions.growthIncreaseLimit}
+            name="decisionMakerOptions.growthIncreaseLimit"
+            type="number"
+            min="0"
+            placeholder="Enter increase limit"
+            ref={register}
+          />
+        </Form.Group>
+
+        <Form.Group as={Col} controlId="formGrowthDecreaseLimit">
+          <Form.Label>Growth Decrease Limit</Form.Label>
+          <Form.Control
+            defaultValue={benchmarkDefaults.decisionMakerOptions.growthDecreaseLimit}
+            name="decisionMakerOptions.growthDecreaseLimit"
+            type="number"
+            placeholder="Enter decrease limit"
+            ref={register}
+            max="0"
+          />
+        </Form.Group>
+      </Form.Row>
+
+      <Form.Row>
         <Form.Group as={Col} controlId="formGridPriceVariationDetection">
           <Form.Label>Price Variation Detection</Form.Label>
           <Form.Control
@@ -128,16 +186,6 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
           />
         </Form.Group>
 
-        <Form.Group as={Col} controlId="formGridAmount">
-          <Form.Label>Account Initial Amount</Form.Label>
-          <Form.Control
-            defaultValue={benchmarkDefaults.accountInitialAmount}
-            name="accountInitialAmount"
-            type="number"
-            placeholder="Enter amount"
-            ref={register}
-          />
-        </Form.Group>
 
         {
           assets
@@ -145,7 +193,7 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
             <Form.Group as={Col} controlId="formGridAsset">
               <Form.Label>Asset</Form.Label>
               <Form.Control
-                defaultValue={activeAsset}
+                value={activeAsset}
                 name="asset"
                 as="select"
                 placeholder="Enter asset"
@@ -172,7 +220,10 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
             <Form.Group as={Col} controlId="formGridDataSourceFilePath">
               <Form.Label>Data Source File Path</Form.Label>
               <Form.Control
-                defaultValue={benchmarkDefaults.dataSourceFilePath}
+                value={activeDataSource}
+                onChange={(e) => {
+                  setActiveDataSource(e.target.value);
+                }}
                 name="dataSourceFilePath"
                 as="select"
                 placeholder="Enter file path"

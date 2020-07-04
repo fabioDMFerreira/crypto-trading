@@ -37,16 +37,19 @@ describe('BenchmarkForm', () => {
     expect(onSubmit.mock.calls[0][0]).toEqual({
       decisionMakerOptions: {
         maximumBuyAmount: 0.1,
-        minimumProfitPerSold: 0.03,
+        minimumProfitPerSold: 0.02,
         minimumPriceDropToBuy: 0.01,
+        minutesToCollectNewPoint: 15,
+        growthIncreaseLimit: 100,
+        growthDecreaseLimit: -100
       },
       statisticsOptions: {
-        numberOfPointsHold: 2000,
+        numberOfPointsHold: 20000,
       },
       collectorOptions: {
         priceVariationDetection: 0.01,
       },
-      accountInitialAmount: 2000,
+      accountInitialAmount: 5000,
       dataSourceFilePath: 'btc/last-year-minute.csv',
       asset: 'btc',
     });

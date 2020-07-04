@@ -49,7 +49,7 @@ func (a *App) RegistOnTickerChange(observable domain.OnTickerChange) {
 // OnTickerChange do operations based on asset new price
 func (a *App) OnTickerChange(ask, bid float32, currentTime time.Time) {
 
-	a.decisionMaker.NewValue(ask)
+	a.decisionMaker.NewValue(ask, currentTime)
 	a.eventLogsRepository.Create("btc price change", fmt.Sprintf("BTC PRICE: %v", ask))
 
 	ok, err := a.decisionMaker.ShouldBuy(ask, currentTime)

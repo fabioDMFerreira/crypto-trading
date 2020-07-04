@@ -97,7 +97,6 @@ func (r *Repository) FindOne(document interface{}, filter interface{}, opts *opt
 	ctx := NewMongoQueryContext()
 
 	err := r.collection.FindOne(ctx, filter, opts).Decode(&document)
-	fmt.Printf("%v", document)
 
 	return err
 }

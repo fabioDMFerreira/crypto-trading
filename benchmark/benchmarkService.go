@@ -19,6 +19,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/trader"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
+	adadatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ada"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
 	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
 )
@@ -137,9 +138,10 @@ func (s *Service) Run(input Input) (*Output, error) {
 func (s *Service) setupApplication(input Input) (*app.App, error) {
 	macd := statistics.NewMACDContainer(statistics.MACDParams{Fast: 12, Slow: 26, Lag: 9}, []float64{})
 	statisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
+	growthStatisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
 	assetsRepository := &assets.AssetsRepositoryInMemory{}
 	decisionMakerOptions := input.DecisionMakerOptions
-	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionMakerOptions, statisticsService)
+	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionMakerOptions, statisticsService, growthStatisticsService)
 
 	_, currentFilePath, _, _ := runtime.Caller(0)
 	currentDir := path.Dir(currentFilePath)
@@ -193,15 +195,13 @@ func (s *Service) HandleBenchmark(benchmark *domain.Benchmark) error {
 func (s *Service) GetDataSources() map[string]map[string]string {
 	return map[string]map[string]string{
 		"btc": map[string]string{
-			"Last Year Minute":    btcdatahistory.LastYearMinute,
-			"November 2019":       btcdatahistory.November2019,
-			"Setember Crash 2019": btcdatahistory.SeptemberCrash2019,
-			"Match 2020":          btcdatahistory.March2020,
-			"April 2020":          btcdatahistory.April2020,
-			"May 2020":            btcdatahistory.May2020,
+			"Last Year Minute": btcdatahistory.LastYearMinute,
 		},
 		"eth": map[string]string{
 			"Last Year Minute": ethdatahistory.LastYearMinute,
+		},
+		"ada": map[string]string{
+			"Last Year Minute": adadatahistory.LastYearMinute,
 		},
 	}
 

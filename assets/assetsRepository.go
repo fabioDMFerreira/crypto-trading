@@ -1,7 +1,6 @@
 package assets
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -47,8 +46,6 @@ func (or *Repository) FindOne(filter interface{}) (*Asset, error) {
 	var asset Asset
 
 	err := or.repo.FindOne(&asset, filter, options.FindOne())
-
-	fmt.Printf("%v", asset)
 
 	if err != nil {
 		return nil, err

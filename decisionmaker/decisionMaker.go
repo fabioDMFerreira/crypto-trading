@@ -1,7 +1,6 @@
 package decisionmaker
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -12,20 +11,40 @@ type DecisionMaker struct {
 	assetsRepository domain.AssetsRepositoryReader
 	options          domain.DecisionMakerOptions
 	statistics       domain.Statistics
+	growthStatistics domain.Statistics
 
-	lastSell      int
-	sellCumulator int
-	sellsLimit    int
+	currentPrice       float32
+	lastPrice          float32
+	currentChange      float32
+	lastPointAddedDate time.Time
 }
 
 // NewDecisionMaker returns a new instance of DecisionMaker
-func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics) *DecisionMaker {
-	return &DecisionMaker{assetsRepository, options, statistics, -1, 0, 500}
+func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics, growthStatistics domain.Statistics) *DecisionMaker {
+	return &DecisionMaker{assetsRepository, options, statistics, growthStatistics, 0, 0, 0, time.Time{}}
 }
 
 // NewValue adds a new price to recalculate statistics
-func (dm *DecisionMaker) NewValue(price float32) {
+func (dm *DecisionMaker) NewValue(price float32, date time.Time) {
+	timeSinceLastPointAdded := date.Sub(dm.lastPointAddedDate).Minutes()
+
+	change := price - dm.lastPrice
+
+	dm.currentChange = change
+
+	if timeSinceLastPointAdded < float64(dm.options.MinutesToCollectNewPoint) {
+		return
+	}
+
 	dm.statistics.AddPoint(float64(price))
+
+	if dm.lastPrice > 0 {
+		dm.growthStatistics.AddPoint(float64(price - dm.lastPrice))
+	}
+
+	dm.lastPrice = dm.currentPrice
+	dm.currentPrice = price
+	dm.lastPointAddedDate = date
 }
 
 // ShouldBuy returns true or false if it is a good time to buy
@@ -44,14 +63,8 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 		return false, nil
 	}
 
-	if dm.lastSell < 0 {
-		dm.lastSell = 0
-	} else if dm.lastSell < dm.sellsLimit {
-		dm.sellCumulator++
-		dm.lastSell++
+	if dm.currentChange < dm.options.GrowthDecreaseLimit {
 		return false, nil
-	} else {
-		dm.lastSell = 0
 	}
 
 	return true, nil
@@ -75,14 +88,6 @@ func (dm *DecisionMaker) HowMuchAmountShouldBuy(price float32) (float32, error) 
 
 	standardDeviation := dm.statistics.GetStandardDeviation()
 	average := dm.statistics.GetAverage()
-
-	if dm.sellCumulator > 0 {
-		factor := dm.sellCumulator / dm.sellsLimit
-		value := 2 * dm.options.MaximumBuyAmount
-		fmt.Printf("%v %v %v %v\n", dm.sellCumulator, dm.sellsLimit, factor, value)
-		dm.sellCumulator = 0
-		return value, nil
-	}
 
 	if float32(average-2*standardDeviation) < price {
 		return dm.options.MaximumBuyAmount, nil

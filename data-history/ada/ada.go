@@ -1,5 +1,5 @@
 package adadatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "ada/last-year-minute.csv"
 )

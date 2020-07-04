@@ -6,6 +6,8 @@ export default (dataSourceOptions: DataSourceOptions) => {
   const [assets, setAssets] = useState<SelectOption[]>([]);
   const [dataSources, setDataSources] = useState<SelectOption[]>([]);
   const [activeAsset, setActiveAsset] = useState<string>();
+  const [activeDataSource, setActiveDataSource] = useState<string>();
+
 
   useEffect(() => {
     if (dataSourceOptions) {
@@ -41,12 +43,15 @@ export default (dataSourceOptions: DataSourceOptions) => {
           }),
         );
       setDataSources(dataSources);
+      if (dataSources.length) {
+        setActiveDataSource(dataSources[0].value)
+      }
     } else {
       setDataSources([]);
     }
   }, [activeAsset, dataSourceOptions]);
 
   return {
-    assets, dataSources, activeAsset, setActiveAsset,
+    assets, dataSources, activeAsset, setActiveAsset, activeDataSource, setActiveDataSource
   };
 };

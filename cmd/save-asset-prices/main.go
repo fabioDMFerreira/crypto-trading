@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/collectors"
-	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
+	adadatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ada"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,8 +20,8 @@ import (
 
 // bulkUpdateElements is the number of elements that are used on bulk upsert
 const bulkUpdateElements = 1000
-const csvFile = ethdatahistory.LastYearMinute
-const asset = "ETH"
+const csvFile = adadatahistory.LastYearMinute
+const asset = "ADA"
 
 func main() {
 	// load environment variables

@@ -54,6 +54,9 @@ export default ({
       dateTimeLabelFormats: {
         day: '%e-%b-%y',
         month: '%b-%y',
+        second: '%H:%M:%S',
+        minute: '%H:%M',
+        hour: '%H:%M',
       },
       labels: {
         formatter() {
@@ -75,7 +78,7 @@ export default ({
     ],
     tooltip: {
       shared: true,
-      xDateFormat: '%Y-%m-%d',
+      xDateFormat: '%Y-%m-%d %H:%M:%S',
     },
     series: [{
       name: 'Prices',
@@ -112,7 +115,7 @@ export default ({
         symbol: 'circle',
       },
       tooltip: {
-        pointFormat: 'x: <b>{point.x:%d-%m-%y %H:%M}</b><br/>y: <b>{point.y}</b><br/>',
+        pointFormat: 'x: <b>{point.x:%d-%m-%y %H:%M:%S}</b><br/>y: <b>{point.y}</b><br/>',
       },
     }, {
       name: 'Sells',
@@ -124,7 +127,7 @@ export default ({
         symbol: 'circle',
       },
       tooltip: {
-        pointFormat: 'x: <b>{point.x:%y-%m-%d %H:%M}</b><br/>y: <b>{point.y}</b><br/>',
+        pointFormat: 'x: <b>{point.x:%y-%m-%d %H:%M:%S}</b><br/>y: <b>{point.y}</b><br/>',
       },
     }],
   };

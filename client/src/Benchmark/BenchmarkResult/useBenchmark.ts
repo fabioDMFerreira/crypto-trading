@@ -41,7 +41,7 @@ function filterBenchmarkResultByTime(data: BenchmarkOutput, start: number | unde
   return newData;
 }
 
-const derivate = (ns: [number, number][]): [number, number][] => {
+const derivate = (ns: [number, number][], minutesBetweenPoints: number = 0): [number, number][] => {
   if (!ns.length) {
     return [];
   }
@@ -49,10 +49,22 @@ const derivate = (ns: [number, number][]): [number, number][] => {
     return ns;
   }
 
-  return ns.slice(1).reduce((final: [number, number][], currentN: [number, number], index) => ([
-    ...final,
-    [currentN[0], currentN[1] - ns[index][1]],
-  ]), []);
+  return ns.slice(1).reduce((final: [number, number][], currentN: [number, number], index) => {
+
+    const lastPoint = final[final.length - 1];
+
+    if (lastPoint) {
+      const change = currentN[1] - lastPoint[1]
+      if (minutesBetweenPoints && (currentN[0] - lastPoint[0] < minutesBetweenPoints * 60 * 1000 && change < 20 && change > -20)) {
+        return final
+      }
+    }
+
+    return [
+      ...final,
+      [currentN[0], currentN[1] - ns[index][1]],
+    ];
+  }, []);
 };
 
 export default (benchmark: Benchmark) => {

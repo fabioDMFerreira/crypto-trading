@@ -27,7 +27,10 @@ export interface Benchmark {
 export interface DecisionMakerOptions {
   maximumBuyAmount: number,
   minimumProfitPerSold: number,
-  minimumPriceDropToBuy: number
+  minimumPriceDropToBuy: number,
+  minutesToCollectNewPoint: number,
+  growthIncreaseLimit: number,
+  growthDecreaseLimit: number
 }
 
 export interface StatisticsOptions {
