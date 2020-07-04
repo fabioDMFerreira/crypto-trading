@@ -1,15 +1,17 @@
+import moment, { Moment } from 'moment';
+import TimePicker from 'rc-time-picker';
 import React from 'react';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
 
-import formatDateYYYYMMDD from '../formatters/formatDateYYYYMMDD';
+import formatDateYYYYMMDD from '../../formatters/formatDateYYYYMMDD';
+import { DatesInterval } from '../../types';
 
 interface Props {
   minimumDate: Date | undefined,
   maximumDate: Date | undefined,
   startDate: Date | undefined,
   endDate: Date | undefined,
-  setStartDate: (startDate: Date) => void,
-  setEndDate: (endDate: Date) => void,
+  setDatesInterval: (interval: DatesInterval) => void,
 }
 
 export default ({
@@ -17,8 +19,7 @@ export default ({
   maximumDate,
   startDate,
   endDate,
-  setStartDate,
-  setEndDate,
+  setDatesInterval,
 }: Props) => {
   const modifiers = {
     from: startDate,
@@ -34,7 +35,10 @@ export default ({
           && (
             <button
               type="button"
-              onClick={() => setStartDate(minimumDate)}
+              onClick={() => endDate && setDatesInterval({
+                startDate: minimumDate,
+                endDate,
+              })}
             >
               {formatDateYYYYMMDD(minimumDate.getTime())}
             </button>
@@ -59,7 +63,24 @@ export default ({
             //   }
             // },
           }}
-          onDayChange={setStartDate}
+          onDayChange={(startDate) => endDate && setDatesInterval({
+            startDate,
+            endDate,
+          })}
+        />
+        <TimePicker
+          showSecond={false}
+          value={moment(startDate?.getTime())}
+          onChange={(data: Moment) => {
+            if (endDate && startDate) {
+              setDatesInterval({
+                startDate: data.toDate(),
+                endDate,
+              });
+            }
+          }}
+          use12Hours
+          inputReadOnly
         />
         {' - '}
         <span className="InputFromTo-to">
@@ -79,7 +100,24 @@ export default ({
               fromMonth: startDate || minimumDate,
               numberOfMonths: 1,
             }}
-            onDayChange={setEndDate}
+            onDayChange={(endDate) => startDate && setDatesInterval({
+              startDate,
+              endDate,
+            })}
+          />
+          <TimePicker
+            showSecond={false}
+            value={moment(endDate?.getTime())}
+            onChange={(data: Moment) => {
+              if (endDate && startDate) {
+                setDatesInterval({
+                  startDate,
+                  endDate: data.toDate(),
+                });
+              }
+            }}
+            use12Hours
+            inputReadOnly
           />
         </span>
         {' '}
@@ -88,7 +126,10 @@ export default ({
           && (
             <button
               type="button"
-              onClick={() => setEndDate(maximumDate)}
+              onClick={() => startDate && setDatesInterval({
+                startDate,
+                endDate: maximumDate,
+              })}
             >
               {formatDateYYYYMMDD(maximumDate.getTime())}
             </button>

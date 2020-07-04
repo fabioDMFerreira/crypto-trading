@@ -57,3 +57,8 @@ export interface DataSourceOptions {
     [dataSource: string]: string
   }
 }
+
+export interface DatesInterval {
+  startDate: Date,
+  endDate: Date,
+}

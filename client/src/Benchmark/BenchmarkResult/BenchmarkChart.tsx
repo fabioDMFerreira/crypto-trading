@@ -3,6 +3,8 @@ import HighchartsReact from 'highcharts-react-official';
 import React from 'react';
 import useDebouncedCallback from 'use-debounce/lib/useDebouncedCallback';
 
+import { DatesInterval } from '../../types';
+
 // const getDates = (el: [number, number]) => new Date(el[0]);
 
 interface BenchmarkChartProps {
@@ -12,8 +14,7 @@ interface BenchmarkChartProps {
   sells: [number, number][]
   growth: [number, number][]
   growthOfGrowth: [number, number][]
-  setStartDate: (startDate: Date) => void
-  setEndDate: (endDate: Date) => void
+  setDatesInterval: (interval: DatesInterval) => void
 }
 
 export default ({
@@ -23,11 +24,13 @@ export default ({
   sells,
   growth,
   growthOfGrowth,
-  setStartDate, setEndDate,
+  setDatesInterval,
 }: BenchmarkChartProps) => {
   const [setRange] = useDebouncedCallback((min: number, max: number) => {
-    setStartDate(new Date(min));
-    setEndDate(new Date(max));
+    setDatesInterval({
+      startDate: new Date(min),
+      endDate: new Date(max),
+    });
   }, 100);
 
   // console.log({
