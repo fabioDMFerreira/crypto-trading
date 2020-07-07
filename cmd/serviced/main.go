@@ -96,9 +96,11 @@ func main() {
 	statisticsOptions := domain.StatisticsOptions{NumberOfPointsHold: 38000}
 	macdParams := statistics.MACDParams{Fast: 24, Slow: 12, Lag: 9}
 	macd := statistics.NewMACDContainer(macdParams)
-	statistics := statistics.NewStatistics(statisticsOptions, macd)
+	pricesStatistics := statistics.NewStatistics(statisticsOptions, macd)
+	growthMacd := statistics.NewMACDContainer(macdParams)
+	growthStatistics := statistics.NewStatistics(statisticsOptions, growthMacd)
 
-	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, statistics)
+	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, pricesStatistics, growthStatistics)
 
 	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01}, krakenAPI)
 	application := app.NewApp(notificationsService, decisionMaker, eventLogsRepository, assetsRepository, dbTrader, accountService, krakenCollector)
