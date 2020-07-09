@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
@@ -59,7 +60,7 @@ func ExecuteBenchmark(done chan benchmark.BenchmarkResult) int {
 		}
 	}
 
-	benchmark := benchmark.NewService(benchmark.NewRepositoryInMemory(), new(assetsprices.RepositoryInMemory))
+	benchmark := benchmark.NewService(benchmark.NewRepositoryInMemory(), new(assetsprices.RepositoryInMemory), applicationExecutionStates.NewRepositoryInMemory())
 
 	benchmark.BulkRun(cases, done)
 

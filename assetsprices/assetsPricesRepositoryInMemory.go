@@ -4,11 +4,18 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // RepositoryInMemory stores and gets assets prices in memory
 type RepositoryInMemory struct {
 	assetsPrices []domain.AssetPrice
+}
+
+// FindAll returns assets prices
+func (r *RepositoryInMemory) FindAll(filter interface{}) (*[]domain.AssetPrice, error) {
+	return &r.assetsPrices, nil
 }
 
 // FindOne returns an asset price
@@ -41,4 +48,11 @@ func (r *RepositoryInMemory) Create(date time.Time, value float32, asset string)
 	r.assetsPrices = append(r.assetsPrices, assetPrice)
 
 	return nil
+}
+
+// Aggregate returns assets prices aggregated
+func (r *RepositoryInMemory) Aggregate(pipeline mongo.Pipeline) (*[]bson.M, error) {
+	var results []bson.M
+
+	return &results, nil
 }

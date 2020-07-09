@@ -55,6 +55,10 @@ export default ({ benchmarks, deleteBenchmark, selectBenchmark }: Props) => {
         accessor: 'createdAt',
       },
       {
+        Header: 'Completed At',
+        accessor: 'completedAt',
+      },
+      {
         id: 'edit',
         accessor: '_id',
         Cell: ({ value }: any) => (

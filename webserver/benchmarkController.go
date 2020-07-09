@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // BenchmarkController has the handlers of benchmark routes
@@ -138,4 +142,70 @@ func (b *BenchmarkController) DeleteBenchmark(w http.ResponseWriter, r *http.Req
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, vars["id"])
+}
+
+// GetBenchmarkExecutionStateHandler returns state of application on each price change
+func (b *BenchmarkController) GetBenchmarkExecutionStateHandler(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+
+	queryVars := r.URL.Query()
+
+	if queryVars["startDate"] == nil || queryVars["endDate"] == nil || len(queryVars["startDate"]) == 0 || len(queryVars["endDate"]) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "startDate and endDate parameters are required")
+		return
+	}
+
+	benchmarkID, err := primitive.ObjectIDFromHex(vars["id"])
+
+	if err != nil {
+		fmt.Fprint(w, "invalid benchmark id")
+		return
+	}
+
+	// TODO: Validate query parameters.
+
+	startDate, _ := time.Parse("2006-01-02T15:04:05", queryVars["startDate"][0])
+	endDate, _ := time.Parse("2006-01-02T15:04:05", queryVars["endDate"][0])
+
+	var pipelineOptions mongo.Pipeline
+
+	groupByDatesClause := GroupByDatesID(startDate, endDate)
+
+	pipelineOptions = mongo.Pipeline{
+		{{
+			"$match",
+			bson.D{
+				{"executionId", benchmarkID},
+				{"date", bson.D{{"$gte", startDate}}},
+				{"date", bson.D{{"$lte", endDate}}},
+			},
+		}},
+		{{
+			"$group",
+			bson.D{
+				{
+					"_id", groupByDatesClause},
+				{"average", bson.D{{"$avg", "$state.average"}}},
+				{"standarddeviation", bson.D{{"$avg", "$state.standarddeviation"}}},
+				{"higherbollingerband", bson.D{{"$avg", "$state.higherbollingerband"}}},
+				{"lowerbollingerband", bson.D{{"$avg", "$state.lowerbollingerband"}}},
+				{"currentchange", bson.D{{"$avg", "$state.currentchange"}}},
+				{"currentchange", bson.D{{"$avg", "$state.currentchange"}}},
+			},
+		}},
+	}
+
+	fmt.Printf("%v", pipelineOptions)
+
+	benchmarkStates, err := b.benchmark.AggregateApplicationState(pipelineOptions)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(*benchmarkStates)
 }

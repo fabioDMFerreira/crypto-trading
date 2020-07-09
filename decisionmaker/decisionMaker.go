@@ -97,3 +97,17 @@ func (dm *DecisionMaker) HowMuchAmountShouldBuy(price float32) (float32, error) 
 		return 0.5 * dm.options.MaximumBuyAmount, nil
 	}
 }
+
+// GetState returns decision maker state
+func (dm *DecisionMaker) GetState() domain.DecisionMakerState {
+	average := dm.statistics.GetAverage()
+	std := dm.statistics.GetStandardDeviation()
+
+	return domain.DecisionMakerState{
+		Average:             average,
+		StandardDeviation:   std,
+		LowerBollingerBand:  average - std,
+		HigherBollingerBand: average + std,
+		CurrentChange:       dm.currentChange,
+	}
+}

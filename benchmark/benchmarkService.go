@@ -17,7 +17,9 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/notifications"
 	"github.com/fabiodmferreira/crypto-trading/statistics"
 	"github.com/fabiodmferreira/crypto-trading/trader"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	adadatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ada"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
@@ -39,13 +41,14 @@ type BenchmarkResult struct {
 
 // Service is a service with all methods to interact with benchmark related functions
 type Service struct {
-	repository           domain.BenchmarksRepository
-	assetpriceRepository domain.AssetPriceRepository
+	repository                           domain.BenchmarksRepository
+	assetpriceRepository                 domain.AssetPriceRepository
+	applicationExecutionStatesRepository domain.ApplicationExecutionStateRepository
 }
 
 // NewService returns an instance of Service
-func NewService(repo domain.BenchmarksRepository, assetpriceRepository domain.AssetPriceRepository) *Service {
-	return &Service{repo, assetpriceRepository}
+func NewService(repo domain.BenchmarksRepository, assetpriceRepository domain.AssetPriceRepository, applicationExecutionStatesRepository domain.ApplicationExecutionStateRepository) *Service {
+	return &Service{repo, assetpriceRepository, applicationExecutionStatesRepository}
 }
 
 // Create inserts one benchmark in database
@@ -56,7 +59,15 @@ func (s *Service) Create(input domain.BenchmarkInput) (*domain.Benchmark, error)
 
 // DeleteByID removes one benchmark from database
 func (s *Service) DeleteByID(id string) error {
-	return s.repository.DeleteByID(id)
+	err := s.repository.DeleteByID(id)
+
+	if err != nil {
+		return err
+	}
+
+	go s.applicationExecutionStatesRepository.BulkDelete(id)
+
+	return nil
 }
 
 // FindAll returns every benchmark
@@ -73,13 +84,13 @@ func (s *Service) BulkRun(inputs []Input, c chan BenchmarkResult) {
 
 // ChannelService passes a benchmark output to a channel. Useful for run benchmarks in go routines.
 func (s *Service) routineRun(input *Input, done chan BenchmarkResult) {
-	result, err := s.Run(*input)
+	result, err := s.Run(*input, nil)
 
 	done <- BenchmarkResult{Input: input, Output: result, Err: err}
 }
 
 // Run executes benchmark and returns performance results
-func (s *Service) Run(input Input) (*Output, error) {
+func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, error) {
 	benchmarkApplication, err := s.setupApplication(input)
 
 	if err != nil {
@@ -88,6 +99,7 @@ func (s *Service) Run(input Input) (*Output, error) {
 
 	balances := [][]float32{}
 	var currentAmount float32
+	var states []bson.M
 
 	benchmarkApplication.RegistOnTickerChange(func(ask, bid float32, time time.Time) {
 		unixTime := float32(time.Unix()) * 1000
@@ -95,6 +107,19 @@ func (s *Service) Run(input Input) (*Output, error) {
 		if currentAmount != amount {
 			balances = append(balances, []float32{unixTime, amount})
 			currentAmount = amount
+		}
+
+		if benchmarkID != nil {
+			states = append(states, bson.M{
+				"date":        time,
+				"executionId": *benchmarkID,
+				"state":       benchmarkApplication.GetState(),
+			})
+
+			if len(states) == 1000 {
+				s.applicationExecutionStatesRepository.BulkCreate(&states)
+				states = []bson.M{}
+			}
 		}
 	})
 
@@ -169,7 +194,7 @@ func (s *Service) setupApplication(input Input) (*app.App, error) {
 // HandleBenchmark executes benchmark and updates database accordingly
 func (s *Service) HandleBenchmark(benchmark *domain.Benchmark) error {
 
-	output, err := s.Run(benchmark.Input)
+	output, err := s.Run(benchmark.Input, &benchmark.ID)
 
 	if err != nil {
 		return err
@@ -215,4 +240,9 @@ func (s *Service) GetDataSources() map[string]map[string]string {
 	// 	fmt.Sprintf("stellar/%v", stellardatahistory.LastYearMinute),
 	// 	fmt.Sprintf("xrp/%v", xrpdatahistory.LastYearMinute),
 	// }
+}
+
+// AggregateApplicationState returns an aggregate of application state
+func (s *Service) AggregateApplicationState(pipeline mongo.Pipeline) (*[]bson.M, error) {
+	return s.applicationExecutionStatesRepository.Aggregate(pipeline)
 }

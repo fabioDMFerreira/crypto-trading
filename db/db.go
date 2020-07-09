@@ -13,12 +13,13 @@ import (
 )
 
 const (
-	ASSETS_COLLECTION        = "assets"
-	EVENT_LOGS_COLLECTION    = "eventlogs"
-	NOTIFICATIONS_COLLECTION = "notifications"
-	ACCOUNTS_COLLECTION      = "accounts"
-	BENCHMARKS_COLLECTION    = "benchmarks"
-	ASSETS_PRICES_COLLECTION = "assetsprices"
+	ASSETS_COLLECTION                       = "assets"
+	EVENT_LOGS_COLLECTION                   = "eventlogs"
+	NOTIFICATIONS_COLLECTION                = "notifications"
+	ACCOUNTS_COLLECTION                     = "accounts"
+	BENCHMARKS_COLLECTION                   = "benchmarks"
+	ASSETS_PRICES_COLLECTION                = "assetsprices"
+	APPLICATION_EXECUTION_STATES_COLLECTION = "applicationExecutionStates"
 )
 
 func NewMongoQueryContext() context.Context {

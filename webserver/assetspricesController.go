@@ -25,6 +25,7 @@ func NewAssetsPricesController(repo domain.AssetPriceRepository) *AssetsPricesCo
 
 // GetAssetPrices returns prices of the asset between a start date and an end date
 func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.Request) {
+
 	vars := mux.Vars(r)
 
 	queryVars := r.URL.Query()
@@ -42,84 +43,29 @@ func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.R
 	startDate, _ := time.Parse("2006-01-02T15:04:05", queryVars["startDate"][0])
 	endDate, _ := time.Parse("2006-01-02T15:04:05", queryVars["endDate"][0])
 
-	days := endDate.Sub(startDate).Hours() / 24
-	// fmt.Printf("%v %v", startDate, endDate)
-
 	var pipelineOptions mongo.Pipeline
 
-	if days > 30 {
-		pipelineOptions = mongo.Pipeline{
-			{{
-				"$match",
-				bson.D{
-					{"asset", asset},
-					{"date", bson.D{{"$gte", startDate}}},
-					{"date", bson.D{{"$lte", endDate}}},
-				},
-			}},
-			{{
-				"$group",
-				bson.D{
-					{
-						"_id", bson.D{
-							{"year", bson.D{{"$year", "$date"}}},
-							{"month", bson.D{{"$month", "$date"}}},
-							{"day", bson.D{{"$dayOfMonth", "$date"}}},
-						}},
-					{"price", bson.D{{"$last", "$value"}}},
-				},
-			}},
-		}
-	} else if days > 5 {
-		pipelineOptions = mongo.Pipeline{
-			{{
-				"$match",
-				bson.D{
-					{"asset", asset},
-					{"date", bson.D{{"$gte", startDate}}},
-					{"date", bson.D{{"$lte", endDate}}},
-				},
-			}},
-			{{
-				"$group",
-				bson.D{
-					{
-						"_id", bson.D{
-							{"year", bson.D{{"$year", "$date"}}},
-							{"month", bson.D{{"$month", "$date"}}},
-							{"day", bson.D{{"$dayOfMonth", "$date"}}},
-							{"hour", bson.D{{"$hour", "$date"}}},
-						}},
-					{"price", bson.D{{"$last", "$value"}}},
-				},
-			}},
-		}
-	} else {
-		pipelineOptions = mongo.Pipeline{
-			{{
-				"$match",
-				bson.D{
-					{"asset", asset},
-					{"date", bson.D{{"$gte", startDate}}},
-					{"date", bson.D{{"$lte", endDate}}},
-				},
-			}},
-			{{
-				"$group",
-				bson.D{
-					{
-						"_id", bson.D{
-							{"year", bson.D{{"$year", "$date"}}},
-							{"month", bson.D{{"$month", "$date"}}},
-							{"day", bson.D{{"$dayOfMonth", "$date"}}},
-							{"hour", bson.D{{"$hour", "$date"}}},
-							{"minute", bson.D{{"$minute", "$date"}}},
-						}},
-					{"price", bson.D{{"$last", "$value"}}},
-				},
-			}},
-		}
+	groupByDatesClause := GroupByDatesID(startDate, endDate)
+
+	pipelineOptions = mongo.Pipeline{
+		{{
+			"$match",
+			bson.D{
+				{"asset", asset},
+				{"date", bson.D{{"$gte", startDate}}},
+				{"date", bson.D{{"$lte", endDate}}},
+			},
+		}},
+		{{
+			"$group",
+			bson.D{
+				{
+					"_id", groupByDatesClause},
+				{"price", bson.D{{"$last", "$value"}}},
+			},
+		}},
 	}
+
 	assetsPrices, err := a.repo.Aggregate(pipelineOptions)
 
 	if err != nil {

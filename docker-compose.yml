@@ -8,3 +8,25 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
     ports:
       - '27017:27017'
+  frontend:
+      build:
+        context: ./client/
+      ports:
+        - '3000:3000'
+      depends_on:
+        - backend
+      volumes:
+        - ./client/src:/usr/src/app/src
+        - ./client/public:/usr/src/app/public
+        - /usr/app/node_modules
+      stdin_open: true
+  backend:
+      build: .
+      ports:
+        - '5000:5000'
+      volumes:
+        - .:/usr/src/app
+      env_file:
+        - .env.docker
+      depends_on:
+        - mongo

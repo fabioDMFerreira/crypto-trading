@@ -15,7 +15,7 @@ type Repository struct {
 	repo domain.Repository
 }
 
-// NewRepository returns an instance of OrdersRepository
+// NewRepository returns an instance of AssetsPricesRepository
 func NewRepository(repo domain.Repository) *Repository {
 
 	return &Repository{

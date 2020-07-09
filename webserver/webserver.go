@@ -24,6 +24,7 @@ func NewCryptoTradingServer(benchmark *benchmark.Service, assetsPrice domain.Ass
 	router.Handle("/api/benchmark", http.HandlerFunc(benchmarkController.BenchmarkHandler))
 	router.Handle("/api/benchmark/data-sources", http.HandlerFunc(benchmarkController.GetBenchmarkDataSourcesHandler))
 	router.HandleFunc("/api/benchmark/{id}", benchmarkController.ResourceHandler)
+	router.HandleFunc("/api/benchmark/{id}/state", benchmarkController.GetBenchmarkExecutionStateHandler)
 
 	assetsPricesController := NewAssetsPricesController(assetsPrice)
 	router.Handle("/api/assets/{asset}/prices", http.HandlerFunc(assetsPricesController.GetAssetPrices))

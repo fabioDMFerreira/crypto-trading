@@ -25,6 +25,7 @@ export default ({ benchmark }: Props) => {
     growthOfGrowth,
     chartDatesInterval,
     setChartDatesInterval,
+    applicationState,
   } = useBenchmark(benchmark);
 
   return (
@@ -67,6 +68,7 @@ export default ({ benchmark }: Props) => {
               growth={growth}
               growthOfGrowth={growthOfGrowth}
               setDatesInterval={setChartDatesInterval}
+              applicationState={applicationState}
             />
           )
         }

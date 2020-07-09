@@ -39,11 +39,12 @@ func (o *BenchmarkOutput) String() {
 
 // Benchmark stores inputs and outputs of a benchmark
 type Benchmark struct {
-	ID        primitive.ObjectID `bson:"_id" json:"_id"`
-	Input     BenchmarkInput     `json:"input"`
-	Output    BenchmarkOutput    `json:"output"`
-	Status    string             `json:"status"`
-	CreatedAt time.Time          `json:"createdAt"`
+	ID          primitive.ObjectID `bson:"_id" json:"_id"`
+	Input       BenchmarkInput     `json:"input"`
+	Output      BenchmarkOutput    `json:"output"`
+	Status      string             `json:"status"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	CompletedAt time.Time          `json:"completedAt"`
 }
 
 // BenchmarksRepository stores and fetches benchmarks

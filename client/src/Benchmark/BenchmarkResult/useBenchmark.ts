@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import fillDatesGaps from '../../formatters/fillDatesGaps';
+import formatApplicationExecutionState, { ApplicationState } from '../../formatters/formatApplicationExecutionState';
 import formatAssetPrices from '../../formatters/formatAssetPrices';
 import formatDateTime from '../../formatters/formatDateTime';
 import {
@@ -50,13 +51,12 @@ const derivate = (ns: [number, number][], minutesBetweenPoints: number = 0): [nu
   }
 
   return ns.slice(1).reduce((final: [number, number][], currentN: [number, number], index) => {
-
     const lastPoint = final[final.length - 1];
 
     if (lastPoint) {
-      const change = currentN[1] - lastPoint[1]
+      const change = currentN[1] - lastPoint[1];
       if (minutesBetweenPoints && (currentN[0] - lastPoint[0] < minutesBetweenPoints * 60 * 1000 && change < 20 && change > -20)) {
-        return final
+        return final;
       }
     }
 
@@ -77,6 +77,7 @@ export default (benchmark: Benchmark) => {
   const [sells, setSells] = useState<[number, number][]>();
   const [growth, setGrowth] = useState<[number, number][]>();
   const [growthOfGrowth, setGrowthOfGrowth] = useState<[number, number][]>();
+  const [applicationState, setApplicationState] = useState<ApplicationState>();
 
   useEffect(() => {
     if (benchmark && benchmark.output.buys && benchmark.output.sells) {
@@ -125,6 +126,19 @@ export default (benchmark: Benchmark) => {
             setGrowthOfGrowth(derivate(growth));
           });
 
+        fetch(`/api/benchmark/${benchmark._id}/state?startDate=${startDateFormatted}&endDate=${endDateFormatted}`)
+          .then((res) => res.json())
+          .then(formatApplicationExecutionState)
+          .then((data) => ({
+            average: data.average.sort((a, b) => a[0] - b[0]),
+            standarddeviation: data.standarddeviation.sort((a, b) => a[0] - b[0]),
+            currentchange: data.currentchange.sort((a, b) => a[0] - b[0]),
+            lowerbollingerband: data.lowerbollingerband.sort((a, b) => a[0] - b[0]),
+            higherbollingerband: data.higherbollingerband.sort((a, b) => a[0] - b[0]),
+          }))
+          .then(setApplicationState);
+
+
         const data = filterBenchmarkResultByTime(
           benchmark.output,
           chartDatesInterval.startDate.getTime(),
@@ -153,5 +167,6 @@ export default (benchmark: Benchmark) => {
     assets,
     chartDatesInterval,
     setChartDatesInterval,
+    applicationState,
   };
 };

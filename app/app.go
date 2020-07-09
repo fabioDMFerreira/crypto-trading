@@ -184,3 +184,8 @@ func (a *App) FetchAssets() (*[]domain.Asset, error) {
 func (a *App) GetAccountAmount() (float32, error) {
 	return a.accountService.GetAmount()
 }
+
+// GetState returns application state
+func (a *App) GetState() interface{} {
+	return a.decisionMaker.GetState()
+}

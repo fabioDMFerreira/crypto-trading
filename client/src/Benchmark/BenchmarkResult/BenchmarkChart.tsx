@@ -3,6 +3,7 @@ import HighchartsReact from 'highcharts-react-official';
 import React from 'react';
 import useDebouncedCallback from 'use-debounce/lib/useDebouncedCallback';
 
+import { ApplicationState } from '../../formatters/formatApplicationExecutionState';
 import { DatesInterval } from '../../types';
 
 // const getDates = (el: [number, number]) => new Date(el[0]);
@@ -14,6 +15,7 @@ interface BenchmarkChartProps {
   sells: [number, number][]
   growth: [number, number][]
   growthOfGrowth: [number, number][]
+  applicationState?: ApplicationState
   setDatesInterval: (interval: DatesInterval) => void
 }
 
@@ -24,6 +26,7 @@ export default ({
   sells,
   growth,
   growthOfGrowth,
+  applicationState,
   setDatesInterval,
 }: BenchmarkChartProps) => {
   const [setRange] = useDebouncedCallback((min: number, max: number) => {
@@ -131,6 +134,41 @@ export default ({
       },
     }],
   };
+
+  if (applicationState && options.series) {
+    options.series = options.series.concat([{
+      name: 'Average',
+      type: 'line',
+      data: applicationState.average,
+      visible: false,
+      color: '#000',
+    }, {
+      name: 'L Bollinger',
+      type: 'line',
+      data: applicationState.lowerbollingerband,
+      visible: false,
+      color: '#ccc',
+    }, {
+      name: 'H Bollinger',
+      type: 'line',
+      data: applicationState.higherbollingerband,
+      visible: false,
+      color: '#ccc',
+    }, {
+      name: 'Standard Deviation',
+      type: 'line',
+      data: applicationState.standarddeviation,
+      visible: false,
+      color: '#FFF176',
+    }, {
+      name: 'Current Change',
+      type: 'line',
+      data: applicationState.currentchange,
+      yAxis: 2,
+      visible: false,
+      color: '#FFF176',
+    }]);
+  }
 
   return (
     <HighchartsReact

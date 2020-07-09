@@ -1,6 +1,8 @@
 package benchmark
 
 import (
+	"time"
+
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -44,7 +46,7 @@ func (r *Repository) UpdateBenchmarkCompleted(id string, output *domain.Benchmar
 	primitiveID, _ := primitive.ObjectIDFromHex(id)
 
 	filter := bson.D{{"_id", primitiveID}}
-	update := bson.D{{"$set", bson.D{{"status", "Completed"}, {"output", output}}}}
+	update := bson.D{{"$set", bson.D{{"status", "Completed"}, {"output", output}, {"completedat", time.Now()}}}}
 
 	return r.repo.UpdateOne(filter, update)
 }

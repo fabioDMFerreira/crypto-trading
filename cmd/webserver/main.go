@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	"github.com/fabiodmferreira/crypto-trading/db"
@@ -33,10 +34,12 @@ func main() {
 	mongoDatabase := dbClient.Database(mongoDB)
 	benchmarksCollection := mongoDatabase.Collection(db.BENCHMARKS_COLLECTION)
 	assetspricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
+	applicationExecutionStatesCollection := mongoDatabase.Collection(db.APPLICATION_EXECUTION_STATES_COLLECTION)
 
 	benchmarkRepository := benchmark.NewRepository(db.NewRepository(benchmarksCollection))
 	assetspricesRepository := assetsprices.NewRepository(db.NewRepository(assetspricesCollection))
-	benchmarkService := benchmark.NewService(benchmarkRepository, assetspricesRepository)
+	applicationExecutionStatesRepository := applicationExecutionStates.NewRepository(db.NewRepository(applicationExecutionStatesCollection))
+	benchmarkService := benchmark.NewService(benchmarkRepository, assetspricesRepository, applicationExecutionStatesRepository)
 
 	server, err := webserver.NewCryptoTradingServer(benchmarkService, assetspricesRepository)
 
