@@ -74,12 +74,9 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
 
   const submit = (data: any) => {
     if (maximumBuyAmountCurrency === 'FIAT') {
-      data.decisionMakerOptions.maximumFIATBuyAmount = data.maximumBuyAmount;
-    } else {
-      data.decisionMakerOptions.maximumBuyAmount = data.maximumBuyAmount;
+      data.decisionMakerOptions.maximumFIATBuyAmount = data.decisionMakerOptions.maximumBuyAmount;
+      delete data.decisionMakerOptions.maximumBuyAmount;
     }
-
-    delete data.maximumBuyAmount;
 
     onSubmit({
       ...data,
@@ -118,7 +115,7 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
           <Form.Label>Maximum Buy Amount</Form.Label>
           <Form.Control
             defaultValue={benchmarkDefaults.decisionMakerOptions.maximumBuyAmount}
-            name="maximumBuyAmount"
+            name="decisionMakerOptions.maximumBuyAmount"
             type="number"
             placeholder="Enter amount"
             step="0.1"
