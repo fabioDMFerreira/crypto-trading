@@ -9,7 +9,7 @@
     "@types/highcharts": "^7.0.0",
     "@types/jest": "^24.9.1",
     "@types/moment": "^2.13.0",
-    "@types/node": "^12.12.46",
+    "@types/node": "^12.12.47",
     "@types/rc-time-picker": "^3.4.1",
     "@types/react": "^16.9.35",
     "@types/react-bootstrap": "^1.0.1",
