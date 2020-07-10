@@ -5,6 +5,7 @@ import "time"
 // DecisionMakerOptions are used to change DecisionMaker behaviour
 type DecisionMakerOptions struct {
 	MaximumBuyAmount         float32 `json:"maximumBuyAmount"`
+	MaximumFIATBuyAmount     float32 `json:"maximumFIATBuyAmount"`
 	MinimumProfitPerSold     float32 `json:"minimumProfitPerSold"`
 	MinimumPriceDropToBuy    float32 `json:"minimumPriceDropToBuy"`
 	MinutesToCollectNewPoint int     `json:"minutesToCollectNewPoint"`

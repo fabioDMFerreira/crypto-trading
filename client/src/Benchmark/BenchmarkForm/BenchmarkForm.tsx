@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
@@ -16,6 +16,7 @@ interface Props {
 const benchmarkDefaults: BenchmarkInput = {
   decisionMakerOptions: {
     maximumBuyAmount: 0.1,
+    maximumFIATBuyAmount: 0,
     minimumProfitPerSold: 0.02,
     minimumPriceDropToBuy: 0.01,
     minutesToCollectNewPoint: 15,
@@ -36,7 +37,8 @@ const benchmarkDefaults: BenchmarkInput = {
 const serializeBenchmarkInput = (fn: any) => (data: any) => {
   const dataSerialized = {
     decisionMakerOptions: {
-      maximumBuyAmount: +data.decisionMakerOptions.maximumBuyAmount,
+      maximumBuyAmount: data.decisionMakerOptions.maximumBuyAmount ? +data.decisionMakerOptions.maximumBuyAmount : undefined,
+      maximumFIATBuyAmount: data.decisionMakerOptions.maximumFIATBuyAmount ? +data.decisionMakerOptions.maximumFIATBuyAmount : undefined,
       minimumProfitPerSold: +data.decisionMakerOptions.minimumProfitPerSold,
       minimumPriceDropToBuy: +data.decisionMakerOptions.minimumPriceDropToBuy,
       minutesToCollectNewPoint: +data.decisionMakerOptions.minutesToCollectNewPoint,
@@ -65,15 +67,25 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
 
   const {
     assets, dataSources, activeAsset, setActiveAsset,
-    activeDataSource, setActiveDataSource
+    activeDataSource, setActiveDataSource,
   } = useDataSourceOptionsParser(dataSourceOptions);
 
+  const [maximumBuyAmountCurrency, setMaximumBuyAmountCurrency] = useState('Asset');
+
   const submit = (data: any) => {
+    if (maximumBuyAmountCurrency === 'FIAT') {
+      data.decisionMakerOptions.maximumFIATBuyAmount = data.maximumBuyAmount;
+    } else {
+      data.decisionMakerOptions.maximumBuyAmount = data.maximumBuyAmount;
+    }
+
+    delete data.maximumBuyAmount;
+
     onSubmit({
       ...data,
-      asset: activeAsset
+      asset: activeAsset,
     });
-  }
+  };
 
   return (
     <Form onSubmit={handleSubmit(serializeBenchmarkInput(submit))}>
@@ -89,11 +101,24 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
           />
         </Form.Group>
 
+        <Form.Group>
+          <Form.Label>Maximum Buy Amount Currency</Form.Label>
+          <Form.Control
+            defaultValue={maximumBuyAmountCurrency}
+            name="maximumBuyAmountCurrency"
+            as="select"
+            onChange={(e) => setMaximumBuyAmountCurrency(e.target.value)}
+          >
+            <option value="Asset">Asset</option>
+            <option value="FIAT">FIAT</option>
+          </Form.Control>
+        </Form.Group>
+
         <Form.Group as={Col} controlId="formGridMaximumBuyAmount">
           <Form.Label>Maximum Buy Amount</Form.Label>
           <Form.Control
             defaultValue={benchmarkDefaults.decisionMakerOptions.maximumBuyAmount}
-            name="decisionMakerOptions.maximumBuyAmount"
+            name="maximumBuyAmount"
             type="number"
             placeholder="Enter amount"
             step="0.1"

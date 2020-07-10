@@ -26,6 +26,7 @@ export interface Benchmark {
 
 export interface DecisionMakerOptions {
   maximumBuyAmount: number,
+  maximumFIATBuyAmount: number,
   minimumProfitPerSold: number,
   minimumPriceDropToBuy: number,
   minutesToCollectNewPoint: number,

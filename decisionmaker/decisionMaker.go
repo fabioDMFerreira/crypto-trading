@@ -89,13 +89,24 @@ func (dm *DecisionMaker) HowMuchAmountShouldBuy(price float32) (float32, error) 
 	standardDeviation := dm.statistics.GetStandardDeviation()
 	average := dm.statistics.GetAverage()
 
+	maximumBuyAmount := dm.getMaximumBuyAmountBasedOnOptions(price)
+
 	if float32(average-2*standardDeviation) < price {
-		return dm.options.MaximumBuyAmount, nil
+		return maximumBuyAmount, nil
 	} else if float32(average-1*standardDeviation) < price {
-		return 0.8 * dm.options.MaximumBuyAmount, nil
+		return 0.8 * maximumBuyAmount, nil
 	} else {
-		return 0.5 * dm.options.MaximumBuyAmount, nil
+		return 0.5 * maximumBuyAmount, nil
 	}
+}
+
+// getMaximumBuyAmountBasedOnOptions returns the asset amount value based on options
+func (dm *DecisionMaker) getMaximumBuyAmountBasedOnOptions(price float32) float32 {
+	if dm.options.MaximumFIATBuyAmount > 0 {
+		return dm.options.MaximumFIATBuyAmount / price
+	}
+
+	return dm.options.MaximumBuyAmount
 }
 
 // GetState returns decision maker state
