@@ -76,3 +76,8 @@ func (s *Statistics) GetStandardDeviation() float64 {
 func (s *Statistics) GetAverage() float64 {
 	return s.average
 }
+
+// HasRequiredNumberOfPoints check whether the number of points hold are the same of required in options
+func (s *Statistics) HasRequiredNumberOfPoints() bool {
+	return s.numberOfPoints == s.options.NumberOfPointsHold
+}

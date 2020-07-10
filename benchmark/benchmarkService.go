@@ -23,7 +23,15 @@ import (
 
 	adadatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ada"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
+	btccashdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-cash"
+	btcsvdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-sv"
+	eosdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eos"
+	etcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/etc"
 	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
+	ltcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ltc"
+	monerodatahistory "github.com/fabiodmferreira/crypto-trading/data-history/monero"
+	stellardatahistory "github.com/fabiodmferreira/crypto-trading/data-history/stellar"
+	xrpdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/xrp"
 )
 
 // Input is an alias for BenchmarkInput
@@ -222,6 +230,30 @@ func (s *Service) GetDataSources() map[string]map[string]string {
 		"btc": map[string]string{
 			"Last Year Minute": btcdatahistory.LastYearMinute,
 		},
+		"btc-cash": map[string]string{
+			"Last Year Minute": btccashdatahistory.LastYearMinute,
+		},
+		"btc-sv": map[string]string{
+			"Last Year Minute": btcsvdatahistory.LastYearMinute,
+		},
+		"eos": map[string]string{
+			"Last Year Minute": eosdatahistory.LastYearMinute,
+		},
+		"etc": map[string]string{
+			"Last Year Minute": etcdatahistory.LastYearMinute,
+		},
+		"ltc": map[string]string{
+			"Last Year Minute": ltcdatahistory.LastYearMinute,
+		},
+		"monero": map[string]string{
+			"Last Year Minute": monerodatahistory.LastYearMinute,
+		},
+		"stellar": map[string]string{
+			"Last Year Minute": stellardatahistory.LastYearMinute,
+		},
+		"xrp": map[string]string{
+			"Last Year Minute": xrpdatahistory.LastYearMinute,
+		},
 		"eth": map[string]string{
 			"Last Year Minute": ethdatahistory.LastYearMinute,
 		},
@@ -229,17 +261,6 @@ func (s *Service) GetDataSources() map[string]map[string]string {
 			"Last Year Minute": adadatahistory.LastYearMinute,
 		},
 	}
-
-	// string{
-	// 	fmt.Sprintf("btc-cash/%v", btccashdatahistory.LastYearMinute),
-	// 	fmt.Sprintf("btc-sv/%v", btcsvdatahistory.LastYearMinute),
-	// 	fmt.Sprintf("eos/%v", eosdatahistory.LastYearMinute),
-	// 	fmt.Sprintf("etc/%v", etcdatahistory.LastYearMinute),
-	// 	fmt.Sprintf("ltc/%v", ltcdatahistory.LastYearMinute),
-	// 	fmt.Sprintf("monero/%v", monerodatahistory.LastYearMinute),
-	// 	fmt.Sprintf("stellar/%v", stellardatahistory.LastYearMinute),
-	// 	fmt.Sprintf("xrp/%v", xrpdatahistory.LastYearMinute),
-	// }
 }
 
 // AggregateApplicationState returns an aggregate of application state

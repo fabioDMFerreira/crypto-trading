@@ -1,5 +1,5 @@
 package ltcdatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "ltc/last-year-minute.csv"
 )

@@ -10,4 +10,5 @@ type Statistics interface {
 	AddPoint(p float64)
 	GetStandardDeviation() float64
 	GetAverage() float64
+	HasRequiredNumberOfPoints() bool
 }

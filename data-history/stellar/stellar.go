@@ -1,5 +1,5 @@
 package stellardatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "stellar/last-year-minute.csv"
 )

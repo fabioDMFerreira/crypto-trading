@@ -1,5 +1,5 @@
 package etccashdatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "etc/last-year-minute.csv"
 )

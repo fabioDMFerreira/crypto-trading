@@ -49,6 +49,10 @@ func (dm *DecisionMaker) NewValue(price float32, date time.Time) {
 
 // ShouldBuy returns true or false if it is a good time to buy
 func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, error) {
+	if !dm.statistics.HasRequiredNumberOfPoints() {
+		return false, nil
+	}
+
 	assetWithCloserPrice, err := dm.assetsRepository.CheckAssetWithCloserPriceExists(price, 0.02)
 
 	if err != nil {
@@ -72,6 +76,10 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 
 // ShouldSell returns true or false if it is a good time to sell
 func (dm *DecisionMaker) ShouldSell(asset *domain.Asset, price float32, byTime time.Time) (bool, error) {
+	if !dm.statistics.HasRequiredNumberOfPoints() {
+		return false, nil
+	}
+
 	if asset.BuyPrice+(asset.BuyPrice*dm.options.MinimumProfitPerSold) > price {
 		return false, nil
 	}

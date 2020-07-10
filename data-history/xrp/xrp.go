@@ -1,5 +1,5 @@
 package xrpdatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "xrp/last-year-minute.csv"
 )

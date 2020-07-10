@@ -12,7 +12,17 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/collectors"
+	adadatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ada"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
+	btccashdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-cash"
+	btcsvdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-sv"
+	eosdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eos"
+	etcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/etc"
+	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
+	ltcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ltc"
+	monerodatahistory "github.com/fabiodmferreira/crypto-trading/data-history/monero"
+	stellardatahistory "github.com/fabiodmferreira/crypto-trading/data-history/stellar"
+	xrpdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/xrp"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,8 +30,9 @@ import (
 
 // bulkUpdateElements is the number of elements that are used on bulk upsert
 const bulkUpdateElements = 1000
-const csvFile = btcdatahistory.LastYearMinute
-const asset = "BTC"
+
+// const csvFile = btcdatahistory.LastYearMinute
+// const asset = "BTC"
 
 func main() {
 	// load environment variables
@@ -43,71 +54,87 @@ func main() {
 
 	collection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
 
-	repo := db.NewRepository(collection)
-
-	err = repo.BulkDelete(bson.M{"asset": asset})
-
-	if err != nil {
-		log.Fatal("error on bulk deleting: ", err)
+	assetsPricesFiles := map[string]string{
+		"ADA":      adadatahistory.LastYearMinute,
+		"BTC":      btcdatahistory.LastYearMinute,
+		"BTC-CASH": btccashdatahistory.LastYearMinute,
+		"BTC-SV":   btcsvdatahistory.LastYearMinute,
+		"EOS":      eosdatahistory.LastYearMinute,
+		"ETC":      etcdatahistory.LastYearMinute,
+		"ETH":      ethdatahistory.LastYearMinute,
+		"LTC":      ltcdatahistory.LastYearMinute,
+		"MONERO":   monerodatahistory.LastYearMinute,
+		"STELLAR":  stellardatahistory.LastYearMinute,
+		"XRP":      xrpdatahistory.LastYearMinute,
 	}
 
-	_, currentFilePath, _, _ := runtime.Caller(0)
-	currentDir := path.Dir(currentFilePath)
-	historyFile, err := collectors.GetCsv(fmt.Sprintf("%v/../../data-history/%v", currentDir, csvFile))
+	for asset, csvFile := range assetsPricesFiles {
+		repo := db.NewRepository(collection)
 
-	if err != nil {
-		log.Fatal("error on getting cv: ", err)
-	}
+		err = repo.BulkDelete(bson.M{"asset": asset})
 
-	// read header
-	_, err = historyFile.Read()
-	if err == io.EOF {
-		log.Fatalf("Error on reading header file: %v", err)
-	}
+		if err != nil {
+			log.Fatal("error on bulk deleting: ", err)
+		}
 
-	var documents []bson.M
-	counter := 0
+		_, currentFilePath, _, _ := runtime.Caller(0)
+		currentDir := path.Dir(currentFilePath)
+		historyFile, err := collectors.GetCsv(fmt.Sprintf("%v/../../data-history/%v", currentDir, csvFile))
 
-	for {
-		// Read each record from csv
-		record, err := historyFile.Read()
+		if err != nil {
+			log.Fatal("error on getting cv: ", err)
+		}
+
+		// read header
+		_, err = historyFile.Read()
 		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error on reading header file: %v", err)
 		}
 
-		priceStr := strings.ReplaceAll(record[1], ",", "")
-		price, err := strconv.ParseFloat(priceStr, 32)
+		var documents []bson.M
+		counter := 0
 
-		if err != nil {
-			log.Fatalf("Error on converting price from file:\n%v", err)
-		}
-
-		unixTime, err := strconv.ParseInt(record[0], 10, 64)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		documents = append(documents,
-			bson.M{
-				"asset": asset,
-				"value": price,
-				"date":  time.Unix(unixTime/1000, 0),
-			},
-		)
-
-		if len(documents) == bulkUpdateElements {
-			err := repo.BulkCreate(&documents)
-
+		for {
+			// Read each record from csv
+			record, err := historyFile.Read()
+			if err == io.EOF {
+				break
+			}
 			if err != nil {
-				log.Fatal("error on bulking create: ", err)
+				log.Fatal(err)
 			}
 
-			counter += bulkUpdateElements
-			fmt.Printf("\rCreated: %d", counter)
-			documents = []bson.M{}
+			priceStr := strings.ReplaceAll(record[1], ",", "")
+			price, err := strconv.ParseFloat(priceStr, 32)
+
+			if err != nil {
+				log.Fatalf("Error on converting price from file:\n%v", err)
+			}
+
+			unixTime, err := strconv.ParseInt(record[0], 10, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			documents = append(documents,
+				bson.M{
+					"asset": asset,
+					"value": price,
+					"date":  time.Unix(unixTime/1000, 0),
+				},
+			)
+
+			if len(documents) == bulkUpdateElements {
+				err := repo.BulkCreate(&documents)
+
+				if err != nil {
+					log.Fatal("error on bulking create: ", err)
+				}
+
+				counter += bulkUpdateElements
+				fmt.Printf("\rAsset: %v Created: %d", asset, counter)
+				documents = []bson.M{}
+			}
 		}
 	}
 }

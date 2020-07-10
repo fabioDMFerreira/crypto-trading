@@ -1,5 +1,5 @@
 package monerodatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "monero/last-year-minute.csv"
 )

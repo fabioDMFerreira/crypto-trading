@@ -1,5 +1,5 @@
 package eosdatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "eos/last-year-minute.csv"
 )

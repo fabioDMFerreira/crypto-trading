@@ -1,5 +1,5 @@
 package btcsvdatahistory
 
 const (
-	LastYearMinute = "last-year-minute.csv"
+	LastYearMinute = "btc-sv/last-year-minute.csv"
 )
