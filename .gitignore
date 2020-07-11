@@ -5,3 +5,4 @@ crypto-trading
 .DS_Store
 reports
 bin
+coverage.txt
