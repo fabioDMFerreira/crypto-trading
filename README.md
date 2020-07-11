@@ -1,4 +1,7 @@
-## Crypto Trading
+Crypto Trading
+[![Build Status](https://travis-ci.com/fabioDMFerreira/crypto-trading.svg?branch=master)](https://travis-ci.com/fabioDMFerreira/crypto-trading)
+[![codecov](https://codecov.io/gh/fabioDMFerreira/crypto-trading/branch/master/graph/badge.svg)](https://codecov.io/gh/fabioDMFerreira/crypto-trading)
+====
 
 Use smart rules to buy and to sell crypto assets.
 

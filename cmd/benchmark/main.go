@@ -93,7 +93,7 @@ func main() {
 			result := br.Output
 			input := br.Input
 			profit := float32(((float64(result.FinalAmount) - input.AccountInitialAmount) * 100) / input.AccountInitialAmount)
-			f.WriteString(fmt.Sprintf("%+v,%d,%d,%d,%.2f,%.2f,%.2f%%\n", input, result.Buys, result.Sells, result.SellsPending, input.AccountInitialAmount, result.FinalAmount, profit))
+			f.WriteString(fmt.Sprintf("%+v,%v,%v,%d,%.2f,%.2f,%.2f%%\n", input, result.Buys, result.Sells, result.SellsPending, input.AccountInitialAmount, result.FinalAmount, profit))
 			fOrders, err := os.Create(fmt.Sprintf("./reports/orders-reports/benchmark-%v-orders-%v.csv", startDate, i))
 
 			fOrders.WriteString(fmt.Sprintf("Buy Date,Sell Date,Amount,Buy Price,Buy Value,Sell Price,Sell Value,Return\n"))

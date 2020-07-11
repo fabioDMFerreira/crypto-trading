@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"path"
+	"runtime"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -44,7 +46,9 @@ func GenerateEventlogReportEmail(
 
 	}
 
-	t, err := template.ParseFiles("notifications/eventlogreport.html")
+	_, currentFilePath, _, _ := runtime.Caller(0)
+	currentDir := path.Dir(currentFilePath)
+	t, err := template.ParseFiles(currentDir + "/eventlogreport.html")
 
 	if err != nil {
 		return nil, err

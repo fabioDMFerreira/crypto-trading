@@ -126,7 +126,7 @@ func (r *Repository) DeleteByID(id string) error {
 
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return fmt.Errorf(fmt.Sprintf("primitive.ObjectIDFromHex ERROR:", err))
+		return fmt.Errorf(fmt.Sprint("primitive.ObjectIDFromHex ERROR:", err))
 	}
 
 	_, err = r.collection.DeleteOne(ctx, bson.M{"_id": idPrimitive})

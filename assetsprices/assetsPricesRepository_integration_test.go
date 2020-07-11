@@ -1,37 +1,28 @@
 package assetsprices
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"testing"
-
-	"github.com/fabiodmferreira/crypto-trading/db"
-	"github.com/fabiodmferreira/crypto-trading/domain"
-	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func TestAssetsPricesRepository(t *testing.T) {
 	// load environment variables
-	err := godotenv.Load("../.env")
-	if err != nil {
-		fmt.Println(".env file does not exist")
-	}
+	// err := godotenv.Load("../.env")
+	// if err != nil {
+	// 	fmt.Println(".env file does not exist")
+	// }
 
-	mongoURL := os.Getenv("MONGO_URL")
-	mongoDB := os.Getenv("MONGO_DB")
+	// mongoURL := os.Getenv("MONGO_URL")
+	// mongoDB := os.Getenv("MONGO_DB")
 
-	dbClient, err := db.ConnectDB(mongoURL)
+	// dbClient, err := db.ConnectDB(mongoURL)
 
-	if err != nil {
-		log.Fatal("connecting db", err)
-	}
+	// if err != nil {
+	// 	log.Fatal("connecting db", err)
+	// }
 
-	mongoDatabase := dbClient.Database(mongoDB)
-	assetspricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
-	assetspricesRepository := NewRepository(db.NewRepository(assetspricesCollection))
+	// mongoDatabase := dbClient.Database(mongoDB)
+	// assetspricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
+	// assetspricesRepository := NewRepository(db.NewRepository(assetspricesCollection))
 
 	// t.Run("create and find created asset price", func(t *testing.T) {
 	// date := time.Now()
@@ -61,37 +52,37 @@ func TestAssetsPricesRepository(t *testing.T) {
 
 	// })
 
-	t.Run("aggregate prices per date", func(t *testing.T) {
-		pipeline := mongo.Pipeline{
-			{{"$match", bson.D{{"asset", "BTC"}}}},
-			{{
-				"$group",
-				bson.D{
-					{
-						"_id", bson.D{
-							{"year", bson.D{{"$year", "$date"}}},
-							{"month", bson.D{{"$month", "$date"}}},
-							{"day", bson.D{{"$dayOfMonth", "$date"}}},
-						},
-					},
-					{"price", bson.D{{"$last", "$value"}}},
-				},
-			}},
-		}
+	// t.Run("aggregate prices per date", func(t *testing.T) {
+	// 	pipeline := mongo.Pipeline{
+	// 		{{"$match", bson.D{{"asset", "BTC"}}}},
+	// 		{{
+	// 			"$group",
+	// 			bson.D{
+	// 				{
+	// 					"_id", bson.D{
+	// 						{"year", bson.D{{"$year", "$date"}}},
+	// 						{"month", bson.D{{"$month", "$date"}}},
+	// 						{"day", bson.D{{"$dayOfMonth", "$date"}}},
+	// 					},
+	// 				},
+	// 				{"price", bson.D{{"$last", "$value"}}},
+	// 			},
+	// 		}},
+	// 	}
 
-		assetsPrices, err := assetspricesRepository.Aggregate(pipeline)
+	// 	assetsPrices, err := assetspricesRepository.Aggregate(pipeline)
 
-		if err != nil {
-			t.Errorf("Error on aggregating data: %v", err)
-		}
+	// 	if err != nil {
+	// 		t.Errorf("Error on aggregating data: %v", err)
+	// 	}
 
-		for _, a := range *assetsPrices {
-			var ap domain.AssetPrice
-			bsonBytes, _ := bson.Marshal(a)
-			bson.Unmarshal(bsonBytes, &ap)
-			fmt.Printf("%v \n", ap)
-		}
-		t.Errorf("Fail")
-	})
+	// 	for _, a := range *assetsPrices {
+	// 		var ap domain.AssetPrice
+	// 		bsonBytes, _ := bson.Marshal(a)
+	// 		bson.Unmarshal(bsonBytes, &ap)
+	// 		fmt.Printf("%v \n", ap)
+	// 	}
+	// 	t.Errorf("Fail")
+	// })
 
 }

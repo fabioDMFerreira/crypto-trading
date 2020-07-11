@@ -13,6 +13,11 @@ type RepositoryInMemory struct {
 	assetsPrices []domain.AssetPrice
 }
 
+// NewRepositoryInMemory returns assets prices repository mock
+func NewRepositoryInMemory() *RepositoryInMemory {
+	return &RepositoryInMemory{}
+}
+
 // FindAll returns assets prices
 func (r *RepositoryInMemory) FindAll(filter interface{}) (*[]domain.AssetPrice, error) {
 	return &r.assetsPrices, nil
