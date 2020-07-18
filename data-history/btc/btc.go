@@ -10,4 +10,5 @@ const (
 	TwentyTwenty       = "btc/2020.csv"
 	TwentyTwentyMinute = "btc/2020-minute.csv"
 	LastYearMinute     = "btc/last-year-minute.csv"
+	Twenty19Current    = "btc/2019-current.csv"
 )

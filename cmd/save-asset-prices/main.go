@@ -56,7 +56,7 @@ func main() {
 
 	assetsPricesFiles := map[string]string{
 		"ADA":      adadatahistory.LastYearMinute,
-		"BTC":      btcdatahistory.LastYearMinute,
+		"BTC":      btcdatahistory.Twenty19Current,
 		"BTC-CASH": btccashdatahistory.LastYearMinute,
 		"BTC-SV":   btcsvdatahistory.LastYearMinute,
 		"EOS":      eosdatahistory.LastYearMinute,

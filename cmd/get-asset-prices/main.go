@@ -40,15 +40,15 @@ func GetAndStoreData(f io.Writer, coin string, service *assetsprices.Service) fu
 func main() {
 	dateLayout := "2006-01-02 15:04:05"
 
-	startDate, _ := time.Parse(dateLayout, "2019-06-01 00:00:00")
-	endDate, _ := time.Parse(dateLayout, "2020-06-01 23:59:59")
+	startDate, _ := time.Parse(dateLayout, "2019-01-01 00:00:00")
+	endDate, _ := time.Parse(dateLayout, "2020-07-15 23:59:59")
 
 	iterations := []struct {
 		filePath string
 		coin     string
 	}{
-		// {"ada/last-year-minute.csv", "ADA"},
-		// {"btc/last-year-minute.csv", "BTC"},
+		{"ada/last-year-minute.csv", "ADA"},
+		{"btc/2019-current.csv", "BTC"},
 		{"btc-cash/last-year-minute.csv", "BCH"},
 		{"btc-sv/last-year-minute.csv", "BSV"},
 		{"eos/last-year-minute.csv", "EOS"},

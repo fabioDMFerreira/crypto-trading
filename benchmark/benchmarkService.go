@@ -231,6 +231,7 @@ func (s *Service) GetDataSources() map[string]map[string]string {
 	return map[string]map[string]string{
 		"btc": map[string]string{
 			"Last Year Minute": btcdatahistory.LastYearMinute,
+			"2019 - Current":   btcdatahistory.Twenty19Current,
 		},
 		"btc-cash": map[string]string{
 			"Last Year Minute": btccashdatahistory.LastYearMinute,
