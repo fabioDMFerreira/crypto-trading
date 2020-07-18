@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"os"
 	"path"
 	"runtime"
 	"time"
@@ -33,6 +34,8 @@ func GenerateEventlogReportEmail(
 	eventsLog *[]domain.EventLog,
 	assets *[]domain.Asset,
 ) (*bytes.Buffer, error) {
+	appEnv := os.Getenv("APP_ENV")
+
 	eventLogFormatted := []EventsLogEmailFormat{}
 
 	for _, event := range *eventsLog {
@@ -46,8 +49,14 @@ func GenerateEventlogReportEmail(
 
 	}
 
-	_, currentFilePath, _, _ := runtime.Caller(0)
-	currentDir := path.Dir(currentFilePath)
+	var currentDir string
+
+	if appEnv == "production" {
+		currentDir = "notifications"
+	} else {
+		_, currentFilePath, _, _ := runtime.Caller(0)
+		currentDir = path.Dir(currentFilePath)
+	}
 	t, err := template.ParseFiles(currentDir + "/eventlogreport.html")
 
 	if err != nil {
