@@ -98,12 +98,15 @@ func main() {
 
 	decisionmakerOptions :=
 		domain.DecisionMakerOptions{
-			MaximumBuyAmount:      0.01,
-			MinimumProfitPerSold:  0.01,
-			MinimumPriceDropToBuy: 0.01,
+			MinimumProfitPerSold:     0.01,
+			MinimumPriceDropToBuy:    0.01,
+			MaximumFIATBuyAmount:     500,
+			GrowthDecreaseLimit:      -100,
+			GrowthIncreaseLimit:      100,
+			MinutesToCollectNewPoint: 15,
 		}
 
-	numberOfPointsHold := 15000
+	numberOfPointsHold := 5000
 
 	statisticsOptions := domain.StatisticsOptions{NumberOfPointsHold: numberOfPointsHold}
 	macdParams := statistics.MACDParams{Fast: 24, Slow: 12, Lag: 9}

@@ -16,7 +16,7 @@ func TestGetBenchmarkDataSources(t *testing.T) {
 
 	AssertRequestStatusCode(t, res, http.StatusOK)
 
-	AssertRequestResponse(t, res, fmt.Sprintf("%v\n", `{"ada":{"Last Year Minute":"ada/last-year-minute.csv"},"btc":{"Last Year Minute":"btc/last-year-minute.csv"},"btc-cash":{"Last Year Minute":"btc-cash/last-year-minute.csv"},"btc-sv":{"Last Year Minute":"btc-sv/last-year-minute.csv"},"eos":{"Last Year Minute":"eos/last-year-minute.csv"},"etc":{"Last Year Minute":"etc/last-year-minute.csv"},"eth":{"Last Year Minute":"eth/last-year-minute.csv"},"ltc":{"Last Year Minute":"ltc/last-year-minute.csv"},"monero":{"Last Year Minute":"monero/last-year-minute.csv"},"stellar":{"Last Year Minute":"stellar/last-year-minute.csv"},"xrp":{"Last Year Minute":"xrp/last-year-minute.csv"}}`))
+	AssertRequestResponse(t, res, fmt.Sprintf("%v\n", `{"ada":{"Last Year Minute":"ada/last-year-minute.csv"},"btc":{"2019 - Current":"btc/2019-current.csv","Last Year Minute":"btc/last-year-minute.csv"},"btc-cash":{"Last Year Minute":"btc-cash/last-year-minute.csv"},"btc-sv":{"Last Year Minute":"btc-sv/last-year-minute.csv"},"eos":{"Last Year Minute":"eos/last-year-minute.csv"},"etc":{"Last Year Minute":"etc/last-year-minute.csv"},"eth":{"Last Year Minute":"eth/last-year-minute.csv"},"ltc":{"Last Year Minute":"ltc/last-year-minute.csv"},"monero":{"Last Year Minute":"monero/last-year-minute.csv"},"stellar":{"Last Year Minute":"stellar/last-year-minute.csv"},"xrp":{"Last Year Minute":"xrp/last-year-minute.csv"}}`))
 }
 
 func TestGetBenchmarkList(t *testing.T) {
