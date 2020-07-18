@@ -97,7 +97,7 @@ func (r *Repository) Aggregate(documents interface{}, pipelineOptions mongo.Pipe
 func (r *Repository) FindOne(document interface{}, filter interface{}, opts *options.FindOneOptions) error {
 	ctx := NewMongoQueryContext()
 
-	err := r.collection.FindOne(ctx, filter, opts).Decode(&document)
+	err := r.collection.FindOne(ctx, filter, opts).Decode(document)
 
 	return err
 }

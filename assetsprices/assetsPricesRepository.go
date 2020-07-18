@@ -10,6 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type AssetPrice = domain.AssetPrice
+
 // Repository stores and gets assets prices
 type Repository struct {
 	repo domain.Repository
@@ -73,4 +75,22 @@ func (r *Repository) Create(date time.Time, value float32, asset string) error {
 	assetPrice := domain.AssetPrice{ID: primitive.NewObjectID(), Date: date, Value: value, Asset: asset}
 
 	return r.repo.InsertOne(assetPrice)
+}
+
+// GetLastAssetsPrices return the last asset price stored in DB
+func (r *Repository) GetLastAssetsPrices(asset string, limit int) (*[]domain.AssetPrice, error) {
+	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetLimit(int64(limit))
+	var foundDocument []AssetPrice
+	err := r.repo.FindAll(&foundDocument, bson.M{"asset": asset}, opts)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &foundDocument, nil
+}
+
+// BulkCreate creates multiple assets prices
+func (r *Repository) BulkCreate(documents *[]bson.M) error {
+	return r.repo.BulkCreate(documents)
 }

@@ -8,10 +8,11 @@ import (
 
 // DecisionMaker decides to buy or sell
 type DecisionMaker struct {
-	assetsRepository domain.AssetsRepositoryReader
-	options          domain.DecisionMakerOptions
-	statistics       domain.Statistics
-	growthStatistics domain.Statistics
+	assetsRepository    domain.AssetsRepositoryReader
+	options             domain.DecisionMakerOptions
+	statistics          domain.Statistics
+	growthStatistics    domain.Statistics
+	assetsPricesService domain.AssetsPricesService
 
 	currentPrice       float32
 	lastPrice          float32
@@ -20,8 +21,8 @@ type DecisionMaker struct {
 }
 
 // NewDecisionMaker returns a new instance of DecisionMaker
-func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics, growthStatistics domain.Statistics) *DecisionMaker {
-	return &DecisionMaker{assetsRepository, options, statistics, growthStatistics, 0, 0, 0, time.Time{}}
+func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics, growthStatistics domain.Statistics, assetsPricesService domain.AssetsPricesService) *DecisionMaker {
+	return &DecisionMaker{assetsRepository, options, statistics, growthStatistics, assetsPricesService, 0, 0, 0, time.Time{}}
 }
 
 // NewValue adds a new price to recalculate statistics
@@ -37,6 +38,7 @@ func (dm *DecisionMaker) NewValue(price float32, date time.Time) {
 	}
 
 	dm.statistics.AddPoint(float64(price))
+	dm.assetsPricesService.Create(date, price, "BTC")
 
 	if dm.lastPrice > 0 {
 		dm.growthStatistics.AddPoint(float64(price - dm.lastPrice))

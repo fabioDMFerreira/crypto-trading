@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	krakenapi "github.com/beldur/kraken-go-api-client"
 	"github.com/fabiodmferreira/crypto-trading/accounts"
 	"github.com/fabiodmferreira/crypto-trading/app"
 	"github.com/fabiodmferreira/crypto-trading/assets"
+	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/broker"
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 	"github.com/fabiodmferreira/crypto-trading/db"
@@ -51,14 +53,22 @@ func main() {
 	eventLogsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
 	notificationsCollection := mongoDatabase.Collection(db.NOTIFICATIONS_COLLECTION)
 	accountsCollection := mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)
+	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
 
 	// instantiate repositories
 	assetsRepository := assets.NewRepository(db.NewRepository(assetsCollection))
 	eventLogsRepository := eventlogs.NewEventLogsRepository(eventLogsCollection)
 	notificationsRepository := notifications.NewNotificationsRepository(notificationsCollection)
 	accountsRepository := accounts.NewAccountsRepository(accountsCollection)
+	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
 
 	// instantiate services
+	assetsPricesService := assetsprices.NewService(assetsPricesRepository)
+
+	fmt.Println("Fetching assets prices from coindesk...")
+	assetsPricesService.FetchAndStoreAssetPrices("BTC", time.Now())
+	fmt.Println("Completed")
+
 	var brokerService domain.Broker
 	if appEnv == "production" {
 		brokerService = broker.NewKrakenBroker(krakenAPI)
@@ -93,14 +103,33 @@ func main() {
 			MinimumPriceDropToBuy: 0.01,
 		}
 
-	statisticsOptions := domain.StatisticsOptions{NumberOfPointsHold: 38000}
+	numberOfPointsHold := 15000
+
+	statisticsOptions := domain.StatisticsOptions{NumberOfPointsHold: numberOfPointsHold}
 	macdParams := statistics.MACDParams{Fast: 24, Slow: 12, Lag: 9}
 	macd := statistics.NewMACDContainer(macdParams)
 	pricesStatistics := statistics.NewStatistics(statisticsOptions, macd)
 	growthMacd := statistics.NewMACDContainer(macdParams)
 	growthStatistics := statistics.NewStatistics(statisticsOptions, growthMacd)
 
-	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, pricesStatistics, growthStatistics)
+	lastAssetsPrices, err := assetsPricesService.GetLastAssetsPrices("BTC", numberOfPointsHold)
+
+	if err != nil {
+		log.Panicf("%v", err)
+	}
+
+	fmt.Println("Adding statistics points...")
+	points := []float64{}
+	for _, assetPrice := range *lastAssetsPrices {
+		points = append(points, float64(assetPrice.Value))
+	}
+	nPoints := len(points)
+	for i := nPoints - 1; i >= 0; i-- {
+		pricesStatistics.AddPoint(points[i])
+	}
+	fmt.Println("Completed")
+
+	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, pricesStatistics, growthStatistics, assetsPricesService)
 
 	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01}, krakenAPI)
 	application := app.NewApp(notificationsService, decisionMaker, eventLogsRepository, assetsRepository, dbTrader, accountService, krakenCollector)

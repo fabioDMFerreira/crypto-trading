@@ -82,7 +82,7 @@ func (mc *MACDContainer) AddPoint(p float64) {
 		mc.FastEMA = []float64{fast}
 	}
 
-	if len(mc.SlowEMA) > 0 {
+	if len(mc.SlowEMA) > 0 && len(mc.FastEMA) > 0 {
 		macd := mc.FastEMA[len(mc.FastEMA)-1] - mc.SlowEMA[len(mc.SlowEMA)-1]
 		mc.MACD = append(mc.MACD, macd)
 	}

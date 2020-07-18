@@ -61,3 +61,13 @@ func (r *RepositoryInMemory) Aggregate(pipeline mongo.Pipeline) (*[]bson.M, erro
 
 	return &results, nil
 }
+
+// GetLastAssetsPrices stub
+func (r *RepositoryInMemory) GetLastAssetsPrices(asset string, limit int) (*[]domain.AssetPrice, error) {
+	return nil, nil
+}
+
+// BulkCreate stub
+func (r *RepositoryInMemory) BulkCreate(documents *[]bson.M) error {
+	return nil
+}
