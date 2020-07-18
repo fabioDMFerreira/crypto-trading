@@ -9,12 +9,13 @@ import (
 
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/domain"
+	"github.com/fabiodmferreira/crypto-trading/utils"
 )
 
 // WriteCoindeskResponse write remote response in write stream
 func WriteCoindeskResponse(response domain.CoindeskResponse, out io.Writer) {
 	for _, entry := range response.Entries {
-		fmt.Fprintf(out, "%.0f,%f\n", entry[0], entry[1])
+		fmt.Fprintf(out, "%.0f,%f\n", entry[0], entry[1]*utils.DollarEuroRate)
 	}
 }
 

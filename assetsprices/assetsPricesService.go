@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
+	"github.com/fabiodmferreira/crypto-trading/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -70,7 +71,7 @@ func (s *Service) FetchAndStoreAssetPrices(asset string, endDate time.Time) erro
 				bson.M{
 					"asset": asset,
 					"date":  time.Unix(int64(entry[0])/1000, 0),
-					"value": float32(entry[1]),
+					"value": float32(entry[1]) * utils.DollarEuroRate,
 				})
 		}
 
