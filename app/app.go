@@ -129,7 +129,7 @@ func (a *App) CheckEventLogs() error {
 			return err
 		}
 
-		pendingAssets, err := a.assetsRepository.FindAll()
+		pendingAssets, err := a.assetsRepository.FindPendingAssets()
 		if err != nil {
 			return err
 		}
