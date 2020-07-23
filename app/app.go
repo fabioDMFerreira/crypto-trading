@@ -46,69 +46,91 @@ func (a *App) RegistOnTickerChange(observable domain.OnTickerChange) {
 	a.collector.Regist(observable)
 }
 
+// DecideToBuy do operations to check if an asset should be bought
+func (a *App) DecideToBuy(price float32, currentTime time.Time) error {
+	ok, err := a.decisionMaker.ShouldBuy(price, currentTime)
+	if ok && err == nil {
+		amount, err := a.decisionMaker.HowMuchAmountShouldBuy(price)
+
+		if err != nil {
+			return err
+		}
+
+		accountAmount, err := a.accountService.GetAmount()
+
+		if err != nil {
+			return err
+		}
+
+		if accountAmount > amount*price {
+			err := a.trader.Buy(amount, price, currentTime)
+
+			if err != nil {
+				return err
+			}
+
+			message := fmt.Sprintf("Asset bought: {Price: %v Amount: %v Value: %v}", price, amount, amount*price)
+			err = a.eventLogsRepository.Create("buy", message)
+			if err != nil {
+				return err
+			}
+		} else {
+			a.eventLogsRepository.Create("Insuffucient Funds", fmt.Sprintf("want to spend %.4fBTC*%.2f$=%v, have %.2f in account", amount, price, amount*price, accountAmount))
+		}
+	}
+
+	return nil
+}
+
+// DecideToSell do operations to check if an asset should be sold
+func (a *App) DecideToSell(price float32, currentTime time.Time) error {
+	assets, err := a.assetsRepository.FindPendingAssets()
+
+	if err != nil {
+		return err
+	}
+
+	for _, asset := range *assets {
+		if ok, err := a.decisionMaker.ShouldSell(&asset, price, currentTime); ok && err == nil {
+
+			if err != nil {
+				return err
+			}
+
+			err := a.trader.Sell(&asset, price, currentTime)
+
+			if err != nil {
+				return err
+			}
+
+			message := fmt.Sprintf("Asset sold: {Price: %v Amount: %v Value: %v}", price, asset.Amount, price*asset.Amount)
+			err = a.eventLogsRepository.Create("sell", message)
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+
+	return nil
+}
+
 // OnTickerChange do operations based on asset new price
 func (a *App) OnTickerChange(ask, bid float32, currentTime time.Time) {
 
 	a.decisionMaker.NewValue(ask, currentTime)
 	a.eventLogsRepository.Create("btc price change", fmt.Sprintf("BTC PRICE: %v", ask))
 
-	ok, err := a.decisionMaker.ShouldBuy(ask, currentTime)
-	if ok && err == nil {
-		amount, err := a.decisionMaker.HowMuchAmountShouldBuy(ask)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		accountAmount, err := a.accountService.GetAmount()
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if accountAmount > amount*ask {
-			err := a.trader.Buy(amount, ask, currentTime)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			message := fmt.Sprintf("Asset bought: {Price: %v Amount: %v Value: %v}", ask, amount, amount*ask)
-			err = a.eventLogsRepository.Create("buy", message)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			a.eventLogsRepository.Create("Insuffucient Funds", fmt.Sprintf("want to spend %.4fBTC*%.2f$=%v, have %.2f in account", amount, ask, amount*ask, accountAmount))
-		}
-	}
-
-	assets, err := a.assetsRepository.FindPendingAssets()
+	err := a.DecideToBuy(ask, currentTime)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, asset := range *assets {
-		if ok, err := a.decisionMaker.ShouldSell(&asset, ask, currentTime); ok && err == nil {
+	err = a.DecideToSell(ask, currentTime)
 
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			err := a.trader.Sell(&asset, ask, currentTime)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			message := fmt.Sprintf("Asset sold: {Price: %v Amount: %v Value: %v}", ask, asset.Amount, ask*asset.Amount)
-			err = a.eventLogsRepository.Create("sell", message)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-		}
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	err = a.CheckEventLogs()

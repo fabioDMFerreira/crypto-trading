@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io"
 	"log"
@@ -68,21 +69,19 @@ func main() {
 		"XRP":      xrpdatahistory.LastYearMinute,
 	}
 
-	for asset, csvFile := range assetsPricesFiles {
-		repo := db.NewRepository(collection)
+	repo := db.NewRepository(collection)
 
-		err = repo.BulkDelete(bson.M{"asset": asset})
+	for asset, csvFile := range assetsPricesFiles {
+		err := repo.BulkDelete(bson.M{"asset": asset})
 
 		if err != nil {
-			log.Fatal("error on bulk deleting: ", err)
+			log.Fatalf("error on bulk deleting: %v", err)
 		}
 
-		_, currentFilePath, _, _ := runtime.Caller(0)
-		currentDir := path.Dir(currentFilePath)
-		historyFile, err := collectors.GetCsv(fmt.Sprintf("%v/../../data-history/%v", currentDir, csvFile))
+		historyFile, err := readHistoryFile(csvFile)
 
 		if err != nil {
-			log.Fatal("error on getting cv: ", err)
+			log.Fatalf("error on getting cv: %v", err)
 		}
 
 		// read header
@@ -91,50 +90,87 @@ func main() {
 			log.Fatalf("Error on reading header file: %v", err)
 		}
 
-		var documents []bson.M
-		counter := 0
+		assetsPrices, err := getFileAssetsPrices(repo, asset, historyFile)
 
-		for {
-			// Read each record from csv
-			record, err := historyFile.Read()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Fatal(err)
-			}
+		err = batchBulkCreate(repo.BulkCreate, assetsPrices, bulkUpdateElements)
 
-			priceStr := strings.ReplaceAll(record[1], ",", "")
-			price, err := strconv.ParseFloat(priceStr, 32)
-
-			if err != nil {
-				log.Fatalf("Error on converting price from file:\n%v", err)
-			}
-
-			unixTime, err := strconv.ParseInt(record[0], 10, 64)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			documents = append(documents,
-				bson.M{
-					"asset": asset,
-					"value": price,
-					"date":  time.Unix(unixTime/1000, 0),
-				},
-			)
-
-			if len(documents) == bulkUpdateElements {
-				err := repo.BulkCreate(&documents)
-
-				if err != nil {
-					log.Fatal("error on bulking create: ", err)
-				}
-
-				counter += bulkUpdateElements
-				fmt.Printf("\rAsset: %v Created: %d", asset, counter)
-				documents = []bson.M{}
-			}
+		if err != nil {
+			log.Fatalf("Error on bulk creating assets prices: %v", err)
 		}
 	}
+}
+
+func batchBulkCreate(BulkCreate func(*[]bson.M) error, documents *[]bson.M, limit int) error {
+	counter := 0
+	totalDocuments := len(*documents)
+
+	for counter != totalDocuments {
+		var nElements int
+
+		if counter+limit > totalDocuments {
+			nElements = totalDocuments - counter
+		} else {
+			nElements = limit
+		}
+
+		docsToCreate := make([]bson.M, nElements)
+
+		copy(docsToCreate, (*documents)[counter:counter+nElements])
+
+		err := BulkCreate(&docsToCreate)
+
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("%v %v\n", counter, len(docsToCreate))
+		counter += len(docsToCreate)
+		fmt.Printf("\rCreated: %d/%d", counter, totalDocuments)
+	}
+
+	return nil
+}
+
+func getFileAssetsPrices(repo *db.Repository, asset string, historyFile *csv.Reader) (*[]bson.M, error) {
+
+	var documents []bson.M
+
+	for {
+		// Read each record from csv
+		record, err := historyFile.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		priceStr := strings.ReplaceAll(record[1], ",", "")
+		price, err := strconv.ParseFloat(priceStr, 32)
+
+		if err != nil {
+			log.Fatalf("Error on converting price from file:\n%v", err)
+		}
+
+		unixTime, err := strconv.ParseInt(record[0], 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		documents = append(documents,
+			bson.M{
+				"asset": asset,
+				"value": price,
+				"date":  time.Unix(unixTime/1000, 0),
+			},
+		)
+	}
+
+	return &documents, nil
+}
+
+func readHistoryFile(fileName string) (*csv.Reader, error) {
+	_, currentFilePath, _, _ := runtime.Caller(0)
+	currentDir := path.Dir(currentFilePath)
+	return collectors.GetCsv(fmt.Sprintf("%v/../../data-history/%v", currentDir, fileName))
 }
