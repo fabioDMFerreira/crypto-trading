@@ -6,6 +6,10 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: crypto-trading
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ~/mongo/crypto-trading-db:/data/db
     ports:
       - '27017:27017'
   frontend:

@@ -3,6 +3,7 @@ tmp/
 xp/
 crypto-trading
 .DS_Store
-reports
+reports/benchmark-reports/*
+reports/orders-reports/*
 bin
 coverage.txt

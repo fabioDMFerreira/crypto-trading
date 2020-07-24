@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
@@ -74,10 +75,12 @@ func main() {
 
 	iterations := ExecuteBenchmark(reportsCh)
 
-	startDate := time.Now().Format("2006-01-02T15:04:05Z07:00")
-	f, err := os.Create(fmt.Sprintf("./reports/benchmark-reports/benchmark-%v.csv", startDate))
+	startDate := time.Now().Format("2006-01-02")
+	reportsFileName, _ := filepath.Abs(fmt.Sprintf("./reports/benchmark-reports/benchmark-%v.csv", startDate))
+	// f, err := os.Create("./reports/benchmark-reports/benchmark.csv")
+	f, err := os.Create(reportsFileName)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("error on creating report file: ", err)
 	}
 
 	f.Write([]byte("Case,Buys,Sells,Sells Pending,Initial Amount,Final Amount,Profit\n"))
