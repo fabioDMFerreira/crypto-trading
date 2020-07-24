@@ -18,6 +18,13 @@ type Notification struct {
 	CreatedAt           time.Time          `json:"createdAt"`
 }
 
+// NotificationOptions has notifications service options
+type NotificationOptions struct {
+	Receiver       string
+	Sender         string
+	SenderPassword string
+}
+
 // NotificationsService interacts with notifications
 type NotificationsService interface {
 	FindLastEventLogsNotificationDate() (time.Time, error)

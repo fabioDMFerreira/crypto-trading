@@ -21,6 +21,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/statistics"
 	"github.com/fabiodmferreira/crypto-trading/trader"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func main() {
@@ -49,6 +50,27 @@ func main() {
 	}
 
 	mongoDatabase := dbClient.Database(mongoDB)
+
+	var brokerService domain.Broker
+	if appEnv == "production" {
+		brokerService = broker.NewKrakenBroker(krakenAPI)
+	} else {
+		fmt.Println("Broker mocked!")
+		brokerService = broker.NewBrokerMock()
+	}
+
+	notificationOptions := domain.NotificationOptions{
+		Receiver:       notificationsReceiver,
+		Sender:         notificationsSender,
+		SenderPassword: notificationsSenderPassword,
+	}
+
+	application := setupApplication(mongoDatabase, brokerService, notificationOptions)
+
+	application.Start()
+}
+
+func setupApplication(mongoDatabase *mongo.Database, brokerService domain.Broker, notificationOptions domain.NotificationOptions) *app.App {
 	assetsCollection := mongoDatabase.Collection(db.ASSETS_COLLECTION)
 	eventLogsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
 	notificationsCollection := mongoDatabase.Collection(db.NOTIFICATIONS_COLLECTION)
@@ -69,14 +91,6 @@ func main() {
 	assetsPricesService.FetchAndStoreAssetPrices("BTC", time.Now())
 	fmt.Println("Completed")
 
-	var brokerService domain.Broker
-	if appEnv == "production" {
-		brokerService = broker.NewKrakenBroker(krakenAPI)
-	} else {
-		fmt.Println("Broker mocked!")
-		brokerService = broker.NewBrokerMock()
-	}
-
 	var accountService *accounts.AccountService
 	accountDocument, err := accountsRepository.FindByBroker("kraken")
 	if err != nil {
@@ -91,9 +105,7 @@ func main() {
 	dbTrader := trader.NewTrader(assetsRepository, accountService, brokerService)
 	notificationsService := notifications.NewNotificationsService(
 		notificationsRepository,
-		notificationsReceiver,
-		notificationsSender,
-		notificationsSenderPassword,
+		notificationOptions,
 	)
 
 	decisionmakerOptions :=
@@ -135,7 +147,5 @@ func main() {
 	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, pricesStatistics, growthStatistics, assetsPricesService)
 
 	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01}, krakenAPI)
-	application := app.NewApp(notificationsService, decisionMaker, eventLogsRepository, assetsRepository, dbTrader, accountService, krakenCollector)
-
-	application.Start()
+	return app.NewApp(notificationsService, decisionMaker, eventLogsRepository, assetsRepository, dbTrader, accountService, krakenCollector)
 }

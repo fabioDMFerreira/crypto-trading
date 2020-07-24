@@ -16,24 +16,20 @@ type Notification domain.Notification
 
 type NotificationsService struct {
 	NotificationsRepository *NotificationsRepository
-	Receiver                string
-	Sender                  string
-	SenderPassword          string
+	options                 domain.NotificationOptions
 }
 
 func NewNotificationsService(
 	notificationsRepository *NotificationsRepository,
-	receiver string,
-	sender string,
-	senderPassword string,
+	options domain.NotificationOptions,
 ) *NotificationsService {
-	return &NotificationsService{notificationsRepository, receiver, sender, senderPassword}
+	return &NotificationsService{notificationsRepository, options}
 }
 
 func (n *NotificationsService) SendEmail(subject, body string) error {
-	from := n.Sender
-	pass := n.SenderPassword
-	to := n.Receiver
+	from := n.options.Sender
+	pass := n.options.SenderPassword
+	to := n.options.Receiver
 
 	msg := "From: " + from + "\n" +
 		"To: " + to + "\n" +
@@ -57,7 +53,7 @@ func (n *NotificationsService) FindLastEventLogsNotificationDate() (time.Time, e
 func (n *NotificationsService) CreateEmailNotification(subject, message, notificationType string) error {
 	notification := &Notification{
 		ID:                  primitive.NewObjectID(),
-		To:                  n.Receiver,
+		To:                  n.options.Receiver,
 		Title:               subject,
 		Message:             message,
 		CreatedAt:           time.Now(),
