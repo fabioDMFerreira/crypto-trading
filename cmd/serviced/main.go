@@ -65,48 +65,47 @@ func main() {
 		SenderPassword: notificationsSenderPassword,
 	}
 
-	application := setupApplication(mongoDatabase, brokerService, notificationOptions)
+	assetsCollection := mongoDatabase.Collection(db.ASSETS_COLLECTION)
+	assetsRepository := assets.NewRepository(db.NewRepository(assetsCollection))
+
+	eventLogsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
+
+	accountService := setupAccountService(mongoDatabase, assetsRepository)
+
+	notificationsService := setupNotificationsService(mongoDatabase, notificationOptions)
+	decisionMaker := setupDecisionMaker(assetsRepository, mongoDatabase)
+	eventLogsRepository := eventlogs.NewEventLogsRepository(eventLogsCollection)
+	dbTrader := trader.NewTrader(assetsRepository, accountService, brokerService)
+	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01}, krakenAPI)
+
+	application := app.NewApp(
+		notificationsService,
+		decisionMaker,
+		eventLogsRepository,
+		assetsRepository,
+		dbTrader,
+		accountService,
+		krakenCollector,
+	)
 
 	application.Start()
 }
 
-func setupApplication(mongoDatabase *mongo.Database, brokerService domain.Broker, notificationOptions domain.NotificationOptions) *app.App {
-	assetsCollection := mongoDatabase.Collection(db.ASSETS_COLLECTION)
-	eventLogsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
+func setupNotificationsService(mongoDatabase *mongo.Database, notificationOptions domain.NotificationOptions) domain.NotificationsService {
 	notificationsCollection := mongoDatabase.Collection(db.NOTIFICATIONS_COLLECTION)
-	accountsCollection := mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)
-	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
 
-	// instantiate repositories
-	assetsRepository := assets.NewRepository(db.NewRepository(assetsCollection))
-	eventLogsRepository := eventlogs.NewEventLogsRepository(eventLogsCollection)
 	notificationsRepository := notifications.NewNotificationsRepository(notificationsCollection)
-	accountsRepository := accounts.NewAccountsRepository(accountsCollection)
-	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
 
-	// instantiate services
-	assetsPricesService := assetsprices.NewService(assetsPricesRepository)
-
-	fmt.Println("Fetching assets prices from coindesk...")
-	assetsPricesService.FetchAndStoreAssetPrices("BTC", time.Now())
-	fmt.Println("Completed")
-
-	var accountService *accounts.AccountService
-	accountDocument, err := accountsRepository.FindByBroker("kraken")
-	if err != nil {
-		accountDocument, err = accountsRepository.Create("kraken", 5000)
-
-		if err != nil {
-			log.Fatal("creating account", err)
-		}
-	}
-	accountService = accounts.NewAccountService(accountDocument.ID, accountsRepository, assetsRepository)
-
-	dbTrader := trader.NewTrader(assetsRepository, accountService, brokerService)
-	notificationsService := notifications.NewNotificationsService(
+	return notifications.NewNotificationsService(
 		notificationsRepository,
 		notificationOptions,
 	)
+}
+
+func setupDecisionMaker(assetsRepository domain.AssetsRepository, mongoDatabase *mongo.Database) domain.DecisionMaker {
+	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
+	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
+	assetsPricesService := assetsprices.NewService(assetsPricesRepository)
 
 	decisionmakerOptions :=
 		domain.DecisionMakerOptions{
@@ -117,7 +116,6 @@ func setupApplication(mongoDatabase *mongo.Database, brokerService domain.Broker
 			GrowthIncreaseLimit:      100,
 			MinutesToCollectNewPoint: 15,
 		}
-
 	numberOfPointsHold := 5000
 
 	statisticsOptions := domain.StatisticsOptions{NumberOfPointsHold: numberOfPointsHold}
@@ -126,6 +124,10 @@ func setupApplication(mongoDatabase *mongo.Database, brokerService domain.Broker
 	pricesStatistics := statistics.NewStatistics(statisticsOptions, macd)
 	growthMacd := statistics.NewMACDContainer(macdParams)
 	growthStatistics := statistics.NewStatistics(statisticsOptions, growthMacd)
+
+	fmt.Println("Fetching assets prices from coindesk...")
+	assetsPricesService.FetchAndStoreAssetPrices("BTC", time.Now())
+	fmt.Println("Completed")
 
 	lastAssetsPrices, err := assetsPricesService.GetLastAssetsPrices("BTC", numberOfPointsHold)
 
@@ -144,8 +146,21 @@ func setupApplication(mongoDatabase *mongo.Database, brokerService domain.Broker
 	}
 	fmt.Println("Completed")
 
-	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, pricesStatistics, growthStatistics, assetsPricesService)
+	return decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, pricesStatistics, growthStatistics, assetsPricesService)
+}
 
-	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01}, krakenAPI)
-	return app.NewApp(notificationsService, decisionMaker, eventLogsRepository, assetsRepository, dbTrader, accountService, krakenCollector)
+func setupAccountService(mongoDatabase *mongo.Database, assetsRepository domain.AssetsRepository) domain.AccountService {
+	accountsCollection := mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)
+	accountsRepository := accounts.NewAccountsRepository(accountsCollection)
+
+	accountDocument, err := accountsRepository.FindByBroker("kraken")
+	if err != nil {
+		accountDocument, err = accountsRepository.Create("kraken", 5000)
+
+		if err != nil {
+			log.Fatal("creating account", err)
+		}
+	}
+
+	return accounts.NewAccountService(accountDocument.ID, accountsRepository, assetsRepository)
 }
