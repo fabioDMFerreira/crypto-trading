@@ -51,16 +51,6 @@ func (kc *KrakenCollector) Start() {
 	}
 
 	defer c.Close()
-	// send message
-	// event := Event{event: "heartbeat"}
-	// message, err := json.Marshal(event)
-	// if message != []byte(`{"event":"heartbeat"}`) {
-	// 	log.Fatal()
-	// }
-	// fmt.Printf("%v\n", string(message))
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 
 	err = c.WriteMessage(
 		websocket.TextMessage,
@@ -93,38 +83,45 @@ func (kc *KrakenCollector) Start() {
 			// https://eagain.net/articles/go-json-array-to-struct/
 			msg := []interface{}{0, &TickerMessage{}, "", ""}
 			err = json.Unmarshal(message, &msg)
-			if err == nil {
-				askStr := msg[1].(*TickerMessage).A[0].(string)
-				// bidStr := msg[1].(*TickerMessage).B[0].(string)
-				ask, err1 := strconv.ParseFloat(askStr, 32)
-				// bid, err2 := strconv.ParseFloat(bidStr, 32)
 
-				if err1 == nil {
-					price := float32(ask)
-
-					changeVariance := kc.lastTickerPrice * kc.options.PriceVariationDetection
-
-					if kc.lastTickerPrice == 0 ||
-						price > kc.lastTickerPrice+changeVariance ||
-						price < kc.lastTickerPrice-changeVariance {
-						kc.lastTickerPrice = price
-						for _, observable := range kc.observables {
-							observable(price, price, time.Now())
-						}
-					}
-				} else {
-					fmt.Printf("%v", err1)
-				}
-
+			if err != nil {
+				fmt.Printf("error on parsing message: %v", err)
 			}
-			// else {
-			// 	fmt.Println("%v", string(message))
-			// }
-			// msgTicker := msg[1]
-			// fmt.Printf("%v", msgTicker)
-			// fmt.Println(string(message))
+
+			err = kc.HandlePriceChangeMessage(msg)
+
+			if err != nil {
+				fmt.Printf("error on handling price change message: %v", err)
+			}
 		}
 	}
+}
+
+// HandlePriceChangeMessage receives message, extracts parameters and call observable functions with the current asset price
+func (kc *KrakenCollector) HandlePriceChangeMessage(msg []interface{}) error {
+	askStr := msg[1].(*TickerMessage).A[0].(string)
+	// bidStr := msg[1].(*TickerMessage).B[0].(string)
+	ask, err := strconv.ParseFloat(askStr, 32)
+	// bid, err2 := strconv.ParseFloat(bidStr, 32)
+
+	if err != nil {
+		return err
+	}
+
+	price := float32(ask)
+
+	changeVariance := kc.lastTickerPrice * kc.options.PriceVariationDetection
+
+	if kc.lastTickerPrice == 0 ||
+		price > kc.lastTickerPrice+changeVariance ||
+		price < kc.lastTickerPrice-changeVariance {
+		kc.lastTickerPrice = price
+		for _, observable := range kc.observables {
+			observable(price, price, time.Now())
+		}
+	}
+
+	return nil
 }
 
 // Regist add function to be executed when ticker price changes
