@@ -48,6 +48,12 @@ type BenchmarkResult struct {
 	Err    error
 }
 
+type BenchmarkAssetsInfo struct {
+	Buys         [][]float32
+	Sells        [][]float32
+	SellsPending int
+}
+
 // Service is a service with all methods to interact with benchmark related functions
 type Service struct {
 	repository                           domain.BenchmarksRepository
@@ -134,14 +140,27 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 
 	benchmarkApplication.Start()
 
-	var sells int
 	assets, _ := benchmarkApplication.FetchAssets()
-	for _, asset := range *assets {
-		if asset.Sold {
-			sells++
-		} else {
-		}
+
+	benchmarkAssetsInfo := s.getBenchmarkAssetsInfo(assets)
+
+	amount, _ := benchmarkApplication.GetAccountAmount()
+
+	output := domain.BenchmarkOutput{
+		Buys:         benchmarkAssetsInfo.Buys,
+		Sells:        benchmarkAssetsInfo.Sells,
+		SellsPending: benchmarkAssetsInfo.SellsPending,
+		FinalAmount:  amount,
+		Assets:       assets,
+		Balances:     balances,
 	}
+
+	return &output, nil
+}
+
+// getBenchmarkAssetsInfo transverse assets and generate info to be saved on benchmark output
+func (s *Service) getBenchmarkAssetsInfo(assets *[]domain.Asset) BenchmarkAssetsInfo {
+	var sells int
 
 	Buys := [][]float32{}
 	Sells := [][]float32{}
@@ -151,21 +170,15 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 
 		if asset.Sold {
 			Sells = append(Sells, []float32{float32(asset.SellTime.Unix()) * 1000, asset.SellPrice})
+			sells++
 		}
 	}
 
-	amount, _ := benchmarkApplication.GetAccountAmount()
-
-	output := domain.BenchmarkOutput{
+	return BenchmarkAssetsInfo{
 		Buys:         Buys,
 		Sells:        Sells,
 		SellsPending: len(*assets) - sells,
-		FinalAmount:  amount,
-		Assets:       assets,
-		Balances:     balances,
 	}
-
-	return &output, nil
 }
 
 // setupApplication create the necessary application to run the benchmark
