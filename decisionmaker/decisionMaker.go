@@ -61,15 +61,9 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 		return false, err
 	}
 
-	if assetWithCloserPrice {
-		return false, nil
-	}
-
-	if float32(dm.statistics.GetAverage()-dm.statistics.GetStandardDeviation()) < price {
-		return false, nil
-	}
-
-	if dm.currentChange < dm.options.GrowthDecreaseLimit {
+	if assetWithCloserPrice ||
+		float32(dm.statistics.GetAverage()-dm.statistics.GetStandardDeviation()) < price ||
+		dm.currentChange < dm.options.GrowthDecreaseLimit {
 		return false, nil
 	}
 
@@ -78,15 +72,9 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 
 // ShouldSell returns true or false if it is a good time to sell
 func (dm *DecisionMaker) ShouldSell(asset *domain.Asset, price float32, byTime time.Time) (bool, error) {
-	if !dm.statistics.HasRequiredNumberOfPoints() {
-		return false, nil
-	}
-
-	if asset.BuyPrice+(asset.BuyPrice*dm.options.MinimumProfitPerSold) > price {
-		return false, nil
-	}
-
-	if float32(dm.statistics.GetAverage()+dm.statistics.GetStandardDeviation()) > price {
+	if !dm.statistics.HasRequiredNumberOfPoints() ||
+		asset.BuyPrice+(asset.BuyPrice*dm.options.MinimumProfitPerSold) > price ||
+		float32(dm.statistics.GetAverage()+dm.statistics.GetStandardDeviation()) > price {
 		return false, nil
 	}
 
