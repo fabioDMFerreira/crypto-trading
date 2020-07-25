@@ -21,6 +21,8 @@ type AccountsRepository interface {
 // AccountServiceReader reads information about one account
 type AccountServiceReader interface {
 	GetAmount() (float32, error)
+	FindPendingAssets() (*[]Asset, error)
+	FindAllAssets() (*[]Asset, error)
 }
 
 // AccountService interacts with one account

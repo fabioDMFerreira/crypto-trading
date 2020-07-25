@@ -84,31 +84,32 @@ func (kc *KrakenCollector) Start() {
 			msg := []interface{}{0, &TickerMessage{}, "", ""}
 			err = json.Unmarshal(message, &msg)
 
-			if err != nil {
-				fmt.Printf("error on parsing message: %v", err)
+			if err == nil {
+				askStr := msg[1].(*TickerMessage).A[0].(string)
+				// bidStr := msg[1].(*TickerMessage).B[0].(string)
+				ask, err := strconv.ParseFloat(askStr, 32)
+				// bid, err2 := strconv.ParseFloat(bidStr, 32)
+
+				if err != nil {
+					fmt.Printf("error parsing price in message: %v", err)
+					return
+				}
+
+				price := float32(ask)
+
+				err = kc.HandlePriceChangeMessage(price)
+
+				if err != nil {
+					fmt.Printf("error on handling price change message: %v", err)
+				}
 			}
 
-			err = kc.HandlePriceChangeMessage(msg)
-
-			if err != nil {
-				fmt.Printf("error on handling price change message: %v", err)
-			}
 		}
 	}
 }
 
 // HandlePriceChangeMessage receives message, extracts parameters and call observable functions with the current asset price
-func (kc *KrakenCollector) HandlePriceChangeMessage(msg []interface{}) error {
-	askStr := msg[1].(*TickerMessage).A[0].(string)
-	// bidStr := msg[1].(*TickerMessage).B[0].(string)
-	ask, err := strconv.ParseFloat(askStr, 32)
-	// bid, err2 := strconv.ParseFloat(bidStr, 32)
-
-	if err != nil {
-		return err
-	}
-
-	price := float32(ask)
+func (kc *KrakenCollector) HandlePriceChangeMessage(price float32) error {
 
 	changeVariance := kc.lastTickerPrice * kc.options.PriceVariationDetection
 

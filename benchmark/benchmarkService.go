@@ -14,8 +14,6 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 	"github.com/fabiodmferreira/crypto-trading/decisionmaker"
 	"github.com/fabiodmferreira/crypto-trading/domain"
-	"github.com/fabiodmferreira/crypto-trading/eventlogs"
-	"github.com/fabiodmferreira/crypto-trading/notifications"
 	"github.com/fabiodmferreira/crypto-trading/statistics"
 	"github.com/fabiodmferreira/crypto-trading/trader"
 	"go.mongodb.org/mongo-driver/bson"
@@ -203,13 +201,11 @@ func (s *Service) setupApplication(input Input) (*app.App, error) {
 
 	collector := collectors.NewFileTickerCollector(input.CollectorOptions)
 
-	notificationsService := &notifications.NotificationsMock{}
-	logService := &eventlogs.EventLogsServiceMock{}
-	accountService := accounts.NewAccountServiceInMemory(float32(input.AccountInitialAmount))
+	accountService := accounts.NewAccountServiceInMemory(float32(input.AccountInitialAmount), assetsRepository)
 	broker := broker.NewBrokerMock()
 	trader := trader.NewTrader(assetsRepository, accountService, broker)
 
-	application := app.NewApp(notificationsService, decisionMaker, logService, assetsRepository, trader, accountService, collector)
+	application := app.NewApp(collector, decisionMaker, trader, accountService)
 
 	return application, err
 }

@@ -29,4 +29,5 @@ type NotificationOptions struct {
 type NotificationsService interface {
 	FindLastEventLogsNotificationDate() (time.Time, error)
 	CreateEmailNotification(subject, message, notificationType string) error
+	ShouldSendNotification() bool
 }

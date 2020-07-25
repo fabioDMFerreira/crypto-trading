@@ -21,6 +21,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/statistics"
 	"github.com/fabiodmferreira/crypto-trading/trader"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -79,14 +80,15 @@ func main() {
 	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01}, krakenAPI)
 
 	application := app.NewApp(
-		notificationsService,
+		krakenCollector,
 		decisionMaker,
-		eventLogsRepository,
-		assetsRepository,
 		dbTrader,
 		accountService,
-		krakenCollector,
 	)
+
+	application.SetEventsLog(eventLogsRepository)
+
+	application.RegistOnTickerChange(NotificationJob(notificationsService, eventLogsRepository, accountService, assetsRepository))
 
 	application.Start()
 }
@@ -94,9 +96,9 @@ func main() {
 func setupNotificationsService(mongoDatabase *mongo.Database, notificationOptions domain.NotificationOptions) domain.NotificationsService {
 	notificationsCollection := mongoDatabase.Collection(db.NOTIFICATIONS_COLLECTION)
 
-	notificationsRepository := notifications.NewNotificationsRepository(notificationsCollection)
+	notificationsRepository := notifications.NewRepository(notificationsCollection)
 
-	return notifications.NewNotificationsService(
+	return notifications.NewService(
 		notificationsRepository,
 		notificationOptions,
 	)
@@ -151,7 +153,7 @@ func setupDecisionMaker(assetsRepository domain.AssetsRepository, mongoDatabase 
 
 func setupAccountService(mongoDatabase *mongo.Database, assetsRepository domain.AssetsRepository) domain.AccountService {
 	accountsCollection := mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)
-	accountsRepository := accounts.NewAccountsRepository(accountsCollection)
+	accountsRepository := accounts.NewRepository(accountsCollection)
 
 	accountDocument, err := accountsRepository.FindByBroker("kraken")
 	if err != nil {
@@ -163,4 +165,80 @@ func setupAccountService(mongoDatabase *mongo.Database, assetsRepository domain.
 	}
 
 	return accounts.NewAccountService(accountDocument.ID, accountsRepository, assetsRepository)
+}
+
+func NotificationJob(
+	notificationsService domain.NotificationsService,
+	eventLogsRepository domain.EventsLog,
+	accountService domain.AccountService,
+	assetsRepository domain.AssetsRepository) func(ask, bid float32, date time.Time) {
+	return func(ask, bid float32, date time.Time) {
+
+		shouldSendNotification := notificationsService.ShouldSendNotification()
+
+		if shouldSendNotification {
+			eventLogs, err := eventLogsRepository.FindAllToNotify()
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			pendingAssets, err := accountService.FindPendingAssets()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			accountAmount, err := accountService.GetAmount()
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			lastNotificationTime, err := notificationsService.FindLastEventLogsNotificationDate()
+
+			if err != nil {
+				fmt.Println(err)
+				lastNotificationTime = time.Now()
+			}
+
+			startDate, endDate := lastNotificationTime, time.Now()
+			balance, err := assetsRepository.GetBalance(startDate, endDate)
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			subject := "Crypto-Trading: Report"
+			message, err := notifications.GenerateEventlogReportEmail(accountAmount, len(*pendingAssets), balance, startDate, endDate, eventLogs, pendingAssets)
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			err = notificationsService.CreateEmailNotification(subject, message.String(), "eventlogs")
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			var eventLogsIds []primitive.ObjectID
+
+			for _, event := range *eventLogs {
+				eventLogsIds = append(eventLogsIds, event.ID)
+			}
+			err = eventLogsRepository.MarkNotified(eventLogsIds)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+		}
+
+	}
 }
