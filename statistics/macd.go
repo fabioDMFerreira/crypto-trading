@@ -60,27 +60,34 @@ func NewMACDContainer(macdParams MACDParams, params ...[]float64) *MACDContainer
 	return &MACDContainer{macdParams, fastEMA, slowEMA, macd, lagEMA, histogram, holdPoints}
 }
 
+func (mc *MACDContainer) updateEMA(p float64, ema *[]float64, params int) {
+	if len(mc.holdPoints) > params {
+		newValue := EMA(p, params, (*ema)[len(*ema)-1])
+		temp := append(*ema, newValue)
+		*ema = temp
+	} else if len(mc.holdPoints) == params {
+		newValue := Average(mc.holdPoints)
+		*ema = []float64{newValue}
+	}
+}
+
+func (mc *MACDContainer) updateSlowEMA(p float64) {
+	mc.updateEMA(p, &mc.SlowEMA, mc.params.Slow)
+}
+
+func (mc *MACDContainer) updateFastEMA(p float64) {
+	mc.updateEMA(p, &mc.FastEMA, mc.params.Fast)
+}
+
 // AddPoint users new point to calculate new MACD value
 func (mc *MACDContainer) AddPoint(p float64) {
 	if len(mc.holdPoints) <= mc.params.Slow {
 		mc.holdPoints = append(mc.holdPoints, p)
 	}
 
-	if len(mc.holdPoints) > mc.params.Slow {
-		slow := EMA(p, mc.params.Slow, mc.SlowEMA[len(mc.SlowEMA)-1])
-		mc.SlowEMA = append(mc.SlowEMA, slow)
-	} else if len(mc.holdPoints) == mc.params.Slow {
-		slow := Average(mc.holdPoints)
-		mc.SlowEMA = []float64{slow}
-	}
+	mc.updateSlowEMA(p)
 
-	if len(mc.holdPoints) > mc.params.Fast {
-		fast := EMA(p, mc.params.Fast, mc.FastEMA[len(mc.FastEMA)-1])
-		mc.FastEMA = append(mc.FastEMA, fast)
-	} else if len(mc.holdPoints) == mc.params.Fast {
-		fast := Average(mc.holdPoints)
-		mc.FastEMA = []float64{fast}
-	}
+	mc.updateFastEMA(p)
 
 	if len(mc.SlowEMA) > 0 && len(mc.FastEMA) > 0 {
 		macd := mc.FastEMA[len(mc.FastEMA)-1] - mc.SlowEMA[len(mc.SlowEMA)-1]
