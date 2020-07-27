@@ -177,57 +177,58 @@ func NotificationJob(
 
 		shouldSendNotification := notificationsService.ShouldSendNotification()
 
-		if shouldSendNotification {
-			eventLogs, err := eventLogsRepository.FindAllToNotify()
-
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			pendingAssets, err := accountService.FindPendingAssets()
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			accountAmount, err := accountService.GetAmount()
-
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			lastNotificationTime, err := notificationsService.FindLastEventLogsNotificationDate()
-
-			if err != nil {
-				fmt.Println(err)
-				lastNotificationTime = time.Now()
-			}
-
-			startDate, endDate := lastNotificationTime, time.Now()
-			balance, err := assetsRepository.GetBalance(startDate, endDate)
-
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			message, err := notifications.GenerateEventlogReportEmail(accountAmount, balance, startDate, endDate, eventLogs, pendingAssets)
-
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			err = sendReport(notificationsService, message)
-
-			if err != nil {
-				markLogsEventsAsNotified(eventLogsRepository, eventLogs)
-			}
-
+		if !shouldSendNotification {
+			return
 		}
 
+		eventLogs, err := eventLogsRepository.FindAllToNotify()
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		pendingAssets, err := accountService.FindPendingAssets()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		accountAmount, err := accountService.GetAmount()
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		lastNotificationTime, err := notificationsService.FindLastEventLogsNotificationDate()
+
+		if err != nil {
+			fmt.Println(err)
+			lastNotificationTime = time.Now()
+		}
+
+		startDate, endDate := lastNotificationTime, time.Now()
+
+		balance, err := assetsRepository.GetBalance(startDate, endDate)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		message, err := notifications.GenerateEventlogReportEmail(accountAmount, balance, startDate, endDate, eventLogs, pendingAssets)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		err = sendReport(notificationsService, message)
+
+		if err != nil {
+			markLogsEventsAsNotified(eventLogsRepository, eventLogs)
+		}
 	}
 }
 
