@@ -17,7 +17,6 @@ func TestGenerateEventlogReportEmail(t *testing.T) {
 		date := time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC)
 		got, err := GenerateEventlogReportEmail(
 			5000,
-			10,
 			-20,
 			date,
 			date,

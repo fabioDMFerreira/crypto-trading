@@ -27,12 +27,11 @@ type PendingAssetsEmailFormat struct {
 
 func GenerateEventlogReportEmail(
 	amount float32,
-	totalAssetsPending int,
 	balance float32,
 	startDate time.Time,
 	endDate time.Time,
 	eventsLog *[]domain.EventLog,
-	assets *[]domain.Asset,
+	pendingAssets *[]domain.Asset,
 ) (*bytes.Buffer, error) {
 	appEnv := os.Getenv("APP_ENV")
 
@@ -44,7 +43,7 @@ func GenerateEventlogReportEmail(
 
 	pendingAssetsFormatted := []PendingAssetsEmailFormat{}
 
-	for _, asset := range *assets {
+	for _, asset := range *pendingAssets {
 		pendingAssetsFormatted = append(pendingAssetsFormatted, PendingAssetsEmailFormat{asset.BuyTime.Format("02-Jan-2006 15:04"), fmt.Sprintf("%.2fBTC", asset.Amount), fmt.Sprintf("%.2f€", asset.BuyPrice), asset.ID.Hex()})
 
 	}
@@ -75,7 +74,7 @@ func GenerateEventlogReportEmail(
 		AssetsPending      []PendingAssetsEmailFormat
 	}{
 		AccountAmount:      fmt.Sprintf("%.2f€", amount),
-		TotalAssetsPending: fmt.Sprintf("%d", totalAssetsPending),
+		TotalAssetsPending: fmt.Sprintf("%d", len(*pendingAssets)),
 		Balance:            fmt.Sprintf("%.2f€", balance),
 		StartDate:          startDate.Format("02-Jan-2006 15:04"),
 		EndDate:            endDate.Format("02-Jan-2006 15:04"),

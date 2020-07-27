@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -212,33 +213,46 @@ func NotificationJob(
 				return
 			}
 
-			subject := "Crypto-Trading: Report"
-			message, err := notifications.GenerateEventlogReportEmail(accountAmount, len(*pendingAssets), balance, startDate, endDate, eventLogs, pendingAssets)
+			message, err := notifications.GenerateEventlogReportEmail(accountAmount, balance, startDate, endDate, eventLogs, pendingAssets)
 
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 
-			err = notificationsService.CreateEmailNotification(subject, message.String(), "eventlogs")
+			err = sendReport(notificationsService, message)
 
 			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			var eventLogsIds []primitive.ObjectID
-
-			for _, event := range *eventLogs {
-				eventLogsIds = append(eventLogsIds, event.ID)
-			}
-			err = eventLogsRepository.MarkNotified(eventLogsIds)
-			if err != nil {
-				fmt.Println(err)
-				return
+				markLogsEventsAsNotified(eventLogsRepository, eventLogs)
 			}
 
 		}
 
+	}
+}
+
+func sendReport(notificationsService domain.NotificationsService, message *bytes.Buffer) error {
+	subject := "Crypto-Trading: Report"
+
+	err := notificationsService.CreateEmailNotification(subject, message.String(), "eventlogs")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return err
+}
+
+func markLogsEventsAsNotified(eventLogsRepository domain.EventsLog, eventLogs *[]domain.EventLog) {
+	var eventLogsIds []primitive.ObjectID
+
+	for _, event := range *eventLogs {
+		eventLogsIds = append(eventLogsIds, event.ID)
+	}
+
+	err := eventLogsRepository.MarkNotified(eventLogsIds)
+
+	if err != nil {
+		fmt.Println(err)
 	}
 }
