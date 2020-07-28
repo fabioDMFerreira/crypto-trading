@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // BenchmarkInput needed to run benchmark
@@ -47,10 +49,28 @@ type Benchmark struct {
 	CompletedAt time.Time          `json:"completedAt"`
 }
 
+// BenchmarkResult stores benchmark returned value and possible error
+type BenchmarkResult struct {
+	Input  *BenchmarkInput
+	Output *BenchmarkOutput
+	Err    error
+}
+
 // BenchmarksRepository stores and fetches benchmarks
 type BenchmarksRepository interface {
 	FindAll() (*[]Benchmark, error)
 	InsertOne(benchmark *Benchmark) error
 	DeleteByID(id string) error
 	UpdateBenchmarkCompleted(id string, output *BenchmarkOutput) error
+}
+
+type BenchmarkService interface {
+	Create(input BenchmarkInput) (*Benchmark, error)
+	DeleteByID(id string) error
+	FindAll() (*[]Benchmark, error)
+	BulkRun(inputs []BenchmarkInput, c chan BenchmarkResult)
+	Run(input BenchmarkInput, benchmarkID *primitive.ObjectID) (*BenchmarkOutput, error)
+	HandleBenchmark(benchmark *Benchmark) error
+	GetDataSources() map[string]map[string]string
+	AggregateApplicationState(pipeline mongo.Pipeline) (*[]bson.M, error)
 }

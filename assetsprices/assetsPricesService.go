@@ -58,6 +58,7 @@ func (s *Service) FetchAndStoreAssetPrices(asset string, endDate time.Time) erro
 	counter := 0
 
 	TransverseDatesRange(startDate, endDate, func(startDate, endDate time.Time) error {
+		// TODO: Inject method to get remote prices in FetchAndStoreAssetPrices instead of just calling it. It helps on testing the function
 		response, err := s.GetRemotePrices(startDate, endDate, asset)
 
 		if err != nil {

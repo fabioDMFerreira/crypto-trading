@@ -39,13 +39,6 @@ type Input = domain.BenchmarkInput
 // Output is an alias for BenchmarkOutput
 type Output = domain.BenchmarkOutput
 
-// BenchmarkResult stores benchmark returned value and possible error
-type BenchmarkResult struct {
-	Input  *Input
-	Output *Output
-	Err    error
-}
-
 type BenchmarkAssetsInfo struct {
 	Buys         [][]float32
 	Sells        [][]float32
@@ -89,17 +82,17 @@ func (s *Service) FindAll() (*[]domain.Benchmark, error) {
 }
 
 // BulkRun runs multiple benchmarks concurrently
-func (s *Service) BulkRun(inputs []Input, c chan BenchmarkResult) {
+func (s *Service) BulkRun(inputs []Input, c chan domain.BenchmarkResult) {
 	for _, input := range inputs {
 		go s.routineRun(&input, c)
 	}
 }
 
 // ChannelService passes a benchmark output to a channel. Useful to run benchmarks in routines.
-func (s *Service) routineRun(input *Input, done chan BenchmarkResult) {
+func (s *Service) routineRun(input *Input, done chan domain.BenchmarkResult) {
 	result, err := s.Run(*input, nil)
 
-	done <- BenchmarkResult{Input: input, Output: result, Err: err}
+	done <- domain.BenchmarkResult{Input: input, Output: result, Err: err}
 }
 
 // Run executes benchmark and returns performance results

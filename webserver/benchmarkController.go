@@ -16,11 +16,11 @@ import (
 
 // BenchmarkController has the handlers of benchmark routes
 type BenchmarkController struct {
-	benchmark *benchmark.Service
+	benchmark domain.BenchmarkService
 }
 
 // NewBenchmarkController returns an instance of BenchmarkController
-func NewBenchmarkController(benchmark *benchmark.Service) *BenchmarkController {
+func NewBenchmarkController(benchmark domain.BenchmarkService) *BenchmarkController {
 	return &BenchmarkController{benchmark}
 }
 
@@ -32,7 +32,6 @@ func (b *BenchmarkController) GetBenchmarkDataSourcesHandler(w http.ResponseWrit
 
 // BenchmarkHandler handles benchmark routes
 func (b *BenchmarkController) BenchmarkHandler(w http.ResponseWriter, r *http.Request) {
-
 	switch r.Method {
 	case http.MethodPost:
 		b.CreateBenchmark(w, r)
@@ -43,7 +42,6 @@ func (b *BenchmarkController) BenchmarkHandler(w http.ResponseWriter, r *http.Re
 
 // ResourceHandler handles benchmark routes releated with a benchmark result
 func (b *BenchmarkController) ResourceHandler(w http.ResponseWriter, r *http.Request) {
-
 	switch r.Method {
 	case http.MethodGet:
 		b.DeleteBenchmark(w, r)
@@ -100,7 +98,7 @@ func (b *BenchmarkController) CreateBenchmark(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	w.WriteHeader(http.StatusAccepted)
+	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("content-type", "application/json")
 	json.NewEncoder(w).Encode(benchmark)
 
@@ -171,33 +169,30 @@ func (b *BenchmarkController) GetBenchmarkExecutionStateHandler(w http.ResponseW
 
 	var pipelineOptions mongo.Pipeline
 
-	groupByDatesClause := GroupByDatesID(startDate, endDate)
+	groupByDatesClause := GetGroupByDatesIDClause(startDate, endDate)
 
 	pipelineOptions = mongo.Pipeline{
-		{{
-			"$match",
-			bson.D{
-				{"executionId", benchmarkID},
-				{"date", bson.D{{"$gte", startDate}}},
-				{"date", bson.D{{"$lte", endDate}}},
+		{
+			primitive.E{
+				Key: "$match",
+				Value: bson.M{
+					"executionId": benchmarkID,
+					"date":        bson.M{"$gte": startDate, "$lte": endDate}},
 			},
-		}},
-		{{
-			"$group",
-			bson.D{
-				{
-					"_id", groupByDatesClause},
-				{"average", bson.D{{"$avg", "$state.average"}}},
-				{"standarddeviation", bson.D{{"$avg", "$state.standarddeviation"}}},
-				{"higherbollingerband", bson.D{{"$avg", "$state.higherbollingerband"}}},
-				{"lowerbollingerband", bson.D{{"$avg", "$state.lowerbollingerband"}}},
-				{"currentchange", bson.D{{"$avg", "$state.currentchange"}}},
-				{"currentchange", bson.D{{"$avg", "$state.currentchange"}}},
-			},
-		}},
+		},
+		{
+			primitive.E{
+				Key: "$group",
+				Value: bson.M{
+					"_id":                 groupByDatesClause,
+					"average":             bson.M{"$avg": "$state.average"},
+					"standarddeviation":   bson.M{"$avg": "$state.standarddeviation"},
+					"higherbollingerband": bson.M{"$avg": "$state.higherbollingerband"},
+					"lowerbollingerband":  bson.M{"$avg": "$state.lowerbollingerband"},
+					"currentchange":       bson.M{"$avg": "$state.currentchange"},
+				},
+			}},
 	}
-
-	fmt.Printf("%v", pipelineOptions)
 
 	benchmarkStates, err := b.benchmark.AggregateApplicationState(pipelineOptions)
 

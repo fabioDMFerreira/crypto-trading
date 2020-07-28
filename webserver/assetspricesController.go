@@ -10,6 +10,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -45,25 +46,31 @@ func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.R
 
 	var pipelineOptions mongo.Pipeline
 
-	groupByDatesClause := GroupByDatesID(startDate, endDate)
+	groupByDatesClause := GetGroupByDatesIDClause(startDate, endDate)
 
 	pipelineOptions = mongo.Pipeline{
-		{{
-			"$match",
-			bson.D{
-				{"asset", asset},
-				{"date", bson.D{{"$gte", startDate}}},
-				{"date", bson.D{{"$lte", endDate}}},
+		{primitive.E{
+			Key: "$match",
+			Value: bson.M{
+				"asset": asset,
+				"date":  bson.M{"$gte": startDate, "$lte": endDate},
 			},
 		}},
-		{{
-			"$group",
-			bson.D{
-				{
-					"_id", groupByDatesClause},
-				{"price", bson.D{{"$last", "$value"}}},
+		{
+			primitive.E{
+				Key: "$group",
+				Value: bson.D{
+					primitive.E{
+						Key:   "_id",
+						Value: groupByDatesClause,
+					},
+					primitive.E{
+						Key:   "price",
+						Value: bson.M{"$last": "$value"},
+					},
+				},
 			},
-		}},
+		},
 	}
 
 	assetsPrices, err := a.repo.Aggregate(pipelineOptions)

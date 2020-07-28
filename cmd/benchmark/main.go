@@ -15,7 +15,7 @@ import (
 )
 
 // ExecuteBenchmark create params and execute benchmarks
-func ExecuteBenchmark(done chan benchmark.BenchmarkResult) int {
+func ExecuteBenchmark(done chan domain.BenchmarkResult) int {
 	filesPaths := []string{
 		// fmt.Sprintf("ada/%v", adadatahistory.LastYearMinute),
 		fmt.Sprintf("%v", btcdatahistory.LastYearMinute),
@@ -71,7 +71,7 @@ func ExecuteBenchmark(done chan benchmark.BenchmarkResult) int {
 func main() {
 	start := time.Now()
 
-	reportsCh := make(chan benchmark.BenchmarkResult)
+	reportsCh := make(chan domain.BenchmarkResult)
 
 	iterations := ExecuteBenchmark(reportsCh)
 
