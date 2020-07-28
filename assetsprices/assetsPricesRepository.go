@@ -64,7 +64,7 @@ func (r *Repository) FindOne(filter interface{}) (interface{}, error) {
 
 // Create stores an asset price
 func (r *Repository) Create(date time.Time, value float32, asset string) error {
-	filter := bson.D{{"date", date}, {"value", value}, {"asset", asset}}
+	filter := bson.M{"date": date, "value": value, "asset": asset}
 
 	assets, err := r.FindAll(filter)
 
@@ -79,7 +79,7 @@ func (r *Repository) Create(date time.Time, value float32, asset string) error {
 
 // GetLastAssetsPrices return the last asset price stored in DB
 func (r *Repository) GetLastAssetsPrices(asset string, limit int) (*[]domain.AssetPrice, error) {
-	opts := options.Find().SetSort(bson.D{{"date", -1}}).SetLimit(int64(limit))
+	opts := options.Find().SetSort(bson.M{"date": -1}).SetLimit(int64(limit))
 	var foundDocument []AssetPrice
 	err := r.repo.FindAll(&foundDocument, bson.M{"asset": asset}, opts)
 

@@ -28,7 +28,7 @@ func NewService(repo domain.AssetPriceRepository) *Service {
 // GetRemotePrices uses remote source to get asset prices
 func (s *Service) GetRemotePrices(startDate, endDate time.Time, asset string) (*domain.CoindeskResponse, error) {
 	response := domain.CoindeskHTTPResponse{}
-	err := fetchCoindeskData(serializeDate(startDate), serializeDate(endDate), asset, &response)
+	err := fetchCoindeskData(SerializeDate(startDate), SerializeDate(endDate), asset, &response)
 
 	time.Sleep(2 * time.Second)
 
@@ -100,29 +100,6 @@ func (s *Service) GetLastAssetsPrices(asset string, limit int) (*[]domain.AssetP
 	return s.repo.GetLastAssetsPrices(asset, limit)
 }
 
-// ServiceMock is a mock service
-type ServiceMock struct{}
-
-// Create stub
-func (a *ServiceMock) Create(date time.Time, value float32, asset string) error {
-	return nil
-}
-
-// FetchAndStoreAssetPrices stub
-func (a *ServiceMock) FetchAndStoreAssetPrices(asset string, endDate time.Time) error {
-	return nil
-}
-
-// GetRemotePrices stub
-func (a *ServiceMock) GetRemotePrices(startDate, endDate time.Time, asset string) (*domain.CoindeskResponse, error) {
-	return nil, nil
-}
-
-// GetLastAssetsPrices stub
-func (a *ServiceMock) GetLastAssetsPrices(asset string, limit int) (*[]AssetPrice, error) {
-	return nil, nil
-}
-
 // fetchCoindeskData uses public API provided by Coindesk
 func fetchCoindeskData(startDate, endDate string, coin string, target *domain.CoindeskHTTPResponse) error {
 	r, err := http.Get(fmt.Sprintf("https://production.api.coindesk.com/v2/price/values/%v?start_date=%v&end_date=%v&ohlc=false", coin, startDate, endDate))
@@ -151,16 +128,16 @@ func TransverseDatesRange(startDate, endDate time.Time, handle func(time.Time, t
 
 	for startDateCursor.Before(endDate) {
 		handle(startDateCursor, endDateCursor)
-		startDateCursor, endDateCursor = getDatesPlusOneDay(startDateCursor, endDateCursor)
+		startDateCursor, endDateCursor = GetDatesPlusOneDay(startDateCursor, endDateCursor)
 	}
 }
 
-// getDatesPlusOneDay returns the two dates passed by parameter with one more day
-func getDatesPlusOneDay(startDate, endDate time.Time) (time.Time, time.Time) {
+// GetDatesPlusOneDay returns the two dates passed by parameter with one more day
+func GetDatesPlusOneDay(startDate, endDate time.Time) (time.Time, time.Time) {
 	return startDate.AddDate(0, 0, 1), endDate.AddDate(0, 0, 1)
 }
 
-// serializeDate convert time to string formatted to be accepted on coindesk url as parameter
-func serializeDate(date time.Time) string {
+// SerializeDate convert time to string formatted to be accepted on coindesk url as parameter
+func SerializeDate(date time.Time) string {
 	return strings.Replace(date.Format("2006-01-02 15:04"), " ", "T", 1)
 }
