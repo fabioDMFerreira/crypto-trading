@@ -95,7 +95,7 @@ func (s *Service) BulkRun(inputs []Input, c chan BenchmarkResult) {
 	}
 }
 
-// ChannelService passes a benchmark output to a channel. Useful for run benchmarks in go routines.
+// ChannelService passes a benchmark output to a channel. Useful to run benchmarks in routines.
 func (s *Service) routineRun(input *Input, done chan BenchmarkResult) {
 	result, err := s.Run(*input, nil)
 

@@ -45,8 +45,8 @@ func (r *Repository) DeleteByID(id string) error {
 func (r *Repository) UpdateBenchmarkCompleted(id string, output *domain.BenchmarkOutput) error {
 	primitiveID, _ := primitive.ObjectIDFromHex(id)
 
-	filter := bson.D{{"_id", primitiveID}}
-	update := bson.D{{"$set", bson.D{{"status", "Completed"}, {"output", output}, {"completedat", time.Now()}}}}
+	filter := bson.M{"_id": primitiveID}
+	update := bson.M{"$set": bson.M{"status": "Completed", "output": output, "completedat": time.Now()}}
 
 	return r.repo.UpdateOne(filter, update)
 }
