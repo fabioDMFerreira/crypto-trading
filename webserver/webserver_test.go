@@ -1,6 +1,8 @@
 package webserver_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,11 +11,13 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
+	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/webserver"
 )
 
 func TestGetBenchmarkDataSources(t *testing.T) {
-	res := MakeRequest(http.MethodGet, "/api/benchmark/data-sources")
+	res := MakeRequest(http.MethodGet, "/api/benchmark/data-sources", nil)
 
 	AssertResponseStatusCode(t, res, http.StatusOK)
 
@@ -21,7 +25,7 @@ func TestGetBenchmarkDataSources(t *testing.T) {
 }
 
 func TestGetBenchmarkList(t *testing.T) {
-	res := MakeRequest(http.MethodGet, "/api/benchmark")
+	res := MakeRequest(http.MethodGet, "/api/benchmark", nil)
 
 	AssertResponseStatusCode(t, res, http.StatusOK)
 
@@ -29,21 +33,45 @@ func TestGetBenchmarkList(t *testing.T) {
 }
 
 func TestDeleteBenchmarkResource(t *testing.T) {
-	res := MakeRequest(http.MethodDelete, "/api/benchmark/random-id")
+	res := MakeRequest(http.MethodDelete, "/api/benchmark/random-id", nil)
 
 	AssertResponseStatusCode(t, res, http.StatusOK)
 
 	AssertRequestResponse(t, res, "random-id")
 }
 
-func MakeRequest(method string, url string) *httptest.ResponseRecorder {
+func TestCreateBenchmarkResource(t *testing.T) {
+	input := benchmark.Input{
+		DecisionMakerOptions: domain.DecisionMakerOptions{MaximumBuyAmount: 0.1, MinimumProfitPerSold: 0.03, MinimumPriceDropToBuy: 0.01},
+		StatisticsOptions:    domain.StatisticsOptions{NumberOfPointsHold: 200},
+		CollectorOptions:     domain.CollectorOptions{PriceVariationDetection: 0.01, DataSource: nil},
+		AccountInitialAmount: 2000,
+		DataSourceFilePath:   btcdatahistory.May2020,
+	}
+
+	body, _ := json.Marshal(input)
+	reader := bytes.NewReader(body)
+
+	res := MakeRequest(http.MethodPost, "/api/benchmark", reader)
+
+	AssertResponseStatusCode(t, res, http.StatusCreated)
+}
+
+func MakeRequest(method string, url string, body *bytes.Reader) *httptest.ResponseRecorder {
 	repo := benchmark.NewRepositoryInMemory()
 	assetsPricesRepo := assetsprices.NewRepositoryInMemory()
 	applicationExecutionsStatesRepo := applicationExecutionStates.NewRepositoryInMemory()
 	benchmarkService := benchmark.NewService(repo, assetsPricesRepo, applicationExecutionsStatesRepo)
 	server, _ := webserver.NewCryptoTradingServer(benchmarkService, assetsPricesRepo)
 
-	req, _ := http.NewRequest(method, url, nil)
+	var req *http.Request
+
+	if body != nil {
+		req, _ = http.NewRequest(method, url, body)
+	} else {
+		req, _ = http.NewRequest(method, url, nil)
+	}
+
 	res := httptest.NewRecorder()
 
 	server.ServeHTTP(res, req)

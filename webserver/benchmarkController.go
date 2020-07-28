@@ -43,8 +43,6 @@ func (b *BenchmarkController) BenchmarkHandler(w http.ResponseWriter, r *http.Re
 // ResourceHandler handles benchmark routes releated with a benchmark result
 func (b *BenchmarkController) ResourceHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
-	case http.MethodGet:
-		b.DeleteBenchmark(w, r)
 	case http.MethodDelete:
 		b.DeleteBenchmark(w, r)
 	}
