@@ -40,7 +40,6 @@ type AssetPriceAggregatedByDate struct {
 
 // AssetsPricesService provides assets prices related methods
 type AssetsPricesService interface {
-	GetRemotePrices(startDate, endDate time.Time, asset string) (*CoindeskResponse, error)
 	GetLastAssetsPrices(asset string, limit int) (*[]AssetPrice, error)
 	Create(date time.Time, value float32, asset string) error
 	FetchAndStoreAssetPrices(asset string, endDate time.Time) error

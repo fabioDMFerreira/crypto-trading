@@ -108,7 +108,7 @@ func setupNotificationsService(mongoDatabase *mongo.Database, notificationOption
 func setupDecisionMaker(assetsRepository domain.AssetsRepository, mongoDatabase *mongo.Database) domain.DecisionMaker {
 	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
 	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
-	assetsPricesService := assetsprices.NewService(assetsPricesRepository)
+	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.FetchCoindeskRemotePrices)
 
 	decisionmakerOptions :=
 		domain.DecisionMakerOptions{

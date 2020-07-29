@@ -8,28 +8,21 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
-	"github.com/fabiodmferreira/crypto-trading/domain"
-	"github.com/fabiodmferreira/crypto-trading/utils"
 )
-
-// WriteCoindeskResponse write remote response in write stream
-func WriteCoindeskResponse(response domain.CoindeskResponse, out io.Writer) {
-	for _, entry := range response.Entries {
-		fmt.Fprintf(out, "%.0f,%f\n", entry[0], entry[1]*utils.DollarEuroRate)
-	}
-}
 
 // GetAndStoreData fetches remotes data and saves it in a file
 func GetAndStoreData(f io.Writer, coin string, service *assetsprices.Service) func(time.Time, time.Time) error {
 	counter := 0
 	return func(startDate, endDate time.Time) error {
-		response, err := service.GetRemotePrices(startDate, endDate, coin)
+		assetsprices, err := service.FetchRemotePrices(startDate, endDate, coin)
 
 		if err != nil {
 			return err
 		}
 
-		WriteCoindeskResponse(*response, f)
+		for _, entry := range *assetsprices {
+			fmt.Fprintf(f, "%.0f,%f\n", entry["date"], entry["value"])
+		}
 
 		counter++
 		fmt.Printf("%v\r", startDate)
@@ -62,7 +55,7 @@ func main() {
 	}
 
 	assetsPricesRepository := assetsprices.NewRepositoryInMemory()
-	assetsPricesService := assetsprices.NewService(assetsPricesRepository)
+	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.FetchCoindeskRemotePrices)
 
 	for _, i := range iterations {
 		fmt.Printf("\nfetching %v...\n", i.coin)
