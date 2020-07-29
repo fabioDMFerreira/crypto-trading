@@ -1,42 +1,25 @@
 package assetsprices
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"log"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
-	"github.com/fabiodmferreira/crypto-trading/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type FetchRemotePricesType = func(startDate, endDate time.Time, asset string) (*[]bson.M, error)
+
 // Service provides assets prices methods
 type Service struct {
-	repo domain.AssetPriceRepository
+	repo              domain.AssetPriceRepository
+	FetchRemotePrices FetchRemotePricesType
 }
 
 // NewService returns an instance of AssetsPricesService
-func NewService(repo domain.AssetPriceRepository) *Service {
-	return &Service{repo}
-}
-
-// GetRemotePrices uses remote source to get asset prices
-func (s *Service) GetRemotePrices(startDate, endDate time.Time, asset string) (*domain.CoindeskResponse, error) {
-	response := domain.CoindeskHTTPResponse{}
-	err := fetchCoindeskData(SerializeDate(startDate), SerializeDate(endDate), asset, &response)
-
-	time.Sleep(2 * time.Second)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &response.Data, nil
+func NewService(repo domain.AssetPriceRepository, fetchRemotePrices FetchRemotePricesType) *Service {
+	return &Service{repo, fetchRemotePrices}
 }
 
 // FetchAndStoreAssetPrices fetches asset prices remotely and save it in repository
@@ -58,30 +41,18 @@ func (s *Service) FetchAndStoreAssetPrices(asset string, endDate time.Time) erro
 	counter := 0
 
 	TransverseDatesRange(startDate, endDate, func(startDate, endDate time.Time) error {
-		// TODO: Inject method to get remote prices in FetchAndStoreAssetPrices instead of just calling it. It helps on testing the function
-		response, err := s.GetRemotePrices(startDate, endDate, asset)
+		assetsPrices, err := s.FetchRemotePrices(startDate, endDate, asset)
 
 		if err != nil {
 			return err
 		}
 
-		var assetsPrices []bson.M
-
-		for _, entry := range response.Entries {
-			assetsPrices = append(assetsPrices,
-				bson.M{
-					"asset": asset,
-					"date":  time.Unix(int64(entry[0])/1000, 0),
-					"value": float32(entry[1]) * utils.DollarEuroRate,
-				})
-		}
-
 		// Tech Debt: Condition to avoid create the same asset price multiple time.
 		// This happens when `FetchAndStoreAssetPrices` is executed multiple times in a short time
-		if len(assetsPrices) > 1 {
-			err = s.repo.BulkCreate(&assetsPrices)
+		if len(*assetsPrices) > 1 {
+			err = s.repo.BulkCreate(assetsPrices)
 
-			counter += len(assetsPrices)
+			counter += len(*assetsPrices)
 			// fmt.Printf("\rAsset: %v Created: %d", asset, counter)
 		}
 
@@ -99,24 +70,6 @@ func (s *Service) Create(date time.Time, value float32, asset string) error {
 // GetLastAssetsPrices returns the last price of an asset in the repository
 func (s *Service) GetLastAssetsPrices(asset string, limit int) (*[]domain.AssetPrice, error) {
 	return s.repo.GetLastAssetsPrices(asset, limit)
-}
-
-// fetchCoindeskData uses public API provided by Coindesk
-func fetchCoindeskData(startDate, endDate string, coin string, target *domain.CoindeskHTTPResponse) error {
-	r, err := http.Get(fmt.Sprintf("https://production.api.coindesk.com/v2/price/values/%v?start_date=%v&end_date=%v&ohlc=false", coin, startDate, endDate))
-
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-
-	body, readErr := ioutil.ReadAll(r.Body)
-	if readErr != nil {
-		log.Fatal(readErr)
-	}
-
-	// var data map[string]interface{}
-	return json.Unmarshal(body, &target)
 }
 
 // TransverseDatesRange iterate every day in the dates range passed and call the callback function

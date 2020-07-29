@@ -9,6 +9,7 @@ import (
 )
 
 type AssetPriceRepositorySpy struct {
+	AssetsPrices             *[]domain.AssetPrice
 	CreateCalls              [][]interface{}
 	FindAllCalls             []interface{}
 	AggregateCalls           []interface{}
@@ -33,7 +34,7 @@ func (a *AssetPriceRepositorySpy) Aggregate(pipeline mongo.Pipeline) (*[]bson.M,
 
 func (a *AssetPriceRepositorySpy) GetLastAssetsPrices(asset string, limit int) (*[]domain.AssetPrice, error) {
 	a.GetLastAssetsPricesCalls = append(a.GetLastAssetsPricesCalls, []interface{}{asset, limit})
-	return &[]domain.AssetPrice{}, nil
+	return a.AssetsPrices, nil
 }
 
 func (a *AssetPriceRepositorySpy) BulkCreate(documents *[]bson.M) error {

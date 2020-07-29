@@ -5,8 +5,20 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/mocks"
+	"go.mongodb.org/mongo-driver/bson"
 )
+
+type FetchRemotePrice struct {
+	Calls []interface{}
+}
+
+func (f *FetchRemotePrice) fetch(startDate, endDate time.Time, asset string) (*[]bson.M, error) {
+	f.Calls = append(f.Calls, []interface{}{startDate, endDate, asset})
+
+	return &[]bson.M{{}, {}}, nil
+}
 
 func TestGetNextDateParams(t *testing.T) {
 	t.Run("should decrease one day to both dates", func(t *testing.T) {
@@ -74,7 +86,7 @@ func TestTransverseDatesRanges(t *testing.T) {
 }
 
 func TestServiceCreate(t *testing.T) {
-	service, repo := NewAssetsPricesService()
+	service, repo, _ := NewAssetsPricesService()
 
 	service.Create(time.Now(), 30, "BTC")
 
@@ -84,7 +96,7 @@ func TestServiceCreate(t *testing.T) {
 }
 
 func TestServiceGetLastAssetsPrices(t *testing.T) {
-	service, repo := NewAssetsPricesService()
+	service, repo, _ := NewAssetsPricesService()
 
 	service.GetLastAssetsPrices("BTC", 10)
 
@@ -93,8 +105,28 @@ func TestServiceGetLastAssetsPrices(t *testing.T) {
 	}
 }
 
-func NewAssetsPricesService() (*assetsprices.Service, *mocks.AssetPriceRepositorySpy) {
-	assetsPriceRepo := &mocks.AssetPriceRepositorySpy{}
+func TestServiceFetchAndStore(t *testing.T) {
+	service, _, fetchRemotePrices := NewAssetsPricesService()
 
-	return assetsprices.NewService(assetsPriceRepo), assetsPriceRepo
+	service.FetchAndStoreAssetPrices("BTC", time.Date(2020, 4, 3, 0, 0, 0, 0, time.UTC))
+
+	got := len(fetchRemotePrices.Calls)
+	want := 2
+
+	if got != want {
+		t.Errorf("got %v want %v", got, want)
+	}
+}
+
+func NewAssetsPricesService() (*assetsprices.Service, *mocks.AssetPriceRepositorySpy, *FetchRemotePrice) {
+	assetsPriceRepo := &mocks.AssetPriceRepositorySpy{
+		AssetsPrices: &[]domain.AssetPrice{
+			{
+				Date: time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC),
+			},
+		},
+	}
+	fetchRemotePrices := &FetchRemotePrice{}
+
+	return assetsprices.NewService(assetsPriceRepo, fetchRemotePrices.fetch), assetsPriceRepo, fetchRemotePrices
 }
