@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/http"
 	"net/smtp"
 	"os"
 	"time"
@@ -77,7 +78,7 @@ func main() {
 
 	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
 	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
-	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.FetchCoindeskRemotePrices)
+	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.NewCoindeskRemoteSource(http.Get).FetchRemoteAssetsPrices)
 
 	notificationsService := setupNotificationsService(mongoDatabase, notificationOptions)
 	decisionMaker := setupDecisionMaker(assetsRepository, assetsPricesService, mongoDatabase)

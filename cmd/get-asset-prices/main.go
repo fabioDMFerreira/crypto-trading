@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -55,7 +56,7 @@ func main() {
 	}
 
 	assetsPricesRepository := assetsprices.NewRepositoryInMemory()
-	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.FetchCoindeskRemotePrices)
+	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.NewCoindeskRemoteSource(http.Get).FetchRemoteAssetsPrices)
 
 	for _, i := range iterations {
 		fmt.Printf("\nfetching %v...\n", i.coin)
