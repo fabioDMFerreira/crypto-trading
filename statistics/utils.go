@@ -32,23 +32,3 @@ func Variance(data []float64) float64 {
 
 	return total / float64(len(data)-1)
 }
-
-// OnlineVariance calculates the variance using online algorithm
-func OnlineVariance(data []float64) float64 {
-	n := 0
-	mean := 0.0
-	M2 := 0.0
-
-	for _, x := range data {
-		n++
-		delta := x - mean
-		mean += delta / float64(n)
-		M2 += delta * (x - mean)
-	}
-
-	if n < 2 {
-		return 0.0
-	}
-
-	return M2 / float64(n-1)
-}
