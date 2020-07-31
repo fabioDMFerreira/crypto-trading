@@ -19,7 +19,6 @@ const benchmarkDefaults: BenchmarkInput = {
     maximumFIATBuyAmount: 0,
     minimumProfitPerSold: 0.02,
     minimumPriceDropToBuy: 0.01,
-    minutesToCollectNewPoint: 15,
     growthIncreaseLimit: 100,
     growthDecreaseLimit: -100,
   },
@@ -28,6 +27,7 @@ const benchmarkDefaults: BenchmarkInput = {
   },
   collectorOptions: {
     priceVariationDetection: 0.01,
+    newPriceTimeRate: 15,
   },
   accountInitialAmount: 5000,
   asset: 'btc',
@@ -41,7 +41,6 @@ const serializeBenchmarkInput = (fn: any) => (data: any) => {
       maximumFIATBuyAmount: data.decisionMakerOptions.maximumFIATBuyAmount ? +data.decisionMakerOptions.maximumFIATBuyAmount : undefined,
       minimumProfitPerSold: +data.decisionMakerOptions.minimumProfitPerSold,
       minimumPriceDropToBuy: +data.decisionMakerOptions.minimumPriceDropToBuy,
-      minutesToCollectNewPoint: +data.decisionMakerOptions.minutesToCollectNewPoint,
       growthIncreaseLimit: +data.decisionMakerOptions.growthIncreaseLimit,
       growthDecreaseLimit: +data.decisionMakerOptions.growthDecreaseLimit,
     },
@@ -52,6 +51,7 @@ const serializeBenchmarkInput = (fn: any) => (data: any) => {
 
     collectorOptions: {
       priceVariationDetection: +data.collectorOptions.priceVariationDetection,
+      newPriceTimeRate: +data.collectorOptions.newPriceTimeRate,
     },
 
     dataSourceFilePath: data.dataSourceFilePath,
@@ -162,8 +162,8 @@ export default ({ onSubmit, dataSourceOptions }: Props) => {
         <Form.Group as={Col} controlId="formMinutesToCollectNewPoint">
           <Form.Label>Minutes to collect new point</Form.Label>
           <Form.Control
-            defaultValue={benchmarkDefaults.decisionMakerOptions.minutesToCollectNewPoint}
-            name="decisionMakerOptions.minutesToCollectNewPoint"
+            defaultValue={benchmarkDefaults.collectorOptions.newPriceTimeRate}
+            name="collectorOptions.newPriceTimeRate"
             type="number"
             placeholder="Enter time in minutes"
             ref={register}

@@ -29,7 +29,6 @@ export interface DecisionMakerOptions {
   maximumFIATBuyAmount: number,
   minimumProfitPerSold: number,
   minimumPriceDropToBuy: number,
-  minutesToCollectNewPoint: number,
   growthIncreaseLimit: number,
   growthDecreaseLimit: number
 }
@@ -40,6 +39,7 @@ export interface StatisticsOptions {
 
 export interface CollectorOptions {
   priceVariationDetection: number
+  newPriceTimeRate: number
 }
 
 export interface BenchmarkInput {

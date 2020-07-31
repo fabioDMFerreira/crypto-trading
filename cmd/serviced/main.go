@@ -75,11 +75,15 @@ func main() {
 
 	accountService := setupAccountService(mongoDatabase, assetsRepository)
 
+	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
+	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
+	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.FetchCoindeskRemotePrices)
+
 	notificationsService := setupNotificationsService(mongoDatabase, notificationOptions)
-	decisionMaker := setupDecisionMaker(assetsRepository, mongoDatabase)
+	decisionMaker := setupDecisionMaker(assetsRepository, assetsPricesService, mongoDatabase)
 	eventLogsRepository := eventlogs.NewEventLogsRepository(eventLogsCollection)
 	dbTrader := trader.NewTrader(assetsRepository, accountService, brokerService)
-	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01}, krakenAPI)
+	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01, NewPriceTimeRate: 15}, krakenAPI)
 
 	application := app.NewApp(
 		krakenCollector,
@@ -91,6 +95,10 @@ func main() {
 	application.SetEventsLog(eventLogsRepository)
 
 	application.RegistOnTickerChange(NotificationJob(notificationsService, eventLogsRepository, accountService, assetsRepository))
+
+	application.RegistOnTickerChange(func(ask, bid float32, date time.Time) {
+		assetsPricesService.Create(date, ask, "BTC")
+	})
 
 	application.Start()
 }
@@ -107,19 +115,14 @@ func setupNotificationsService(mongoDatabase *mongo.Database, notificationOption
 	)
 }
 
-func setupDecisionMaker(assetsRepository domain.AssetsRepository, mongoDatabase *mongo.Database) domain.DecisionMaker {
-	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
-	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
-	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.FetchCoindeskRemotePrices)
-
+func setupDecisionMaker(assetsRepository domain.AssetsRepository, assetsPricesService domain.AssetsPricesService, mongoDatabase *mongo.Database) domain.DecisionMaker {
 	decisionmakerOptions :=
 		domain.DecisionMakerOptions{
-			MinimumProfitPerSold:     0.01,
-			MinimumPriceDropToBuy:    0.01,
-			MaximumFIATBuyAmount:     500,
-			GrowthDecreaseLimit:      -100,
-			GrowthIncreaseLimit:      100,
-			MinutesToCollectNewPoint: 15,
+			MinimumProfitPerSold:  0.01,
+			MinimumPriceDropToBuy: 0.01,
+			MaximumFIATBuyAmount:  500,
+			GrowthDecreaseLimit:   -100,
+			GrowthIncreaseLimit:   100,
 		}
 	numberOfPointsHold := 5000
 
@@ -151,7 +154,7 @@ func setupDecisionMaker(assetsRepository domain.AssetsRepository, mongoDatabase 
 	}
 	fmt.Println("Completed")
 
-	return decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, pricesStatistics, growthStatistics, assetsPricesService)
+	return decisionmaker.NewDecisionMaker(assetsRepository, decisionmakerOptions, pricesStatistics, growthStatistics)
 }
 
 func setupAccountService(mongoDatabase *mongo.Database, assetsRepository domain.AssetsRepository) domain.AccountService {

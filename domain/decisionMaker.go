@@ -4,13 +4,12 @@ import "time"
 
 // DecisionMakerOptions are used to change DecisionMaker behaviour
 type DecisionMakerOptions struct {
-	MaximumBuyAmount         float32 `json:"maximumBuyAmount"`
-	MaximumFIATBuyAmount     float32 `json:"maximumFIATBuyAmount"`
-	MinimumProfitPerSold     float32 `json:"minimumProfitPerSold"`
-	MinimumPriceDropToBuy    float32 `json:"minimumPriceDropToBuy"`
-	MinutesToCollectNewPoint int     `json:"minutesToCollectNewPoint"`
-	GrowthDecreaseLimit      float32 `json:"growthDecreaseLimit"`
-	GrowthIncreaseLimit      float32 `json:"growthIncreaseLimit"`
+	MaximumBuyAmount      float32 `json:"maximumBuyAmount"`
+	MaximumFIATBuyAmount  float32 `json:"maximumFIATBuyAmount"`
+	MinimumProfitPerSold  float32 `json:"minimumProfitPerSold"`
+	MinimumPriceDropToBuy float32 `json:"minimumPriceDropToBuy"`
+	GrowthDecreaseLimit   float32 `json:"growthDecreaseLimit"`
+	GrowthIncreaseLimit   float32 `json:"growthIncreaseLimit"`
 }
 
 // DecisionMakerState represents the decision maker state

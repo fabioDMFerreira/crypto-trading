@@ -9,6 +9,7 @@ import (
 type CollectorOptions struct {
 	PriceVariationDetection float32 `json:"priceVariationDetection"`
 	DataSource              *csv.Reader
+	NewPriceTimeRate        int `json:"newPriceTimeRate"`
 }
 
 // Collector notifies when price asset changes

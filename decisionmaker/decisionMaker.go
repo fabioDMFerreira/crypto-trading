@@ -8,37 +8,28 @@ import (
 
 // DecisionMaker decides to buy or sell
 type DecisionMaker struct {
-	assetsRepository    domain.AssetsRepositoryReader
-	options             domain.DecisionMakerOptions
-	statistics          domain.Statistics
-	growthStatistics    domain.Statistics
-	assetsPricesService domain.AssetsPricesService
+	assetsRepository domain.AssetsRepositoryReader
+	options          domain.DecisionMakerOptions
+	statistics       domain.Statistics
+	growthStatistics domain.Statistics
 
-	currentPrice       float32
-	lastPrice          float32
-	currentChange      float32
-	lastPointAddedDate time.Time
+	currentPrice  float32
+	lastPrice     float32
+	currentChange float32
 }
 
 // NewDecisionMaker returns a new instance of DecisionMaker
-func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics, growthStatistics domain.Statistics, assetsPricesService domain.AssetsPricesService) *DecisionMaker {
-	return &DecisionMaker{assetsRepository, options, statistics, growthStatistics, assetsPricesService, 0, 0, 0, time.Time{}}
+func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics, growthStatistics domain.Statistics) *DecisionMaker {
+	return &DecisionMaker{assetsRepository, options, statistics, growthStatistics, 0, 0, 0}
 }
 
 // NewValue adds a new price to recalculate statistics
 func (dm *DecisionMaker) NewValue(price float32, date time.Time) {
-	timeSinceLastPointAdded := date.Sub(dm.lastPointAddedDate).Minutes()
-
 	change := price - dm.lastPrice
 
 	dm.currentChange = change
 
-	if timeSinceLastPointAdded < float64(dm.options.MinutesToCollectNewPoint) {
-		return
-	}
-
 	dm.statistics.AddPoint(float64(price))
-	dm.assetsPricesService.Create(date, price, "BTC")
 
 	if dm.lastPrice > 0 {
 		dm.growthStatistics.AddPoint(float64(price - dm.lastPrice))
@@ -46,7 +37,6 @@ func (dm *DecisionMaker) NewValue(price float32, date time.Time) {
 
 	dm.lastPrice = dm.currentPrice
 	dm.currentPrice = price
-	dm.lastPointAddedDate = date
 }
 
 // ShouldBuy returns true or false if it is a good time to buy

@@ -26,15 +26,16 @@ type TickerMessage struct {
 
 // KrakenCollector collects data from kraken exchange
 type KrakenCollector struct {
-	options         domain.CollectorOptions
-	krakenAPI       *krakenapi.KrakenAPI
-	lastTickerPrice float32
-	observables     []domain.OnTickerChange
+	options              domain.CollectorOptions
+	krakenAPI            *krakenapi.KrakenAPI
+	lastTickerPrice      float32
+	observables          []domain.OnTickerChange
+	lastPricePublishDate time.Time
 }
 
 // NewKrakenCollector returns an instance of KrakenCollector
 func NewKrakenCollector(options domain.CollectorOptions, krakenAPI *krakenapi.KrakenAPI) *KrakenCollector {
-	return &KrakenCollector{options, krakenAPI, 0, []domain.OnTickerChange{}}
+	return &KrakenCollector{options, krakenAPI, 0, []domain.OnTickerChange{}, time.Time{}}
 }
 
 // Start connects to a kraken websocket that send prices variations
@@ -97,7 +98,7 @@ func (kc *KrakenCollector) Start() {
 
 				price := float32(ask)
 
-				err = kc.HandlePriceChangeMessage(price)
+				err = kc.HandlePriceChangeMessage(price, time.Now())
 
 				if err != nil {
 					fmt.Printf("error on handling price change message: %v", err)
@@ -109,7 +110,12 @@ func (kc *KrakenCollector) Start() {
 }
 
 // HandlePriceChangeMessage receives message, extracts parameters and call observable functions with the current asset price
-func (kc *KrakenCollector) HandlePriceChangeMessage(price float32) error {
+func (kc *KrakenCollector) HandlePriceChangeMessage(price float32, date time.Time) error {
+	timeSinceLastPricePublished := date.Sub(kc.lastPricePublishDate).Minutes()
+
+	if timeSinceLastPricePublished < float64(kc.options.NewPriceTimeRate) {
+		return nil
+	}
 
 	changeVariance := kc.lastTickerPrice * kc.options.PriceVariationDetection
 
@@ -121,6 +127,8 @@ func (kc *KrakenCollector) HandlePriceChangeMessage(price float32) error {
 			observable(price, price, time.Now())
 		}
 	}
+
+	kc.lastPricePublishDate = date
 
 	return nil
 }

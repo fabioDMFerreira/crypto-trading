@@ -39,7 +39,6 @@ describe('BenchmarkForm', () => {
         maximumBuyAmount: 0.1,
         minimumProfitPerSold: 0.02,
         minimumPriceDropToBuy: 0.01,
-        minutesToCollectNewPoint: 15,
         growthIncreaseLimit: 100,
         growthDecreaseLimit: -100
       },

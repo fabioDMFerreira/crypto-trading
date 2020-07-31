@@ -9,7 +9,6 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/accounts"
 	"github.com/fabiodmferreira/crypto-trading/app"
 	"github.com/fabiodmferreira/crypto-trading/assets"
-	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/broker"
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 	"github.com/fabiodmferreira/crypto-trading/decisionmaker"
@@ -179,8 +178,7 @@ func (s *Service) setupApplication(input Input) (*app.App, error) {
 	growthStatisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
 	assetsRepository := &assets.AssetsRepositoryInMemory{}
 	decisionMakerOptions := input.DecisionMakerOptions
-	assetsPricesServiceMock := &assetsprices.ServiceMock{}
-	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionMakerOptions, statisticsService, growthStatisticsService, assetsPricesServiceMock)
+	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionMakerOptions, statisticsService, growthStatisticsService)
 
 	_, currentFilePath, _, _ := runtime.Caller(0)
 	currentDir := path.Dir(currentFilePath)
