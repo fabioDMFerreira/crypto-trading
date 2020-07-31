@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/smtp"
 	"os"
 	"time"
 
@@ -97,11 +98,12 @@ func main() {
 func setupNotificationsService(mongoDatabase *mongo.Database, notificationOptions domain.NotificationOptions) domain.NotificationsService {
 	notificationsCollection := mongoDatabase.Collection(db.NOTIFICATIONS_COLLECTION)
 
-	notificationsRepository := notifications.NewRepository(notificationsCollection)
+	notificationsRepository := notifications.NewRepository(db.NewRepository(notificationsCollection))
 
 	return notifications.NewService(
 		notificationsRepository,
 		notificationOptions,
+		smtp.SendMail,
 	)
 }
 

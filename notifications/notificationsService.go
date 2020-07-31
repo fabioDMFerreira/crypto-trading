@@ -11,13 +11,15 @@ import (
 type Service struct {
 	notificationsRepository domain.NotificationsRepository
 	options                 domain.NotificationOptions
+	sendMail                domain.SendMail
 }
 
 func NewService(
 	notificationsRepository domain.NotificationsRepository,
 	options domain.NotificationOptions,
+	sendMail domain.SendMail,
 ) *Service {
-	return &Service{notificationsRepository, options}
+	return &Service{notificationsRepository, options, sendMail}
 }
 
 // SendEmail setup an email options and sends it
@@ -34,7 +36,7 @@ func (n *Service) SendEmail(subject, body string) error {
 
 		body
 
-	err := smtp.SendMail("smtp.gmail.com:587",
+	err := n.sendMail("smtp.gmail.com:587",
 		smtp.PlainAuth("", from, pass, "smtp.gmail.com"),
 		from, []string{to}, []byte(msg))
 
