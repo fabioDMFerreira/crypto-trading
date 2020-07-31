@@ -125,10 +125,10 @@ func (kc *KrakenCollector) HandlePriceChangeMessage(price float32, date time.Tim
 		kc.lastTickerPrice = price
 		for _, observable := range kc.observables {
 			observable(price, price, time.Now())
+
+			kc.lastPricePublishDate = date
 		}
 	}
-
-	kc.lastPricePublishDate = date
 
 	return nil
 }

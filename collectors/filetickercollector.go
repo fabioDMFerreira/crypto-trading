@@ -67,10 +67,11 @@ func (ftc *FileTickerCollector) Start() {
 			float32(price) < ftc.lastTickerPrice-changeVariance) {
 			for _, observable := range ftc.observables {
 				observable(float32(price), float32(price), date)
+
+				ftc.lastPricePublishDate = date
 			}
 		}
 
-		ftc.lastPricePublishDate = date
 	}
 }
 

@@ -22,7 +22,7 @@ func GetAndStoreData(f io.Writer, coin string, service *assetsprices.Service) fu
 		}
 
 		for _, entry := range *assetsprices {
-			fmt.Fprintf(f, "%.0f,%f\n", entry["date"], entry["value"])
+			fmt.Fprintf(f, "%d,%f\n", entry["date"].(time.Time).Unix(), entry["value"])
 		}
 
 		counter++

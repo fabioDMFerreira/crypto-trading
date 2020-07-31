@@ -217,12 +217,6 @@ func (s *Service) HandleBenchmark(benchmark *domain.Benchmark) error {
 		return err
 	}
 
-	// creates prices if they do not exist
-
-	// creates benchmark balances
-
-	// creates benchmark assets
-
 	return nil
 }
 

@@ -90,9 +90,9 @@ func main() {
 			log.Fatalf("Error on reading header file: %v", err)
 		}
 
-		assetsPrices, err := getFileAssetsPrices(repo, asset, historyFile)
+		assetsPrices, err := getFileAssetsPrices(asset, historyFile)
 
-		err = batchBulkCreate(repo.BulkCreate, assetsPrices, bulkUpdateElements)
+		err = db.BatchBulkCreate(repo.BulkCreate, assetsPrices, bulkUpdateElements)
 
 		if err != nil {
 			log.Fatalf("Error on bulk creating assets prices: %v", err)
@@ -100,38 +100,7 @@ func main() {
 	}
 }
 
-func batchBulkCreate(BulkCreate func(*[]bson.M) error, documents *[]bson.M, limit int) error {
-	counter := 0
-	totalDocuments := len(*documents)
-
-	for counter != totalDocuments {
-		var nElements int
-
-		if counter+limit > totalDocuments {
-			nElements = totalDocuments - counter
-		} else {
-			nElements = limit
-		}
-
-		docsToCreate := make([]bson.M, nElements)
-
-		copy(docsToCreate, (*documents)[counter:counter+nElements])
-
-		err := BulkCreate(&docsToCreate)
-
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("%v %v\n", counter, len(docsToCreate))
-		counter += len(docsToCreate)
-		fmt.Printf("\rCreated: %d/%d", counter, totalDocuments)
-	}
-
-	return nil
-}
-
-func getFileAssetsPrices(repo *db.Repository, asset string, historyFile *csv.Reader) (*[]bson.M, error) {
+func getFileAssetsPrices(asset string, historyFile *csv.Reader) (*[]bson.M, error) {
 
 	var documents []bson.M
 
@@ -161,7 +130,7 @@ func getFileAssetsPrices(repo *db.Repository, asset string, historyFile *csv.Rea
 			bson.M{
 				"asset": asset,
 				"value": price,
-				"date":  time.Unix(unixTime/1000, 0),
+				"date":  time.Unix(unixTime, 0),
 			},
 		)
 	}
