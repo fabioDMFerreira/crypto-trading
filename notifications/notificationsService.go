@@ -9,17 +9,18 @@ import (
 )
 
 type Service struct {
-	notificationsRepository *Repository
+	notificationsRepository domain.NotificationsRepository
 	options                 domain.NotificationOptions
 }
 
 func NewService(
-	notificationsRepository *Repository,
+	notificationsRepository domain.NotificationsRepository,
 	options domain.NotificationOptions,
 ) *Service {
 	return &Service{notificationsRepository, options}
 }
 
+// SendEmail setup an email options and sends it
 func (n *Service) SendEmail(subject, body string) error {
 	from := n.options.Sender
 	pass := n.options.SenderPassword
@@ -40,12 +41,14 @@ func (n *Service) SendEmail(subject, body string) error {
 	return err
 }
 
+// FindLastEventLogsNotificationDate returns last notification date
 func (n *Service) FindLastEventLogsNotificationDate() (time.Time, error) {
 	return n.notificationsRepository.FindLastEventLogsNotificationDate()
 }
 
+// CreateEmailNotification stores notification in repository and send email to Receiver
 func (n *Service) CreateEmailNotification(subject, message, notificationType string) error {
-	notification := &Notification{
+	notification := &domain.Notification{
 		ID:                  primitive.NewObjectID(),
 		To:                  n.options.Receiver,
 		Title:               subject,
@@ -75,7 +78,7 @@ func (n *Service) CreateEmailNotification(subject, message, notificationType str
 	return err
 }
 
-// isThereANotificationToSend verifies wheter there are log events to notify the user
+// ShouldSendNotification verifies wheter last notification was sent more than 12 hours ago
 func (a *Service) ShouldSendNotification() bool {
 	lastNotificationTime, err := a.FindLastEventLogsNotificationDate()
 

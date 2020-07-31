@@ -31,3 +31,10 @@ type NotificationsService interface {
 	CreateEmailNotification(subject, message, notificationType string) error
 	ShouldSendNotification() bool
 }
+
+// NotificationsRepository stores and gets notifications
+type NotificationsRepository interface {
+	Create(notification *Notification) error
+	FindLastEventLogsNotificationDate() (time.Time, error)
+	Sent(id primitive.ObjectID) error
+}
