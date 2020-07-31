@@ -1,8 +1,6 @@
 package db
 
 import (
-	"fmt"
-
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -29,9 +27,7 @@ func BatchBulkCreate(BulkCreate func(*[]bson.M) error, documents *[]bson.M, limi
 			return err
 		}
 
-		fmt.Printf("%v %v\n", counter, len(docsToCreate))
 		counter += len(docsToCreate)
-		fmt.Printf("\rCreated: %d/%d", counter, totalDocuments)
 	}
 
 	return nil

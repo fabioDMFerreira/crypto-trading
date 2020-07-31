@@ -37,6 +37,27 @@ func TestBatchBulkCreate(t *testing.T) {
 		if got != want {
 			t.Errorf("got %v want %v", got, want)
 		}
+	})
 
+	t.Run("the last bulk should create less documents that the one point on the limit", func(t *testing.T) {
+		repo := &RepoStub{}
+		documents := []bson.M{}
+
+		for i := 0; i < 105; i++ {
+			documents = append(documents, bson.M{"index": i})
+		}
+
+		err := db.BatchBulkCreate(repo.BulkCreate, &documents, 10)
+
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+
+		got := repo.calls
+		want := 11
+
+		if got != want {
+			t.Errorf("got %v want %v", got, want)
+		}
 	})
 }

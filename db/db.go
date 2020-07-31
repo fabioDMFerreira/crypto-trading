@@ -22,23 +22,26 @@ const (
 	APPLICATION_EXECUTION_STATES_COLLECTION = "applicationExecutionStates"
 )
 
-func NewMongoQueryContext() context.Context {
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+func NewMongoQueryContext() (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 
-	return ctx
+	return ctx, cancel
 }
 
 func ConnectDB(mongoUrl string) (*mongo.Client, error) {
 
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoUrl))
 
 	if err != nil {
+		cancel()
 		return nil, err
 	}
 
-	ctx, _ = context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 	err = client.Ping(ctx, readpref.Primary())
+
+	defer cancel()
 
 	if err != nil {
 		return nil, err
@@ -59,16 +62,18 @@ func NewRepository(c *mongo.Collection) *Repository {
 
 // FindAll returns rows that match criteria
 func (r *Repository) FindAll(documents interface{}, filter interface{}, opts *options.FindOptions) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 	cur, err := r.collection.Find(ctx, filter, opts)
 
 	if err != nil {
+		cancel()
 		return err
 	}
 
 	defer cur.Close(ctx)
 
 	if err = cur.All(ctx, documents); err != nil {
+		cancel()
 		return err
 	}
 
@@ -77,16 +82,18 @@ func (r *Repository) FindAll(documents interface{}, filter interface{}, opts *op
 
 // Aggregate returns rows aggregated
 func (r *Repository) Aggregate(documents interface{}, pipelineOptions mongo.Pipeline) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 	cur, err := r.collection.Aggregate(ctx, pipelineOptions)
 
 	if err != nil {
+		cancel()
 		return err
 	}
 
 	defer cur.Close(ctx)
 
 	if err = cur.All(ctx, documents); err != nil {
+		cancel()
 		return err
 	}
 
@@ -95,34 +102,46 @@ func (r *Repository) Aggregate(documents interface{}, pipelineOptions mongo.Pipe
 
 // FindOne returns one row that match criteria
 func (r *Repository) FindOne(document interface{}, filter interface{}, opts *options.FindOneOptions) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 
 	err := r.collection.FindOne(ctx, filter, opts).Decode(document)
+
+	if err != nil {
+		cancel()
+	}
 
 	return err
 }
 
 // InsertOne creates one document
 func (r *Repository) InsertOne(document interface{}) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 
 	_, err := r.collection.InsertOne(ctx, document)
+
+	if err != nil {
+		cancel()
+	}
 
 	return err
 }
 
 // UpdateOne updates one document found with match criteria
 func (r *Repository) UpdateOne(filter interface{}, update interface{}) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 
 	_, err := r.collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		cancel()
+	}
 
 	return err
 }
 
 // DeleteByID delete one document by ID
 func (r *Repository) DeleteByID(id string) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 
 	idPrimitive, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -131,12 +150,16 @@ func (r *Repository) DeleteByID(id string) error {
 
 	_, err = r.collection.DeleteOne(ctx, bson.M{"_id": idPrimitive})
 
+	if err != nil {
+		cancel()
+	}
+
 	return err
 }
 
 // BulkUpsert creates multiple documents if there are no documents with the same data
 func (r *Repository) BulkUpsert(documents []bson.M) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 
 	var operations []mongo.WriteModel
 
@@ -154,12 +177,16 @@ func (r *Repository) BulkUpsert(documents []bson.M) error {
 
 	_, err := r.collection.BulkWrite(ctx, operations, &bulkOptions)
 
+	if err != nil {
+		cancel()
+	}
+
 	return err
 }
 
 // BulkCreate creates multiple documents
 func (r *Repository) BulkCreate(documents *[]bson.M) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 
 	bulkOptions := options.InsertManyOptions{}
 
@@ -171,14 +198,22 @@ func (r *Repository) BulkCreate(documents *[]bson.M) error {
 
 	_, err := r.collection.InsertMany(ctx, ds, &bulkOptions)
 
+	if err != nil {
+		cancel()
+	}
+
 	return err
 }
 
 // BulkDelete deletes multiple documents
 func (r *Repository) BulkDelete(filter bson.M) error {
-	ctx := NewMongoQueryContext()
+	ctx, cancel := NewMongoQueryContext()
 
 	_, err := r.collection.DeleteMany(ctx, filter)
+
+	if err != nil {
+		cancel()
+	}
 
 	return err
 }
