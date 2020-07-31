@@ -13,10 +13,21 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-// FetchRemotePrices uses remote source to get asset prices
-func FetchCoindeskRemotePrices(startDate, endDate time.Time, asset string) (*[]bson.M, error) {
+type UrlDataFetcher func(url string) (resp *http.Response, err error)
+
+type CoindeskRemoteSource struct {
+	HTTPFetcher UrlDataFetcher
+}
+
+func NewCoindeskRemoteSource(HTTPFetcher UrlDataFetcher) *CoindeskRemoteSource {
+	return &CoindeskRemoteSource{HTTPFetcher}
+}
+
+// FetchRemoteAssetsPrices uses remote source to get asset prices
+func (c *CoindeskRemoteSource) FetchRemoteAssetsPrices(startDate, endDate time.Time, asset string) (*[]bson.M, error) {
 	response := domain.CoindeskHTTPResponse{}
-	err := fetchCoindeskData(SerializeDate(startDate), SerializeDate(endDate), asset, &response)
+
+	err := c.fetchCoindeskData(SerializeDate(startDate), SerializeDate(endDate), asset, &response)
 
 	time.Sleep(2 * time.Second)
 
@@ -39,12 +50,13 @@ func FetchCoindeskRemotePrices(startDate, endDate time.Time, asset string) (*[]b
 }
 
 // fetchCoindeskData uses public API provided by Coindesk
-func fetchCoindeskData(startDate, endDate string, coin string, target *domain.CoindeskHTTPResponse) error {
-	r, err := http.Get(fmt.Sprintf("https://production.api.coindesk.com/v2/price/values/%v?start_date=%v&end_date=%v&ohlc=false", coin, startDate, endDate))
+func (c *CoindeskRemoteSource) fetchCoindeskData(startDate, endDate string, coin string, target *domain.CoindeskHTTPResponse) error {
+	r, err := c.HTTPFetcher(fmt.Sprintf("https://production.api.coindesk.com/v2/price/values/%v?start_date=%v&end_date=%v&ohlc=false", coin, startDate, endDate))
 
 	if err != nil {
 		return err
 	}
+
 	defer r.Body.Close()
 
 	body, readErr := ioutil.ReadAll(r.Body)
