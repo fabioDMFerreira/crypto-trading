@@ -208,12 +208,19 @@ func (r *Repository) BulkCreate(documents *[]bson.M) error {
 // BulkDelete deletes multiple documents
 func (r *Repository) BulkDelete(filter bson.M) error {
 	ctx, cancel := NewMongoQueryContext()
+	defer cancel()
 
 	_, err := r.collection.DeleteMany(ctx, filter)
 
-	if err != nil {
-		cancel()
-	}
+	return err
+}
+
+// BulkUpdate updates multiple documents
+func (r *Repository) BulkUpdate(filter bson.M, update bson.M) error {
+	ctx, cancel := NewMongoQueryContext()
+	defer cancel()
+
+	_, err := r.collection.UpdateMany(ctx, filter, update)
 
 	return err
 }

@@ -16,6 +16,7 @@ type RepositorySpy struct {
 	BulkUpsertCalls []interface{}
 	BulkCreateCalls []interface{}
 	BulkDeleteCalls []interface{}
+	BulkUpdateCalls [][]interface{}
 }
 
 func (r *RepositorySpy) FindAll(documents interface{}, query interface{}, opts *options.FindOptions) error {
@@ -60,5 +61,10 @@ func (r *RepositorySpy) BulkCreate(documents *[]bson.M) error {
 
 func (r *RepositorySpy) BulkDelete(filter bson.M) error {
 	r.BulkDeleteCalls = append(r.BulkDeleteCalls, filter)
+	return nil
+}
+
+func (r *RepositorySpy) BulkUpdate(filter bson.M, update bson.M) error {
+	r.BulkUpdateCalls = append(r.BulkUpdateCalls, []interface{}{filter, update})
 	return nil
 }

@@ -82,7 +82,7 @@ func main() {
 
 	notificationsService := setupNotificationsService(mongoDatabase, notificationOptions)
 	decisionMaker := setupDecisionMaker(assetsRepository, assetsPricesService, mongoDatabase)
-	eventLogsRepository := eventlogs.NewEventLogsRepository(eventLogsCollection)
+	eventLogsRepository := eventlogs.NewEventLogsRepository(db.NewRepository(eventLogsCollection))
 	dbTrader := trader.NewTrader(assetsRepository, accountService, brokerService)
 	krakenCollector := collectors.NewKrakenCollector(domain.CollectorOptions{PriceVariationDetection: 0.01, NewPriceTimeRate: 15}, krakenAPI)
 
@@ -160,7 +160,7 @@ func setupDecisionMaker(assetsRepository domain.AssetsRepository, assetsPricesSe
 
 func setupAccountService(mongoDatabase *mongo.Database, assetsRepository domain.AssetsRepository) domain.AccountService {
 	accountsCollection := mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)
-	accountsRepository := accounts.NewRepository(accountsCollection)
+	accountsRepository := accounts.NewRepository(db.NewRepository(accountsCollection))
 
 	accountDocument, err := accountsRepository.FindByBroker("kraken")
 	if err != nil {

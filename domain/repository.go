@@ -17,4 +17,5 @@ type Repository interface {
 	BulkUpsert(documents []bson.M) error
 	BulkCreate(documents *[]bson.M) error
 	BulkDelete(filter bson.M) error
+	BulkUpdate(filter bson.M, update bson.M) error
 }

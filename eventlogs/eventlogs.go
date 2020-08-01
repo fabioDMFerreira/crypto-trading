@@ -4,22 +4,20 @@ import (
 	"log"
 	"time"
 
-	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // EventLogsRepository fetches and stores events
 type EventLogsRepository struct {
-	collection *mongo.Collection
+	repo domain.Repository
 }
 
 // NewEventLogsRepository returns an instance of Repository
-func NewEventLogsRepository(collection *mongo.Collection) *EventLogsRepository {
+func NewEventLogsRepository(repo domain.Repository) *EventLogsRepository {
 	return &EventLogsRepository{
-		collection,
+		repo,
 	}
 }
 
@@ -35,36 +33,22 @@ func (or *EventLogsRepository) Create(eventName, message string) error {
 
 	log.Println(message)
 
-	ctx := db.NewMongoQueryContext()
-	_, err := or.collection.InsertOne(ctx, event)
-	return err
+	return or.repo.InsertOne(event)
 }
 
 // FindAllToNotify returns every event log that needs to be notified
 func (or *EventLogsRepository) FindAllToNotify() (*[]domain.EventLog, error) {
-	ctx := db.NewMongoQueryContext()
-	cur, err := or.collection.Find(ctx, bson.D{{"notified", false}})
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer cur.Close(ctx)
 	var results []domain.EventLog
-	if err = cur.All(ctx, &results); err != nil {
-		return nil, err
-	}
 
-	return &results, nil
+	err := or.repo.FindAll(&results, bson.M{"notified": false}, nil)
+
+	return &results, err
 }
 
 // MarkNotified marks every eventLog as notified
 func (or *EventLogsRepository) MarkNotified(ids []primitive.ObjectID) error {
-	ctx := db.NewMongoQueryContext()
+	filter := bson.M{"_id": bson.M{"$in": ids}}
+	update := bson.M{"$set": bson.M{"notified": true}}
 
-	filter := bson.D{{"_id", bson.M{"$in": ids}}}
-	update := bson.D{{"$set", bson.D{{"notified", true}}}}
-	_, err := or.collection.UpdateMany(ctx, filter, update)
-
-	return err
+	return or.repo.BulkUpdate(filter, update)
 }
