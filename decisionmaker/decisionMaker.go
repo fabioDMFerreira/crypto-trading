@@ -8,7 +8,7 @@ import (
 
 // DecisionMaker decides to buy or sell
 type DecisionMaker struct {
-	assetsRepository domain.AssetsRepositoryReader
+	account          domain.AccountService
 	options          domain.DecisionMakerOptions
 	statistics       domain.Statistics
 	growthStatistics domain.Statistics
@@ -19,8 +19,8 @@ type DecisionMaker struct {
 }
 
 // NewDecisionMaker returns a new instance of DecisionMaker
-func NewDecisionMaker(assetsRepository domain.AssetsRepositoryReader, options domain.DecisionMakerOptions, statistics domain.Statistics, growthStatistics domain.Statistics) *DecisionMaker {
-	return &DecisionMaker{assetsRepository, options, statistics, growthStatistics, 0, 0, 0}
+func NewDecisionMaker(account domain.AccountService, options domain.DecisionMakerOptions, statistics domain.Statistics, growthStatistics domain.Statistics) *DecisionMaker {
+	return &DecisionMaker{account, options, statistics, growthStatistics, 0, 0, 0}
 }
 
 // NewValue adds a new price to recalculate statistics
@@ -45,7 +45,7 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 		return false, nil
 	}
 
-	assetWithCloserPrice, err := dm.assetsRepository.CheckAssetWithCloserPriceExists(price, 0.02)
+	assetWithCloserPrice, err := dm.account.CheckAssetWithCloserPriceExists(price, 0.02)
 
 	if err != nil {
 		return false, err
@@ -107,6 +107,7 @@ func (dm *DecisionMaker) GetState() domain.DecisionMakerState {
 		StandardDeviation:   std,
 		LowerBollingerBand:  average - std,
 		HigherBollingerBand: average + std,
+		CurrentPrice:        dm.currentPrice,
 		CurrentChange:       dm.currentChange,
 	}
 }

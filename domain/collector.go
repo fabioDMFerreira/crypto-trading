@@ -7,9 +7,9 @@ import (
 
 // CollectorOptions are used to change collectors behaviour
 type CollectorOptions struct {
-	PriceVariationDetection float32 `json:"priceVariationDetection"`
+	PriceVariationDetection float32 `bson:"priceVariationDetection,truncate" json:"priceVariationDetection"`
 	DataSource              *csv.Reader
-	NewPriceTimeRate        int `json:"newPriceTimeRate"`
+	NewPriceTimeRate        int `bson:"newPriceTimeRate,truncate" json:"newPriceTimeRate"`
 }
 
 // Collector notifies when price asset changes

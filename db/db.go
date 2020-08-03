@@ -17,6 +17,7 @@ const (
 	BENCHMARKS_COLLECTION                   = "benchmarks"
 	ASSETS_PRICES_COLLECTION                = "assetsprices"
 	APPLICATION_EXECUTION_STATES_COLLECTION = "applicationExecutionStates"
+	APPLICATIONS_COLLECTION                 = "applications"
 )
 
 func NewMongoQueryContext() (context.Context, context.CancelFunc) {

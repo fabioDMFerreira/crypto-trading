@@ -30,9 +30,9 @@ func (r *Repository) Create(notification *domain.Notification) error {
 func (r *Repository) FindLastEventLogsNotificationDate() (time.Time, error) {
 	var document Notification
 
-	opts := options.FindOne().SetSort(bson.M{"createdat": -1})
+	opts := options.FindOne().SetSort(bson.M{"createdAt": -1})
 
-	err := r.repo.FindOne(&document, bson.M{"notificationtype": "eventlogs"}, opts)
+	err := r.repo.FindOne(&document, bson.M{"notificationType": "eventlogs"}, opts)
 
 	if err != nil {
 		return time.Now().AddDate(-1, 0, 0), err
@@ -44,7 +44,7 @@ func (r *Repository) FindLastEventLogsNotificationDate() (time.Time, error) {
 // Sent updates notification as sent
 func (r *Repository) Sent(id primitive.ObjectID) error {
 	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{"send": true}}
+	update := bson.M{"$set": bson.M{"sent": true}}
 
 	return r.repo.UpdateOne(filter, update)
 }

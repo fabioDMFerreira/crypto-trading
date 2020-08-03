@@ -15,6 +15,7 @@ type App struct {
 	trader              domain.Trader
 	accountService      domain.AccountService
 	collector           domain.Collector
+	Asset               string
 }
 
 // NewApp returns an instance of App
@@ -81,10 +82,10 @@ func (a *App) DecideToBuy(price float32, currentTime time.Time) error {
 				return err
 			}
 
-			message := fmt.Sprintf("Asset bought: {Price: %v Amount: %v Value: %v}", price, amount, amount*price)
+			message := fmt.Sprintf("Asset bought: {Price: %v Amount: %v Value: %v, Asset: %v}", price, amount, amount*price, a.Asset)
 			a.log("buy", message)
 		} else {
-			a.log("Insuffucient Funds", fmt.Sprintf("want to spend %.4fBTC*%.2f$=%v, have %.2f in account", amount, price, amount*price, accountAmount))
+			a.log("Insuffucient Funds", fmt.Sprintf("want to spend %.4f%v*%.2f$=%v, have %.2f in account", amount, a.Asset, price, amount*price, accountAmount))
 		}
 	}
 
@@ -106,7 +107,7 @@ func (a *App) DecideToSell(price float32, currentTime time.Time) error {
 				return err
 			}
 
-			message := fmt.Sprintf("Asset sold: {Price: %v Amount: %v Value: %v}", price, asset.Amount, price*asset.Amount)
+			message := fmt.Sprintf("Asset sold: {Price: %v Amount: %v Value: %v, Asset: %v}", price, asset.Amount, price*asset.Amount, a.Asset)
 			a.log("sell", message)
 		}
 	}
@@ -118,7 +119,7 @@ func (a *App) DecideToSell(price float32, currentTime time.Time) error {
 func (a *App) OnTickerChange(ask, bid float32, currentTime time.Time) {
 
 	a.decisionMaker.NewValue(ask, currentTime)
-	a.log("btc price change", fmt.Sprintf("BTC PRICE: %v", ask))
+	a.log("Price change", fmt.Sprintf("%v PRICE: %v", a.Asset, ask))
 
 	err := a.DecideToBuy(ask, currentTime)
 

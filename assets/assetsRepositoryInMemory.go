@@ -13,7 +13,7 @@ type AssetsRepositoryInMemory struct {
 }
 
 // FindPendingAssets returns all assets sold stored
-func (ar *AssetsRepositoryInMemory) FindPendingAssets() (*[]domain.Asset, error) {
+func (ar *AssetsRepositoryInMemory) FindPendingAssets(accountID primitive.ObjectID) (*[]domain.Asset, error) {
 
 	pendingAssets := []domain.Asset{}
 
@@ -26,12 +26,12 @@ func (ar *AssetsRepositoryInMemory) FindPendingAssets() (*[]domain.Asset, error)
 }
 
 // FindAll returns all assets stored
-func (ar *AssetsRepositoryInMemory) FindAll() (*[]domain.Asset, error) {
+func (ar *AssetsRepositoryInMemory) FindAll(accountID primitive.ObjectID) (*[]domain.Asset, error) {
 	return &ar.Assets, nil
 }
 
 // FindCheaperAssetPrice returns the lowest price of non sold assets
-func (ar *AssetsRepositoryInMemory) FindCheaperAssetPrice() (float32, error) {
+func (ar *AssetsRepositoryInMemory) FindCheaperAssetPrice(accountID primitive.ObjectID) (float32, error) {
 	var minimumPrice float32
 
 	for _, asset := range ar.Assets {
@@ -44,7 +44,7 @@ func (ar *AssetsRepositoryInMemory) FindCheaperAssetPrice() (float32, error) {
 }
 
 // GetBalance mocks the returning of balance between two dates
-func (ar *AssetsRepositoryInMemory) GetBalance(startDate, endDate time.Time) (float32, error) {
+func (ar *AssetsRepositoryInMemory) GetBalance(accountID primitive.ObjectID, startDate, endDate time.Time) (float32, error) {
 	return 0, nil
 }
 
@@ -70,7 +70,7 @@ func (ar *AssetsRepositoryInMemory) Sell(id primitive.ObjectID, price float32, s
 }
 
 // CheckAssetWithCloserPriceExists checks whether exist an asset that has the same price within limits defined
-func (ar *AssetsRepositoryInMemory) CheckAssetWithCloserPriceExists(price, limit float32) (bool, error) {
+func (ar *AssetsRepositoryInMemory) CheckAssetWithCloserPriceExists(accountID primitive.ObjectID, price, limit float32) (bool, error) {
 	lowerLimit := price - (price * limit)
 	upperLimit := price + (price * limit)
 

@@ -6,6 +6,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/mocks"
 	"github.com/fabiodmferreira/crypto-trading/notifications"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestSendEmail(t *testing.T) {
@@ -73,5 +74,5 @@ func setupNotificationsService() (*notifications.Service, *mocks.NotificaitonsRe
 	repository := &mocks.NotificaitonsRepositorySpy{}
 	emailService := &mocks.EmailServiceSpy{}
 
-	return notifications.NewService(repository, domain.NotificationOptions{Sender: "a", Receiver: "a", SenderPassword: "a"}, emailService.SendMail), repository, emailService
+	return notifications.NewService(repository, domain.NotificationOptions{Sender: "a", Receiver: "a", SenderPassword: "a"}, emailService.SendMail, primitive.NewObjectID()), repository, emailService
 }

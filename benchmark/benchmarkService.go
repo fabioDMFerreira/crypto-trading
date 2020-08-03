@@ -177,8 +177,10 @@ func (s *Service) setupApplication(input Input) (*app.App, error) {
 	statisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
 	growthStatisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
 	assetsRepository := &assets.AssetsRepositoryInMemory{}
+	accountService := accounts.NewAccountServiceInMemory(float32(input.AccountInitialAmount), assetsRepository)
+
 	decisionMakerOptions := input.DecisionMakerOptions
-	decisionMaker := decisionmaker.NewDecisionMaker(assetsRepository, decisionMakerOptions, statisticsService, growthStatisticsService)
+	decisionMaker := decisionmaker.NewDecisionMaker(accountService, decisionMakerOptions, statisticsService, growthStatisticsService)
 
 	_, currentFilePath, _, _ := runtime.Caller(0)
 	currentDir := path.Dir(currentFilePath)
@@ -192,9 +194,8 @@ func (s *Service) setupApplication(input Input) (*app.App, error) {
 
 	collector := collectors.NewFileTickerCollector(input.CollectorOptions)
 
-	accountService := accounts.NewAccountServiceInMemory(float32(input.AccountInitialAmount), assetsRepository)
 	broker := broker.NewBrokerMock()
-	trader := trader.NewTrader(assetsRepository, accountService, broker)
+	trader := trader.NewTrader(accountService, broker)
 
 	application := app.NewApp(collector, decisionMaker, trader, accountService)
 

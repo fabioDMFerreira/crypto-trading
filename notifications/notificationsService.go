@@ -12,14 +12,16 @@ type Service struct {
 	notificationsRepository domain.NotificationsRepository
 	options                 domain.NotificationOptions
 	sendMail                domain.SendMail
+	appID                   primitive.ObjectID
 }
 
 func NewService(
 	notificationsRepository domain.NotificationsRepository,
 	options domain.NotificationOptions,
 	sendMail domain.SendMail,
+	appID primitive.ObjectID,
 ) *Service {
-	return &Service{notificationsRepository, options, sendMail}
+	return &Service{notificationsRepository, options, sendMail, appID}
 }
 
 // SendEmail setup an email options and sends it
@@ -58,6 +60,7 @@ func (n *Service) CreateEmailNotification(subject, message, notificationType str
 		CreatedAt:           time.Now(),
 		NotificationType:    notificationType,
 		NotificationChannel: "email",
+		ApplicationID:       n.appID,
 	}
 
 	err := n.notificationsRepository.Create(notification)

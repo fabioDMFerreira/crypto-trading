@@ -1,6 +1,10 @@
 package domain
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // Account has details about an exchange account
 type Account struct {
@@ -23,6 +27,8 @@ type AccountServiceReader interface {
 	GetAmount() (float32, error)
 	FindPendingAssets() (*[]Asset, error)
 	FindAllAssets() (*[]Asset, error)
+	GetBalance(startDate, endDate time.Time) (float32, error)
+	CheckAssetWithCloserPriceExists(price, limit float32) (bool, error)
 }
 
 // AccountService interacts with one account
@@ -30,4 +36,6 @@ type AccountService interface {
 	AccountServiceReader
 	Withdraw(amount float32) error
 	Deposit(amount float32) error
+	CreateAsset(amount, price float32, time time.Time) (*Asset, error)
+	SellAsset(assetID primitive.ObjectID, price float32, time time.Time) error
 }

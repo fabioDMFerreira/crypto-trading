@@ -27,9 +27,9 @@ func NewRepository(repo domain.Repository) *Repository {
 }
 
 // FindPendingAssets returns all assets that weren't sold
-func (or *Repository) FindPendingAssets() (*[]Asset, error) {
+func (or *Repository) FindPendingAssets(accountID primitive.ObjectID) (*[]Asset, error) {
 
-	query := bson.D{{"sold", false}}
+	query := bson.M{"sold": false, "accountID": accountID}
 
 	var results []Asset
 	err := or.repo.FindAll(&results, query, nil)
@@ -55,8 +55,8 @@ func (or *Repository) FindOne(filter interface{}) (*Asset, error) {
 }
 
 // FindAll returns every order
-func (or *Repository) FindAll() (*[]Asset, error) {
-	query := bson.D{}
+func (or *Repository) FindAll(accountID primitive.ObjectID) (*[]Asset, error) {
+	query := bson.M{"accountID": accountID}
 
 	var results []Asset
 	err := or.repo.FindAll(&results, query, nil)
@@ -69,10 +69,10 @@ func (or *Repository) FindAll() (*[]Asset, error) {
 }
 
 // FindCheaperAssetPrice returns the asset with the lower buy price
-func (or *Repository) FindCheaperAssetPrice() (float32, error) {
-	opts := options.FindOne().SetSort(bson.D{{"buyPrice", 1}})
+func (or *Repository) FindCheaperAssetPrice(accountID primitive.ObjectID) (float32, error) {
+	opts := options.FindOne().SetSort(bson.M{"buyPrice": 1})
 	var foundDocument Asset
-	err := or.repo.FindOne(&foundDocument, bson.D{{"sold", false}}, opts)
+	err := or.repo.FindOne(&foundDocument, bson.M{"sold": false, "accountID": accountID}, opts)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -91,16 +91,16 @@ func (or *Repository) Create(asset *Asset) error {
 
 // Sell updates asset sell fields
 func (or *Repository) Sell(id primitive.ObjectID, price float32, sellTime time.Time) error {
-	filter := bson.D{{"_id", id}}
-	update := bson.D{{"$set", bson.D{{"sellPrice", price}, {"sold", true}, {"selltime", sellTime}}}}
+	filter := bson.M{"_id": id}
+	update := bson.M{"$set": bson.M{"sellPrice": price, "sold": true, "selltime": sellTime}}
 	err := or.repo.UpdateOne(filter, update)
 
 	return err
 }
 
 // GetBalance returns the assets balance based on buys and sells
-func (ar *Repository) GetBalance(startDate, endDate time.Time) (float32, error) {
-	filter := bson.M{"sold": false, "buytime": bson.M{"$gte": startDate, "$lte": endDate}}
+func (ar *Repository) GetBalance(accountID primitive.ObjectID, startDate, endDate time.Time) (float32, error) {
+	filter := bson.M{"sold": false, "accountID": accountID, "buytime": bson.M{"$gte": startDate, "$lte": endDate}}
 	var assetsBought []Asset
 	err := ar.repo.FindAll(&assetsBought, filter, nil)
 
@@ -130,11 +130,11 @@ func (ar *Repository) GetBalance(startDate, endDate time.Time) (float32, error) 
 }
 
 // CheckAssetWithCloserPriceExists checks whether an asset that has the same price within limits defined exists
-func (ar *Repository) CheckAssetWithCloserPriceExists(price, limit float32) (bool, error) {
+func (ar *Repository) CheckAssetWithCloserPriceExists(accountID primitive.ObjectID, price, limit float32) (bool, error) {
 	lowerLimit := price - (price * limit)
 	upperLimit := price + (price * limit)
 
-	filter := bson.M{"sold": false, "buyPrice": bson.M{"$gte": lowerLimit, "$lte": upperLimit}}
+	filter := bson.M{"sold": false, "accountID": accountID, "buyPrice": bson.M{"$gte": lowerLimit, "$lte": upperLimit}}
 
 	var assets []Asset
 	err := ar.repo.FindAll(&assets, filter, nil)

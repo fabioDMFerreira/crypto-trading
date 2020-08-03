@@ -4,20 +4,17 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Trader execute operations to buy and sell assets
 type Trader struct {
-	assetsRepository domain.AssetsRepository
-	accountService   domain.AccountService
-	broker           domain.Broker
+	accountService domain.AccountService
+	broker         domain.Broker
 }
 
 // NewTrader returns a Trader instance
-func NewTrader(assetsRepository domain.AssetsRepository, accountService domain.AccountService, broker domain.Broker) *Trader {
+func NewTrader(accountService domain.AccountService, broker domain.Broker) *Trader {
 	return &Trader{
-		assetsRepository,
 		accountService,
 		broker,
 	}
@@ -25,7 +22,7 @@ func NewTrader(assetsRepository domain.AssetsRepository, accountService domain.A
 
 // Sell updates asset status to sold, requests broker to sell an asset and updates account ammount
 func (t *Trader) Sell(asset *domain.Asset, price float32, sellTime time.Time) error {
-	err := t.assetsRepository.Sell(asset.ID, price, sellTime)
+	err := t.accountService.SellAsset(asset.ID, price, sellTime)
 
 	if err != nil {
 		return err
@@ -55,8 +52,7 @@ func (t *Trader) Buy(amount, price float32, buyTime time.Time) error {
 		return err
 	}
 
-	asset := &domain.Asset{ID: primitive.NewObjectID(), Amount: amount, BuyPrice: price, BuyTime: buyTime}
-	err = t.assetsRepository.Create(asset)
+	asset, err := t.accountService.CreateAsset(amount, price, buyTime)
 
 	if err != nil {
 		return err

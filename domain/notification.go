@@ -12,10 +12,11 @@ type Notification struct {
 	Title               string             `json:"title"`
 	Message             string             `json:"message"`
 	To                  string             `json:"to"`
-	NotificationType    string             `json:"notificationType"`
-	NotificationChannel string             `json:"notificationChannel"`
+	NotificationType    string             `bson:"notificationType" json:"notificationType"`
+	NotificationChannel string             `bson:"notificationChannel" json:"notificationChannel"`
 	Sent                bool               `json:"sent"`
-	CreatedAt           time.Time          `json:"createdAt"`
+	CreatedAt           time.Time          `bson:"createdAt" json:"createdAt"`
+	ApplicationID       primitive.ObjectID `bson:"applicationID" json:"applicationID"`
 }
 
 // NotificationOptions has notifications service options

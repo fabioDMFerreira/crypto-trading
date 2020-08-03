@@ -8,11 +8,12 @@ import (
 
 // EventLog is a regist of an application event
 type EventLog struct {
-	ID        primitive.ObjectID `bson:"_id" json:"_id"`
-	EventName string             `json:"eventName"`
-	Message   string             `json:"message"`
-	Notified  bool               `json:"notified"`
-	CreatedAt time.Time          `json:"createdAt"`
+	ID            primitive.ObjectID `bson:"_id" json:"_id"`
+	EventName     string             `json:"eventName"`
+	Message       string             `json:"message"`
+	Notified      bool               `json:"notified"`
+	CreatedAt     time.Time          `json:"createdAt"`
+	ApplicationID primitive.ObjectID `bson:"applicationID" json:"applicationID"`
 }
 
 // EventsLog interacts with events

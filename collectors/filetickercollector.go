@@ -56,7 +56,7 @@ func (ftc *FileTickerCollector) Start() {
 			log.Fatal(err)
 		}
 
-		date := time.Unix(unixTime/1000, 0)
+		date := time.Unix(unixTime, 0)
 
 		changeVariance := float32(ftc.lastTickerPrice * ftc.options.PriceVariationDetection)
 

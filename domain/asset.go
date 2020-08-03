@@ -15,15 +15,16 @@ type Asset struct {
 	BuyPrice  float32            `bson:"buyPrice,truncate" json:"buyPrice"`
 	SellPrice float32            `bson:"sellPrice,truncate" json:"sellPrice"`
 	Sold      bool               `json:"sold"`
+	AccountID primitive.ObjectID `bson:"accountID" json:"accountID"`
 }
 
 // AssetsRepositoryReader fetches assets data
 type AssetsRepositoryReader interface {
-	FindAll() (*[]Asset, error)
-	FindPendingAssets() (*[]Asset, error)
-	FindCheaperAssetPrice() (float32, error)
-	CheckAssetWithCloserPriceExists(price float32, limit float32) (bool, error)
-	GetBalance(startDate, endDate time.Time) (float32, error)
+	FindAll(accountID primitive.ObjectID) (*[]Asset, error)
+	FindPendingAssets(accountID primitive.ObjectID) (*[]Asset, error)
+	FindCheaperAssetPrice(accountID primitive.ObjectID) (float32, error)
+	CheckAssetWithCloserPriceExists(accountID primitive.ObjectID, price float32, limit float32) (bool, error)
+	GetBalance(accountID primitive.ObjectID, startDate, endDate time.Time) (float32, error)
 }
 
 // AssetsRepository stores and fetches assets

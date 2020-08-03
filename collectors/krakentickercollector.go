@@ -24,6 +24,11 @@ type TickerMessage struct {
 	B []interface{}
 }
 
+var Pairs = map[string]string{
+	"BTC": "XBT/EUR",
+	"ETH": "ETH/EUR",
+}
+
 // KrakenCollector collects data from kraken exchange
 type KrakenCollector struct {
 	options              domain.CollectorOptions
@@ -31,11 +36,19 @@ type KrakenCollector struct {
 	lastTickerPrice      float32
 	observables          []domain.OnTickerChange
 	lastPricePublishDate time.Time
+	pair                 string
 }
 
 // NewKrakenCollector returns an instance of KrakenCollector
-func NewKrakenCollector(options domain.CollectorOptions, krakenAPI *krakenapi.KrakenAPI) *KrakenCollector {
-	return &KrakenCollector{options, krakenAPI, 0, []domain.OnTickerChange{}, time.Time{}}
+func NewKrakenCollector(asset string, options domain.CollectorOptions, krakenAPI *krakenapi.KrakenAPI) *KrakenCollector {
+
+	pair, ok := Pairs[asset]
+
+	if !ok {
+		log.Fatalf("%v does not have a valid kraken pair", asset)
+	}
+
+	return &KrakenCollector{options, krakenAPI, 0, []domain.OnTickerChange{}, time.Time{}, pair}
 }
 
 // Start connects to a kraken websocket that send prices variations
@@ -53,17 +66,19 @@ func (kc *KrakenCollector) Start() {
 
 	defer c.Close()
 
+	subscribeEventMessage := fmt.Sprintf(`{
+		"event": "subscribe",
+		"pair": [
+			"%v"
+		],
+		"subscription": {
+			"name": "ticker"
+		}
+	}`, kc.pair)
+
 	err = c.WriteMessage(
 		websocket.TextMessage,
-		[]byte(`{
-			"event": "subscribe",
-			"pair": [
-				"XBT/EUR"
-			],
-			"subscription": {
-				"name": "ticker"
-			}
-		}`),
+		[]byte(subscribeEventMessage),
 	)
 	if err != nil {
 		log.Fatal(err)
