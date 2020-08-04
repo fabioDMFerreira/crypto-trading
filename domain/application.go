@@ -20,7 +20,7 @@ type Application struct {
 	Asset     string             `json:"asset"`
 	AccountID primitive.ObjectID `bson:"accountID" json:"accountID"`
 	Options   ApplicationOptions `bson:"options" json:"options"`
-	CreatedAt time.Time          `json:"createdAt"`
+	CreatedAt time.Time          `json:"createdAt" bson:"createdAt"`
 }
 
 // ApplicationRepository stores and gets applications from db

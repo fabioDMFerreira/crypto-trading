@@ -2,8 +2,6 @@ import React from 'react';
 import Table from 'react-bootstrap/Table';
 import { useTable } from 'react-table';
 
-import formatDate from '../formatters/formatDate';
-
 interface Props {
   applications: any[]
   selectApplication: (value: string) => void
@@ -25,7 +23,6 @@ export default ({ selectApplication, deleteApplication, applications }: Props) =
       {
         Header: 'Created At',
         accessor: 'createdAt',
-        Cell: ({ value }:any) => (<span>{formatDate(value)}</span>),
       },
       {
         id: 'edit',

@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
@@ -37,7 +38,7 @@ func (r *Repository) FindByID(id string) (*domain.Application, error) {
 // Create creates an application object
 func (r *Repository) Create(asset string, options domain.ApplicationOptions, accountID primitive.ObjectID) (*domain.Application, error) {
 
-	app := domain.Application{ID: primitive.NewObjectID(), Options: options, AccountID: accountID, Asset: asset}
+	app := domain.Application{ID: primitive.NewObjectID(), Options: options, AccountID: accountID, Asset: asset, CreatedAt: time.Now()}
 
 	err := r.repo.InsertOne(app)
 

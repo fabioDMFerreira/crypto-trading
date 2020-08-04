@@ -38,6 +38,7 @@ export default (applications: Application[]) => {
 
     fetch(`/api/accounts/${activeApplication.accountID}/assets`)
       .then((res) => res.json())
+      .then(assets => assets || [])
       .then(setAssets);
 
     fetch(`/api/applications/${activeApplication._id}/log-events`)
