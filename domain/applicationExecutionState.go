@@ -23,7 +23,7 @@ type ApplicationExecutionState struct {
 	ID          primitive.ObjectID `bson:"_id" json:"_id"`
 	ExecutionID primitive.ObjectID `bson:"executionId" json:"executionId"`
 	Date        time.Time          `json:"date"`
-	State       interface{}        `json:"executionState"`
+	State       interface{}        `json:"state" bson:"state"`
 }
 
 // ApplicationExecutionStateRepository stores and gets application executions states

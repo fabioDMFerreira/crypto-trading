@@ -29,7 +29,7 @@ export default (applications: Application[]) => {
       .then((res) => res.json())
       .then(data => ({
         ...data,
-        state: data.executionState.reduce((final: any, pair: any) => {
+        state: data.state.reduce((final: any, pair: any) => {
           final[pair.Key] = pair.Value
           return final;
         }, {})
