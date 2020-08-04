@@ -23,6 +23,7 @@ export default ({ selectApplication, deleteApplication, applications }: Props) =
       {
         Header: 'Created At',
         accessor: 'createdAt',
+        Cell: ({ value }: any) => (<span>{value.toString()}</span>),
       },
       {
         id: 'edit',

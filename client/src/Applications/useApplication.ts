@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import {
-  Account, Application, ApplicationExecutionState, Asset, LogEvent
+  Account, Application, ApplicationExecutionState, Asset, LogEvent,
 } from '../types';
 
 export default (applications: Application[]) => {
@@ -10,9 +10,7 @@ export default (applications: Application[]) => {
   const [activeAccount, setActiveAccount] = useState<Account>();
   const [lastApplicationState, setLastApplicationState] = useState<ApplicationExecutionState>();
   const [assets, setAssets] = useState<Asset[]>();
-  const [logEvents, setLogEvents] = useState<LogEvent[]>()
-
-
+  const [logEvents, setLogEvents] = useState<LogEvent[]>();
 
   useEffect(() => {
     if (!activeApplication) {
@@ -27,35 +25,35 @@ export default (applications: Application[]) => {
 
     fetch(`/api/applications/${activeApplication._id}/state/last`)
       .then((res) => res.json())
-      .then(data => ({
+      .then((data) => ({
         ...data,
         state: data.state.reduce((final: any, pair: any) => {
-          final[pair.Key] = pair.Value
+          final[pair.Key] = pair.Value;
           return final;
-        }, {})
+        }, {}),
       }))
       .then(setLastApplicationState);
 
     fetch(`/api/accounts/${activeApplication.accountID}/assets`)
       .then((res) => res.json())
-      .then(assets => assets || [])
+      .then((assets) => assets || [])
       .then(setAssets);
 
     fetch(`/api/applications/${activeApplication._id}/log-events`)
       .then((res) => res.json())
-      .then(setLogEvents)
+      .then(setLogEvents);
   }, [activeApplication]);
 
   useEffect(() => {
     if (!activeApplicationID) {
       setActiveApplication(undefined);
-      return
+      return;
     }
 
-    const application = applications.find(app => app._id === activeApplicationID)
+    const application = applications.find((app) => app._id === activeApplicationID);
 
-    setActiveApplication(application)
-  }, [activeApplicationID, applications])
+    setActiveApplication(application);
+  }, [activeApplicationID, applications]);
 
   return {
     activeApplication,

@@ -3,16 +3,14 @@ import HighchartsReact from 'highcharts-react-official';
 import React from 'react';
 import useDebouncedCallback from 'use-debounce/lib/useDebouncedCallback';
 
-import { ApplicationState } from '../formatters/formatApplicationExecutionState';
-import { DatesInterval } from '../types';
+import { ApplicationState } from '../../formatters/formatApplicationExecutionState';
+import { DatesInterval } from '../../types';
 
 interface ChartProps {
   prices: [number, number][]
   balances: [number, number][]
   buys: [number, number][]
   sells: [number, number][]
-  growth: [number, number][]
-  growthOfGrowth: [number, number][]
   applicationState?: ApplicationState
   setDatesInterval: (interval: DatesInterval) => void
 }
@@ -22,8 +20,6 @@ export default ({
   balances,
   buys,
   sells,
-  growth,
-  growthOfGrowth,
   applicationState,
   setDatesInterval,
 }: ChartProps) => {
@@ -76,20 +72,6 @@ export default ({
       data: prices,
       color: 'rgba(83, 83, 223, .5)',
     }, {
-      name: 'Growth',
-      type: 'line',
-      data: growth,
-      yAxis: 2,
-      visible: false,
-      color: '#FFA000',
-    }, {
-      name: 'Growth of growth',
-      type: 'line',
-      data: growthOfGrowth,
-      yAxis: 2,
-      visible: false,
-      color: '#FFF176',
-    }, {
       name: 'Balance',
       type: 'line',
       yAxis: 1,
@@ -132,25 +114,25 @@ export default ({
     }, {
       name: 'L Bollinger',
       type: 'line',
-      data: applicationState.lowerbollingerband,
+      data: applicationState.lowerBollingerBand,
       visible: false,
       color: '#ccc',
     }, {
       name: 'H Bollinger',
       type: 'line',
-      data: applicationState.higherbollingerband,
+      data: applicationState.higherBollingerBand,
       visible: false,
       color: '#ccc',
     }, {
       name: 'Standard Deviation',
       type: 'line',
-      data: applicationState.standarddeviation,
+      data: applicationState.standardDeviation,
       visible: false,
       color: '#FFF176',
     }, {
       name: 'Current Change',
       type: 'line',
-      data: applicationState.currentchange,
+      data: applicationState.currentChange,
       yAxis: 2,
       visible: false,
       color: '#FFF176',

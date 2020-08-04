@@ -7,23 +7,23 @@ export interface ApplicationStateAggregatedByDate {
     minute?: number;
   };
   average: number;
-  standarddeviation: number;
-  currentchange: number
-  lowerbollingerband: number;
-  higherbollingerband: number;
+  standardDeviation: number;
+  currentChange: number
+  lowerBollingerBand: number;
+  higherBollingerBand: number;
 }
 
 export interface ApplicationState {
   average: [number, number][]
-  standarddeviation: [number, number][]
-  lowerbollingerband: [number, number][]
-  higherbollingerband: [number, number][]
-  currentchange: [number, number][]
+  standardDeviation: [number, number][]
+  lowerBollingerBand: [number, number][]
+  higherBollingerBand: [number, number][]
+  currentChange: [number, number][]
 }
 
 export default (data: ApplicationStateAggregatedByDate[]): ApplicationState => {
   const defaultResult: ApplicationState = {
-    average: [], standarddeviation: [], higherbollingerband: [], lowerbollingerband: [], currentchange: [],
+    average: [], standardDeviation: [], higherBollingerBand: [], lowerBollingerBand: [], currentChange: [],
   };
 
   return data
@@ -39,10 +39,10 @@ export default (data: ApplicationStateAggregatedByDate[]): ApplicationState => {
           );
 
           final.average.push([time, applicationState.average]);
-          final.standarddeviation.push([time, applicationState.standarddeviation]);
-          final.currentchange.push([time, applicationState.currentchange]);
-          final.lowerbollingerband.push([time, applicationState.lowerbollingerband]);
-          final.higherbollingerband.push([time, applicationState.higherbollingerband]);
+          final.standardDeviation.push([time, applicationState.standardDeviation]);
+          final.currentChange.push([time, applicationState.currentChange]);
+          final.lowerBollingerBand.push([time, applicationState.lowerBollingerBand]);
+          final.higherBollingerBand.push([time, applicationState.higherBollingerBand]);
 
           return final;
         }, defaultResult,

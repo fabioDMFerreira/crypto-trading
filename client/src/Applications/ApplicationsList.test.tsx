@@ -67,6 +67,10 @@ const applications: Application[] = [
 
 describe('ApplicationsList', () => {
   it('should render', () => {
-    render(<ApplicationsList applications={applications} selectApplication={jest.fn()} deleteApplication={jest.fn()} />);
+    render(<ApplicationsList
+      applications={applications}
+      selectApplication={jest.fn()}
+      deleteApplication={jest.fn()}
+    />);
   });
 });

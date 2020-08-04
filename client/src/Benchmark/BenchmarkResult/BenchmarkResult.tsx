@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 
 import AssetsTable from '../../components/AssetsTable';
 import Chart from '../../components/Chart';
+import ChartFilters from '../../components/ChartFilters/ChartFilters';
 import JsonDisplayer from '../../components/JsonDisplayer';
+import useAssetPrices from '../../hooks/useAssetPrices';
+import useDatesInterval from '../../hooks/useDatesInterval';
 import { Benchmark } from '../../types';
-import BenchmarkFilters from './BenchmarkFilters';
-import PricesAnalysisTable from './PricesAnalysisTable';
-import PricesStatisticsAnalysisTable from './PricesStatisticsAnalysisTable';
+// import PricesAnalysisTable from './PricesAnalysisTable';
+// import PricesStatisticsAnalysisTable from './PricesStatisticsAnalysisTable';
 import useBenchmark from './useBenchmark';
-
 
 interface Props {
   benchmark: Benchmark
@@ -18,17 +19,21 @@ export default ({ benchmark }: Props) => {
   const [tableView, setTableView] = useState<string>('assets');
 
   const {
+    datesInterval,
+    setDatesInterval,
+  } = useDatesInterval();
+
+  const {
     assets,
-    prices,
     balances,
     buys,
     sells,
-    growth,
-    growthOfGrowth,
-    chartDatesInterval,
-    setChartDatesInterval,
     applicationState,
-  } = useBenchmark(benchmark);
+  } = useBenchmark(benchmark, datesInterval, setDatesInterval);
+
+  const {
+    assetPrices: prices,
+  } = useAssetPrices(benchmark.input.asset, datesInterval?.startDate, datesInterval?.endDate);
 
   return (
     <>
@@ -43,7 +48,7 @@ export default ({ benchmark }: Props) => {
           }}
           />
         </div>
-        <BenchmarkFilters
+        <ChartFilters
           minimumDate={
             benchmark.output.balances && benchmark.output.balances.length
               ? new Date(benchmark.output.balances[0][0]) : undefined
@@ -52,23 +57,21 @@ export default ({ benchmark }: Props) => {
             benchmark.output.balances && benchmark.output.balances.length
               ? new Date(benchmark.output.balances[benchmark.output.balances.length - 1][0]) : undefined
           }
-          startDate={chartDatesInterval?.startDate}
-          endDate={chartDatesInterval?.endDate}
-          setDatesInterval={setChartDatesInterval}
+          startDate={datesInterval?.startDate}
+          endDate={datesInterval?.endDate}
+          setDatesInterval={setDatesInterval}
         />
       </div>
       <div className="mb-5">
         {
-          prices && balances && sells && buys && assets && growth && growthOfGrowth
+          prices && balances && sells && buys && applicationState
           && (
             <Chart
               prices={prices}
               balances={balances}
               buys={buys}
               sells={sells}
-              growth={growth}
-              growthOfGrowth={growthOfGrowth}
-              setDatesInterval={setChartDatesInterval}
+              setDatesInterval={setDatesInterval}
               applicationState={applicationState}
             />
           )
@@ -83,7 +86,7 @@ export default ({ benchmark }: Props) => {
           assets && tableView === 'assets'
           && <AssetsTable assets={assets} />
         }
-        {
+        {/* {
           prices && growth && growthOfGrowth && tableView === 'price-analysis'
           && (
             <PricesStatisticsAnalysisTable
@@ -102,7 +105,7 @@ export default ({ benchmark }: Props) => {
               growthOfGrowth={growthOfGrowth}
             />
           )
-        }
+        } */}
       </div>
     </>
   );

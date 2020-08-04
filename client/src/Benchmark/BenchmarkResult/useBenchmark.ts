@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 
 import fillDatesGaps from '../../formatters/fillDatesGaps';
 import formatApplicationExecutionState, { ApplicationState } from '../../formatters/formatApplicationExecutionState';
-import formatAssetPrices from '../../formatters/formatAssetPrices';
 import formatDateTime from '../../formatters/formatDateTime';
 import {
-  Asset, Benchmark, BenchmarkOutput, DatesInterval,
+  Asset, Benchmark, BenchmarkOutput,
+  DatesInterval,
 } from '../../types';
 
 
@@ -42,7 +42,7 @@ function filterBenchmarkResultByTime(data: BenchmarkOutput, start: number | unde
   return newData;
 }
 
-const derivate = (ns: [number, number][], minutesBetweenPoints: number = 0): [number, number][] => {
+export const derivate = (ns: [number, number][], minutesBetweenPoints: number = 0): [number, number][] => {
   if (!ns.length) {
     return [];
   }
@@ -67,16 +67,11 @@ const derivate = (ns: [number, number][], minutesBetweenPoints: number = 0): [nu
   }, []);
 };
 
-export default (benchmark: Benchmark) => {
-  const [chartDatesInterval, setChartDatesInterval] = useState<DatesInterval>();
-
-  const [prices, setPrices] = useState<[number, number][]>();
+export default (benchmark: Benchmark, datesInterval: DatesInterval | undefined, setDatesInterval: any) => {
   const [assets, setAssets] = useState<Asset[]>();
   const [balances, setBalances] = useState<[number, number][]>();
   const [buys, setBuys] = useState<[number, number][]>();
   const [sells, setSells] = useState<[number, number][]>();
-  const [growth, setGrowth] = useState<[number, number][]>();
-  const [growthOfGrowth, setGrowthOfGrowth] = useState<[number, number][]>();
   const [applicationState, setApplicationState] = useState<ApplicationState>();
 
   useEffect(() => {
@@ -92,8 +87,8 @@ export default (benchmark: Benchmark) => {
       const startDate = firstBuy > firstSell ? firstSell : firstBuy;
       const endDate = lastBuy > lastSell ? lastBuy : lastSell;
 
-      if (startDate && endDate) {
-        setChartDatesInterval({ startDate: new Date(startDate), endDate: new Date(endDate) });
+      if (startDate && endDate && setDatesInterval) {
+        setDatesInterval({ startDate: new Date(startDate), endDate: new Date(endDate) });
       }
     }
 
@@ -107,66 +102,48 @@ export default (benchmark: Benchmark) => {
       setSells(benchmark.output.sells);
       setAssets(benchmark.output.assets);
     }
-  }, [benchmark]);
+  }, [benchmark, setDatesInterval]);
 
   useEffect(() => {
-    if (chartDatesInterval) {
-      const startDateFormatted = formatDateTime(chartDatesInterval.startDate.getTime());
-      const endDateFormatted = formatDateTime(chartDatesInterval.endDate.getTime());
+    if (datesInterval && benchmark) {
+      const startDateFormatted = formatDateTime(datesInterval.startDate.getTime());
+      const endDateFormatted = formatDateTime(datesInterval.endDate.getTime());
 
-      if (benchmark) {
-        fetch(`/api/assets/${benchmark?.input.asset}/prices?startDate=${startDateFormatted}&endDate=${endDateFormatted}`)
-          .then((res) => res.json())
-          .then(formatAssetPrices)
-          .then((data) => data.sort((a, b) => a[0] - b[0]))
-          .then((prices) => {
-            setPrices(prices);
-            const growth = derivate(prices);
-            setGrowth(growth);
-            setGrowthOfGrowth(derivate(growth));
-          });
-
-        fetch(`/api/benchmark/${benchmark._id}/state?startDate=${startDateFormatted}&endDate=${endDateFormatted}`)
-          .then((res) => res.json())
-          .then(formatApplicationExecutionState)
-          .then((data) => ({
-            average: data.average.sort((a, b) => a[0] - b[0]),
-            standarddeviation: data.standarddeviation.sort((a, b) => a[0] - b[0]),
-            currentchange: data.currentchange.sort((a, b) => a[0] - b[0]),
-            lowerbollingerband: data.lowerbollingerband.sort((a, b) => a[0] - b[0]),
-            higherbollingerband: data.higherbollingerband.sort((a, b) => a[0] - b[0]),
-          }))
-          .then(setApplicationState);
+      fetch(`/api/benchmark/${benchmark._id}/state?startDate=${startDateFormatted}&endDate=${endDateFormatted}`)
+        .then((res) => res.json())
+        .then(formatApplicationExecutionState)
+        .then((data) => ({
+          average: data.average.sort((a, b) => a[0] - b[0]),
+          standardDeviation: data.standardDeviation.sort((a, b) => a[0] - b[0]),
+          currentChange: data.currentChange.sort((a, b) => a[0] - b[0]),
+          lowerBollingerBand: data.lowerBollingerBand.sort((a, b) => a[0] - b[0]),
+          higherBollingerBand: data.higherBollingerBand.sort((a, b) => a[0] - b[0]),
+        }))
+        .then(setApplicationState);
 
 
-        const data = filterBenchmarkResultByTime(
-          benchmark.output,
-          chartDatesInterval.startDate.getTime(),
-          chartDatesInterval.endDate.getTime(),
-        );
+      const data = filterBenchmarkResultByTime(
+        benchmark.output,
+        datesInterval.startDate.getTime(),
+        datesInterval.endDate.getTime(),
+      );
 
-        setBalances(
-          fillDatesGaps(
-            data.balances,
-          ),
-        );
-        setBuys(data.buys);
-        setSells(data.sells);
-      }
+      setBalances(
+        fillDatesGaps(
+          data.balances,
+        ),
+      );
+      setBuys(data.buys);
+      setSells(data.sells);
     }
-  }, [chartDatesInterval, benchmark]);
+  }, [datesInterval, benchmark]);
 
 
   return {
-    prices,
     buys,
     sells,
-    growth,
-    growthOfGrowth,
     balances,
     assets,
-    chartDatesInterval,
-    setChartDatesInterval,
     applicationState,
   };
 };

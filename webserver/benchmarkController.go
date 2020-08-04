@@ -184,10 +184,10 @@ func (b *BenchmarkController) GetBenchmarkExecutionStateHandler(w http.ResponseW
 				Value: bson.M{
 					"_id":                 groupByDatesClause,
 					"average":             bson.M{"$avg": "$state.average"},
-					"standarddeviation":   bson.M{"$avg": "$state.standardDeviation"},
-					"higherbollingerband": bson.M{"$avg": "$state.higherBollingerBand"},
-					"lowerbollingerband":  bson.M{"$avg": "$state.lowerBollingerBand"},
-					"currentchange":       bson.M{"$avg": "$state.currentChange"},
+					"standardDeviation":   bson.M{"$avg": "$state.standardDeviation"},
+					"higherBollingerBand": bson.M{"$avg": "$state.higherBollingerBand"},
+					"lowerBollingerBand":  bson.M{"$avg": "$state.lowerBollingerBand"},
+					"currentChange":       bson.M{"$avg": "$state.currentChange"},
 				},
 			}},
 	}
