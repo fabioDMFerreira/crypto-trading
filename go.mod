@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/beldur/kraken-go-api-client v0.0.0-20200330152217-ed78f31b987e
 	github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473
-	github.com/golang/mock v1.4.3 // indirect
+	github.com/golang/mock v1.4.3
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/websocket v1.4.2

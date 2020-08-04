@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Repository stores and gets assets prices
@@ -70,4 +71,19 @@ func (r *Repository) BulkDelete(id string) error {
 	filter := bson.M{"executionId": oid}
 
 	return r.repo.BulkDelete(filter)
+}
+
+// FindOne retuns one document of application execution state
+func (r *Repository) FindLast(filter interface{}) (*domain.ApplicationExecutionState, error) {
+	var result domain.ApplicationExecutionState
+
+	opts := options.FindOne().SetSort(bson.M{"date": 1})
+
+	err := r.repo.FindOne(&result, filter, opts)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &result, nil
 }

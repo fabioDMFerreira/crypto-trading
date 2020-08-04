@@ -1,5 +1,5 @@
 import React from 'react';
-import Table from 'react-bootstrap/Table';
+import Table from '../../components/Table';
 
 interface Props {
   prices: [number, number][]
@@ -26,7 +26,7 @@ export default ({ prices, growth, growthOfGrowth }: Props) => {
   const growthOfGrowthStatistics = getStatistics(growthOfGrowth.map((el) => el[1]));
 
   return (
-    <Table striped bordered hover>
+    <Table>
       <thead>
         <tr>
           <th>Metric</th>

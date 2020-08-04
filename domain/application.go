@@ -1,6 +1,10 @@
 package domain
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 // ApplicationOptions aggregates options of every service options needed to run an application
 type ApplicationOptions struct {
@@ -16,10 +20,21 @@ type Application struct {
 	Asset     string             `json:"asset"`
 	AccountID primitive.ObjectID `bson:"accountID" json:"accountID"`
 	Options   ApplicationOptions `bson:"options" json:"options"`
+	CreatedAt time.Time          `json:"createdAt"`
 }
 
 // ApplicationRepository stores and gets applications from db
 type ApplicationRepository interface {
 	FindByID(id string) (*Application, error)
 	Create(asset string, options ApplicationOptions, acountID primitive.ObjectID) (*Application, error)
+	FindAll() (*[]Application, error)
+	DeleteByID(id string) error
+}
+
+// ApplicationService interacts with objects related with an application
+type ApplicationService interface {
+	FindAll() (*[]Application, error)
+	GetLastState(appID primitive.ObjectID) (*ApplicationExecutionState, error)
+	DeleteByID(id string) error
+	GetLogEvents(appID primitive.ObjectID) (*[]EventLog, error)
 }

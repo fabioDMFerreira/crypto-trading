@@ -4,14 +4,32 @@ import 'rc-time-picker/assets/index.css';
 import './App.css';
 
 import React from 'react';
+import {
+  BrowserRouter as Router,
+  Route,
+  Switch,
+} from 'react-router-dom';
 
+import Applications from './Applications';
 import Benchmark from './Benchmark';
+import Navbar from './components/Navbar';
 
 function App() {
   return (
-    <div className="App">
-      <Benchmark />
-    </div>
+    <Router>
+      <Navbar />
+      <div className="App">
+        <Switch>
+          <Route exact path="/" />
+          <Route path="/benchmarks">
+            <Benchmark />
+          </Route>
+          <Route path="/applications">
+            <Applications />
+          </Route>
+        </Switch>
+      </div>
+    </Router>
   );
 }
 

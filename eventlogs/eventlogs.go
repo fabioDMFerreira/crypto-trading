@@ -7,6 +7,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // EventLogsRepository fetches and stores events
@@ -54,4 +55,13 @@ func (or *EventLogsRepository) MarkNotified(ids []primitive.ObjectID) error {
 	update := bson.M{"$set": bson.M{"notified": true}}
 
 	return or.repo.BulkUpdate(filter, update)
+}
+
+// FindAll returns all log events that match the filter
+func (e *EventLogsRepository) FindAll(filter interface{}) (*[]domain.EventLog, error) {
+	var events []domain.EventLog
+
+	err := e.repo.FindAll(&events, filter, &options.FindOptions{Sort: bson.M{"createdat": -1}})
+
+	return &events, err
 }

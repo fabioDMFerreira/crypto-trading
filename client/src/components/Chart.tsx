@@ -3,12 +3,10 @@ import HighchartsReact from 'highcharts-react-official';
 import React from 'react';
 import useDebouncedCallback from 'use-debounce/lib/useDebouncedCallback';
 
-import { ApplicationState } from '../../formatters/formatApplicationExecutionState';
-import { DatesInterval } from '../../types';
+import { ApplicationState } from '../formatters/formatApplicationExecutionState';
+import { DatesInterval } from '../types';
 
-// const getDates = (el: [number, number]) => new Date(el[0]);
-
-interface BenchmarkChartProps {
+interface ChartProps {
   prices: [number, number][]
   balances: [number, number][]
   buys: [number, number][]
@@ -28,7 +26,7 @@ export default ({
   growthOfGrowth,
   applicationState,
   setDatesInterval,
-}: BenchmarkChartProps) => {
+}: ChartProps) => {
   const [setRange] = useDebouncedCallback((min: number, max: number) => {
     setDatesInterval({
       startDate: new Date(min),
@@ -36,19 +34,7 @@ export default ({
     });
   }, 100);
 
-  // console.log({
-  //   prices: prices.map(getDates),
-  //   balances: balances.map(getDates),
-  //   buys: buys.map(getDates),
-  //   sells: sells.map(getDates),
-  //   growth: growth.map(getDates),
-  //   growthOfGrowth: growthOfGrowth.map(getDates),
-  // });
-
   const options: Highcharts.Options = {
-    title: {
-      text: 'Benchmark',
-    },
     chart: {
       zoomType: 'x',
     },
@@ -63,6 +49,7 @@ export default ({
       },
       labels: {
         formatter() {
+          // eslint-disable-next-line react/no-this-in-sfc
           return Highcharts.dateFormat('%d-%b-%y', (this.value));
         },
       },

@@ -1,4 +1,4 @@
-import moment, { Moment } from 'moment';
+import moment from 'moment';
 import TimePicker from 'rc-time-picker';
 import React from 'react';
 import DayPickerInput from 'react-day-picker/DayPickerInput';
@@ -71,7 +71,7 @@ export default ({
         <TimePicker
           showSecond={false}
           value={moment(startDate?.getTime())}
-          onChange={(data: Moment) => {
+          onChange={(data: moment.Moment) => {
             if (endDate && startDate) {
               setDatesInterval({
                 startDate: data.toDate(),
@@ -108,7 +108,7 @@ export default ({
           <TimePicker
             showSecond={false}
             value={moment(endDate?.getTime())}
-            onChange={(data: Moment) => {
+            onChange={(data: moment.Moment) => {
               if (endDate && startDate) {
                 setDatesInterval({
                   startDate,

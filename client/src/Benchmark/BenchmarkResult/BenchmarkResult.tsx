@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 
+import AssetsTable from '../../components/AssetsTable';
+import Chart from '../../components/Chart';
+import JsonDisplayer from '../../components/JsonDisplayer';
 import { Benchmark } from '../../types';
-import AssetsTable from './AssetsTable';
-import BenchmarkChart from './BenchmarkChart';
 import BenchmarkFilters from './BenchmarkFilters';
 import PricesAnalysisTable from './PricesAnalysisTable';
 import PricesStatisticsAnalysisTable from './PricesStatisticsAnalysisTable';
 import useBenchmark from './useBenchmark';
+
 
 interface Props {
   benchmark: Benchmark
@@ -33,14 +35,13 @@ export default ({ benchmark }: Props) => {
       <div className="mb-5">
         <h2>Benchmark Result</h2>
         <div className="mb-5">
-          <code>
-            {JSON.stringify({
-              ...benchmark,
-              output: {
-                finalAmount: benchmark.output.finalAmount,
-              },
-            }, undefined, 2)}
-          </code>
+          <JsonDisplayer json={{
+            ...benchmark,
+            output: {
+              finalAmount: benchmark.output.finalAmount,
+            },
+          }}
+          />
         </div>
         <BenchmarkFilters
           minimumDate={
@@ -60,7 +61,7 @@ export default ({ benchmark }: Props) => {
         {
           prices && balances && sells && buys && assets && growth && growthOfGrowth
           && (
-            <BenchmarkChart
+            <Chart
               prices={prices}
               balances={balances}
               buys={buys}

@@ -21,4 +21,5 @@ type EventsLog interface {
 	FindAllToNotify() (*[]EventLog, error)
 	Create(logType, message string) error
 	MarkNotified(ids []primitive.ObjectID) error
+	FindAll(filter interface{}) (*[]EventLog, error)
 }

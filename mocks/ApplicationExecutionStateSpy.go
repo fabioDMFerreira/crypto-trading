@@ -3,6 +3,7 @@ package mocks
 import (
 	"time"
 
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,6 +14,7 @@ type ApplicationExecutionStatesRepositorySpy struct {
 	AggregateCalls  []interface{}
 	BulkCreateCalls []interface{}
 	BulkDeleteCalls []string
+	FindLastCalls   []interface{}
 }
 
 func (a *ApplicationExecutionStatesRepositorySpy) Create(date time.Time, executionID primitive.ObjectID, state interface{}) error {
@@ -33,4 +35,9 @@ func (a *ApplicationExecutionStatesRepositorySpy) BulkCreate(documents *[]bson.M
 func (a *ApplicationExecutionStatesRepositorySpy) BulkDelete(id string) error {
 	a.BulkDeleteCalls = append(a.BulkDeleteCalls, id)
 	return nil
+}
+
+func (a *ApplicationExecutionStatesRepositorySpy) FindLast(filter interface{}) (*domain.ApplicationExecutionState, error) {
+	a.FindLastCalls = append(a.FindLastCalls, filter)
+	return &domain.ApplicationExecutionState{}, nil
 }

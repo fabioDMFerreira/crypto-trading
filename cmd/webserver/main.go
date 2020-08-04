@@ -6,13 +6,18 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/fabiodmferreira/crypto-trading/accounts"
+	"github.com/fabiodmferreira/crypto-trading/app"
 	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
+	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	"github.com/fabiodmferreira/crypto-trading/db"
+	"github.com/fabiodmferreira/crypto-trading/eventlogs"
 	"github.com/fabiodmferreira/crypto-trading/webserver"
 	"github.com/gorilla/handlers"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func main() {
@@ -41,7 +46,20 @@ func main() {
 	applicationExecutionStatesRepository := applicationExecutionStates.NewRepository(db.NewRepository(applicationExecutionStatesCollection))
 	benchmarkService := benchmark.NewService(benchmarkRepository, assetspricesRepository, applicationExecutionStatesRepository)
 
-	server, err := webserver.NewCryptoTradingServer(benchmarkService, assetspricesRepository)
+	accountsCollection := mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)
+	accountsRepository := accounts.NewRepository(db.NewRepository(accountsCollection))
+
+	assetsCollection := mongoDatabase.Collection(db.ASSETS_COLLECTION)
+	assetsRepository := assets.NewRepository(db.NewRepository(assetsCollection))
+
+	logEventsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
+	logEventsRepository := eventlogs.NewEventLogsRepository(db.NewRepository(logEventsCollection), primitive.NewObjectID())
+
+	applicationsCollection := mongoDatabase.Collection(db.APPLICATIONS_COLLECTION)
+	applicationsRepository := app.NewRepository(db.NewRepository(applicationsCollection))
+	applicationsService := app.NewService(applicationsRepository, applicationExecutionStatesRepository, logEventsRepository)
+
+	server, err := webserver.NewCryptoTradingServer(benchmarkService, assetspricesRepository, accountsRepository, assetsRepository, applicationsService)
 
 	if err != nil {
 		log.Fatalf("problem creating server, %v ", err)

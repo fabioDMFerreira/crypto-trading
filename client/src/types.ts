@@ -40,6 +40,13 @@ export interface StatisticsOptions {
 export interface CollectorOptions {
   priceVariationDetection: number
   newPriceTimeRate: number
+  datasource: null | string
+}
+
+export interface NotificationOptions {
+  receiver: string,
+  sender: string,
+  senderpassword: string,
 }
 
 export interface BenchmarkInput {
@@ -65,4 +72,48 @@ export interface DataSourceOptions {
 export interface DatesInterval {
   startDate: Date,
   endDate: Date,
+}
+
+export interface ApplicationOptions {
+  notificationOptions: NotificationOptions,
+  statisticsOptions: StatisticsOptions,
+  decisionMakerOptions: DecisionMakerOptions,
+  collectorOptions: CollectorOptions,
+}
+
+export interface Application {
+  _id: string,
+  asset: string,
+  accountID: string,
+  options: ApplicationOptions
+  createdAt: Date
+}
+
+export interface Account {
+  _id: string,
+  amount: Number,
+  broker: string,
+}
+
+export interface ApplicationExecutionState {
+  '_id': string,
+  'executionId': string,
+  'date': Date,
+  'state': {
+    'average': number,
+    'standardDeviation': number,
+    'lowerBollingerBand': number,
+    'higherBollingerBand': number,
+    'currentPrice': number,
+    'currentChange': number
+  }
+}
+
+export interface LogEvent {
+  "_id": string,
+  eventName: string,
+  message: string,
+  notified: boolean,
+  createdAt: Date,
+  applicatioID: string
 }

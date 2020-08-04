@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// AssetsPricesController has the handlers of benchmark routes
+// AssetsPricesController has the assets prices routes handlers
 type AssetsPricesController struct {
 	repo domain.AssetPriceRepository
 }

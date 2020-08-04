@@ -12,6 +12,11 @@ type AssetsRepositoryInMemory struct {
 	Assets []domain.Asset
 }
 
+// NewAssetsRepositoryInMemory returns an instance of NewAssetsRepositoryInMemory
+func NewAssetsRepositoryInMemory() *AssetsRepositoryInMemory {
+	return &AssetsRepositoryInMemory{}
+}
+
 // FindPendingAssets returns all assets sold stored
 func (ar *AssetsRepositoryInMemory) FindPendingAssets(accountID primitive.ObjectID) (*[]domain.Asset, error) {
 

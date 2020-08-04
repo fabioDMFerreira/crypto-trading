@@ -9,15 +9,18 @@ import (
 	"testing"
 
 	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
+	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
 	"github.com/fabiodmferreira/crypto-trading/domain"
+	"github.com/fabiodmferreira/crypto-trading/mocks"
 	"github.com/fabiodmferreira/crypto-trading/webserver"
+	"github.com/golang/mock/gomock"
 )
 
 func TestGetBenchmarkDataSources(t *testing.T) {
-	res := MakeRequest(http.MethodGet, "/api/benchmark/data-sources", nil)
+	res := MakeRequest(t, http.MethodGet, "/api/benchmark/data-sources", nil)
 
 	AssertResponseStatusCode(t, res, http.StatusOK)
 
@@ -25,7 +28,7 @@ func TestGetBenchmarkDataSources(t *testing.T) {
 }
 
 func TestGetBenchmarkList(t *testing.T) {
-	res := MakeRequest(http.MethodGet, "/api/benchmark", nil)
+	res := MakeRequest(t, http.MethodGet, "/api/benchmark", nil)
 
 	AssertResponseStatusCode(t, res, http.StatusOK)
 
@@ -33,7 +36,7 @@ func TestGetBenchmarkList(t *testing.T) {
 }
 
 func TestDeleteBenchmarkResource(t *testing.T) {
-	res := MakeRequest(http.MethodDelete, "/api/benchmark/random-id", nil)
+	res := MakeRequest(t, http.MethodDelete, "/api/benchmark/random-id", nil)
 
 	AssertResponseStatusCode(t, res, http.StatusOK)
 
@@ -52,17 +55,24 @@ func TestCreateBenchmarkResource(t *testing.T) {
 	body, _ := json.Marshal(input)
 	reader := bytes.NewReader(body)
 
-	res := MakeRequest(http.MethodPost, "/api/benchmark", reader)
+	res := MakeRequest(t, http.MethodPost, "/api/benchmark", reader)
 
 	AssertResponseStatusCode(t, res, http.StatusCreated)
 }
 
-func MakeRequest(method string, url string, body *bytes.Reader) *httptest.ResponseRecorder {
+func MakeRequest(t *testing.T, method string, url string, body *bytes.Reader) *httptest.ResponseRecorder {
+	ctrl := gomock.NewController(t)
+
+	defer ctrl.Finish()
+
 	repo := benchmark.NewRepositoryInMemory()
 	assetsPricesRepo := assetsprices.NewRepositoryInMemory()
 	applicationExecutionsStatesRepo := applicationExecutionStates.NewRepositoryInMemory()
+	accountsRepo := mocks.NewMockAccountsRepository(ctrl)
+	appService := mocks.NewMockApplicationService(ctrl)
+	assetsRepo := &assets.AssetsRepositoryInMemory{}
 	benchmarkService := benchmark.NewService(repo, assetsPricesRepo, applicationExecutionsStatesRepo)
-	server, _ := webserver.NewCryptoTradingServer(benchmarkService, assetsPricesRepo)
+	server, _ := webserver.NewCryptoTradingServer(benchmarkService, assetsPricesRepo, accountsRepo, assetsRepo, appService)
 
 	var req *http.Request
 

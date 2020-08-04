@@ -15,7 +15,13 @@ type CryptoTradingServer struct {
 }
 
 // NewCryptoTradingServer returns an instance of CryptoTradingServer
-func NewCryptoTradingServer(benchmark *benchmark.Service, assetsPrice domain.AssetPriceRepository) (*CryptoTradingServer, error) {
+func NewCryptoTradingServer(
+	benchmark *benchmark.Service,
+	assetsPrice domain.AssetPriceRepository,
+	accounts domain.AccountsRepository,
+	assets domain.AssetsRepository,
+	appService domain.ApplicationService,
+) (*CryptoTradingServer, error) {
 	server := new(CryptoTradingServer)
 
 	router := mux.NewRouter()
@@ -28,6 +34,16 @@ func NewCryptoTradingServer(benchmark *benchmark.Service, assetsPrice domain.Ass
 
 	assetsPricesController := NewAssetsPricesController(assetsPrice)
 	router.Handle("/api/assets/{asset}/prices", http.HandlerFunc(assetsPricesController.GetAssetPrices))
+
+	accountsController := NewAccountsController(accounts, assets)
+	router.HandleFunc("/api/accounts/{id}", accountsController.GetAccountHandler)
+	router.HandleFunc("/api/accounts/{id}/assets", accountsController.GetAccountAssetsHandler)
+
+	applicationsController := NewApplicationsController(appService)
+	router.HandleFunc("/api/applications", applicationsController.GetApplicationsHandler)
+	router.HandleFunc("/api/applications/{id}/state/last", applicationsController.GetLastApplicationStateHandler)
+	router.HandleFunc("/api/applications/{id}/log-events", applicationsController.GetApplicationLogEventsHandler)
+	router.HandleFunc("/api/applications/{id}", applicationsController.ApplicationItemHandler)
 
 	router.Handle("/", http.HandlerFunc(server.versionHandler))
 

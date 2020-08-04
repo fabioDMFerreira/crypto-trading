@@ -38,14 +38,16 @@ describe('BenchmarkForm', () => {
       decisionMakerOptions: {
         maximumBuyAmount: 0.1,
         minimumProfitPerSold: 0.02,
+        maximumFIATBuyAmount: undefined,
         minimumPriceDropToBuy: 0.01,
         growthIncreaseLimit: 100,
-        growthDecreaseLimit: -100
+        growthDecreaseLimit: -100,
       },
       statisticsOptions: {
         numberOfPointsHold: 20000,
       },
       collectorOptions: {
+        newPriceTimeRate: 15,
         priceVariationDetection: 0.01,
       },
       accountInitialAmount: 5000,

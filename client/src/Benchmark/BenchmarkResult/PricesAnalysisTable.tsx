@@ -1,6 +1,8 @@
 import React from 'react';
 import Table from 'react-bootstrap/Table';
 
+import formatDateTime from '../../formatters/formatDateTime';
+
 interface Props {
   prices: [number, number][]
   growth: [number, number][]
@@ -14,19 +16,6 @@ interface PriceRow {
   growthOfGrowth: number
 }
 
-function formatDate(date: number | string) {
-  const d = new Date(+date);
-  let month = `${d.getMonth() + 1}`;
-  let day = `${d.getDate()}`;
-  const year = d.getFullYear();
-  const hour = d.getHours();
-  const minute = d.getMinutes();
-
-  if (month.length < 2) { month = `0${month}`; }
-  if (day.length < 2) { day = `0${day}`; }
-
-  return `${[year, month, day].join('-')} ${hour}:${minute}`;
-}
 
 function MapToPriceRow(prices: [number, number][], growth: [number, number][], growthOfGrowth: [number, number][]) {
   const mapper: any = {};
@@ -75,7 +64,7 @@ export default ({ prices, growth, growthOfGrowth }: Props) => {
           data.map(
             (pr) => (
               <tr key={Math.random()}>
-                <td>{formatDate(pr.date)}</td>
+                <td>{formatDateTime(pr.date)}</td>
                 <td>{pr.price}</td>
                 <td style={{ backgroundColor: pr.growth > 0 ? '#C8E6C9' : '#FFCDD2' }}>{pr.growth}</td>
                 <td style={{ backgroundColor: pr.growthOfGrowth > 0 ? '#C8E6C9' : '#FFCDD2' }}>{pr.growthOfGrowth}</td>

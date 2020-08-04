@@ -27,6 +27,7 @@ const benchmarkDefaults: BenchmarkInput = {
   },
   collectorOptions: {
     priceVariationDetection: 0.01,
+    datasource: null,
     newPriceTimeRate: 15,
   },
   accountInitialAmount: 5000,
