@@ -38,12 +38,6 @@ type Input = domain.BenchmarkInput
 // Output is an alias for BenchmarkOutput
 type Output = domain.BenchmarkOutput
 
-type BenchmarkAssetsInfo struct {
-	Buys         [][]float32
-	Sells        [][]float32
-	SellsPending int
-}
-
 // Service is a service with all methods to interact with benchmark related functions
 type Service struct {
 	repository                           domain.BenchmarksRepository
@@ -102,18 +96,9 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 		return nil, err
 	}
 
-	balances := [][]float32{}
-	var currentAmount float32
 	var states []bson.M
 
 	benchmarkApplication.RegistOnTickerChange(func(ask, bid float32, time time.Time) {
-		unixTime := float32(time.Unix()) * 1000
-		amount, _ := benchmarkApplication.GetAccountAmount()
-		if currentAmount != amount {
-			balances = append(balances, []float32{unixTime, amount})
-			currentAmount = amount
-		}
-
 		if benchmarkID != nil {
 			states = append(states, bson.M{
 				"date":        time,
@@ -130,9 +115,9 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 
 	benchmarkApplication.Start()
 
-	assets, _ := benchmarkApplication.FetchAssets()
+	assetsDocs, _ := benchmarkApplication.FetchAssets()
 
-	benchmarkAssetsInfo := s.getBenchmarkAssetsInfo(assets)
+	benchmarkAssetsInfo := assets.GroupAssetsByState(assetsDocs)
 
 	amount, _ := benchmarkApplication.GetAccountAmount()
 
@@ -141,34 +126,10 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 		Sells:        benchmarkAssetsInfo.Sells,
 		SellsPending: benchmarkAssetsInfo.SellsPending,
 		FinalAmount:  amount,
-		Assets:       assets,
-		Balances:     balances,
+		Assets:       assetsDocs,
 	}
 
 	return &output, nil
-}
-
-// getBenchmarkAssetsInfo transverse assets and generate info to be saved on benchmark output
-func (s *Service) getBenchmarkAssetsInfo(assets *[]domain.Asset) BenchmarkAssetsInfo {
-	var sells int
-
-	Buys := [][]float32{}
-	Sells := [][]float32{}
-
-	for _, asset := range *assets {
-		Buys = append(Buys, []float32{float32(asset.BuyTime.Unix()) * 1000, asset.BuyPrice})
-
-		if asset.Sold {
-			Sells = append(Sells, []float32{float32(asset.SellTime.Unix()) * 1000, asset.SellPrice})
-			sells++
-		}
-	}
-
-	return BenchmarkAssetsInfo{
-		Buys:         Buys,
-		Sells:        Sells,
-		SellsPending: len(*assets) - sells,
-	}
 }
 
 // setupApplication create the necessary application to run the benchmark

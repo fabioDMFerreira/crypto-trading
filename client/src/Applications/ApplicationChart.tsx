@@ -4,13 +4,17 @@ import Chart from '../components/Chart';
 import ChartFilters from '../components/ChartFilters';
 import useAssetPrices from '../hooks/useAssetPrices';
 import useDatesInterval from '../hooks/useDatesInterval';
-import useApplicationChart from './useApplicationChart';
+import useAccountBuysAndSells from './useAccountBuysAndSells';
+import useApplicationState from './useApplicationState';
+
 
 interface Props {
-  asset: string
+  asset: string,
+  appID: string,
+  accountID: string,
 }
 
-export default ({ asset }: Props) => {
+export default ({ asset, appID, accountID }: Props) => {
   const {
     datesInterval,
     setDatesInterval,
@@ -21,11 +25,13 @@ export default ({ asset }: Props) => {
   } = useAssetPrices(asset, datesInterval?.startDate, datesInterval?.endDate);
 
   const {
-    sells,
-    buys,
-    balances,
     applicationState,
-  } = useApplicationChart();
+  } = useApplicationState(appID, datesInterval?.startDate, datesInterval?.endDate);
+
+  const {
+    buys,
+    sells,
+  } = useAccountBuysAndSells(accountID);
 
   return (
     <>
@@ -39,12 +45,11 @@ export default ({ asset }: Props) => {
         />
       </div>
       {
-        prices && balances && sells && buys
+        prices && sells && buys
         && (
           <div className="mt-4">
             <Chart
               prices={prices}
-              balances={balances}
               buys={buys}
               sells={sells}
               setDatesInterval={setDatesInterval}

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 
-import fillDatesGaps from '../../formatters/fillDatesGaps';
 import formatApplicationExecutionState, { ApplicationState } from '../../formatters/formatApplicationExecutionState';
 import formatDateTime from '../../formatters/formatDateTime';
 import {
@@ -9,10 +8,10 @@ import {
 } from '../../types';
 
 
-type chartKeys = 'balances' | 'buys' | 'sells'
+type chartKeys = 'buys' | 'sells'
 
 function filterBenchmarkResultByTime(data: BenchmarkOutput, start: number | undefined, end: number | undefined) {
-  const keys: chartKeys[] = ['balances', 'buys', 'sells'];
+  const keys: chartKeys[] = ['buys', 'sells'];
   const newData: any = {};
   keys.forEach((key) => {
     if (!data[key]) {
@@ -67,9 +66,14 @@ export const derivate = (ns: [number, number][], minutesBetweenPoints: number = 
   }, []);
 };
 
-export default (benchmark: Benchmark, datesInterval: DatesInterval | undefined, setDatesInterval: any) => {
+export default (
+  benchmark: Benchmark,
+  datesInterval: DatesInterval | undefined,
+  setDatesInterval: any,
+  setMinDate: (date:Date|undefined)=>void,
+  setMaxDate: (date:Date|undefined)=>void,
+) => {
   const [assets, setAssets] = useState<Asset[]>();
-  const [balances, setBalances] = useState<[number, number][]>();
   const [buys, setBuys] = useState<[number, number][]>();
   const [sells, setSells] = useState<[number, number][]>();
   const [applicationState, setApplicationState] = useState<ApplicationState>();
@@ -93,11 +97,6 @@ export default (benchmark: Benchmark, datesInterval: DatesInterval | undefined, 
     }
 
     if (benchmark) {
-      setBalances(
-        fillDatesGaps(
-          benchmark.output.balances,
-        ),
-      );
       setBuys(benchmark.output.buys);
       setSells(benchmark.output.sells);
       setAssets(benchmark.output.assets);
@@ -118,8 +117,20 @@ export default (benchmark: Benchmark, datesInterval: DatesInterval | undefined, 
           currentChange: data.currentChange.sort((a, b) => a[0] - b[0]),
           lowerBollingerBand: data.lowerBollingerBand.sort((a, b) => a[0] - b[0]),
           higherBollingerBand: data.higherBollingerBand.sort((a, b) => a[0] - b[0]),
+          accountAmount: data.accountAmount.sort((a, b) => a[0] - b[0]),
         }))
-        .then(setApplicationState);
+        .then((data) => {
+          setApplicationState(data);
+          if (data.accountAmount.length) {
+            const minDate = new Date(+data.accountAmount[0][0]);
+            const maxDate = new Date(+data.accountAmount[data.accountAmount.length - 1][0]);
+            setMinDate(minDate);
+            setMaxDate(maxDate);
+          } else {
+            setMinDate(undefined);
+            setMaxDate(undefined);
+          }
+        });
 
 
       const data = filterBenchmarkResultByTime(
@@ -128,21 +139,15 @@ export default (benchmark: Benchmark, datesInterval: DatesInterval | undefined, 
         datesInterval.endDate.getTime(),
       );
 
-      setBalances(
-        fillDatesGaps(
-          data.balances,
-        ),
-      );
       setBuys(data.buys);
       setSells(data.sells);
     }
-  }, [datesInterval, benchmark]);
+  }, [datesInterval, benchmark, setMinDate, setMaxDate]);
 
 
   return {
     buys,
     sells,
-    balances,
     assets,
     applicationState,
   };

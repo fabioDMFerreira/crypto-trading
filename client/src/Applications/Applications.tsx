@@ -6,7 +6,7 @@ import useApplication from './useApplication';
 import useApplicationsList from './useApplicationsList';
 
 export default () => {
-  const { applications,deleteApplicationByID } = useApplicationsList();
+  const { applications, deleteApplicationByID } = useApplicationsList();
   const {
     activeApplication,
     setActiveApplication,
@@ -26,15 +26,15 @@ export default () => {
       {
         activeApplication && activeAccount && lastApplicationState && assets && logEvents
         && (
-        <div className="mt-5">
-          <ApplicationItem
-            application={activeApplication}
-            account={activeAccount}
-            lastApplicationState={lastApplicationState}
-            assets={assets}
-            logEvents={logEvents}
-          />
-        </div>
+          <div className="mt-5">
+            <ApplicationItem
+              application={activeApplication}
+              account={activeAccount}
+              lastApplicationState={lastApplicationState}
+              assets={assets}
+              logEvents={logEvents}
+            />
+          </div>
         )
       }
     </>

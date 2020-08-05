@@ -8,7 +8,6 @@ import { DatesInterval } from '../../types';
 
 interface ChartProps {
   prices: [number, number][]
-  balances: [number, number][]
   buys: [number, number][]
   sells: [number, number][]
   applicationState?: ApplicationState
@@ -17,7 +16,6 @@ interface ChartProps {
 
 export default ({
   prices,
-  balances,
   buys,
   sells,
   applicationState,
@@ -72,12 +70,6 @@ export default ({
       data: prices,
       color: 'rgba(83, 83, 223, .5)',
     }, {
-      name: 'Balance',
-      type: 'line',
-      yAxis: 1,
-      data: balances,
-      color: 'rgba(83, 223, 223, .5)',
-    }, {
       name: 'Buys',
       type: 'scatter',
       data: buys,
@@ -106,6 +98,12 @@ export default ({
 
   if (applicationState && options.series) {
     options.series = options.series.concat([{
+      name: 'Account Amount',
+      type: 'line',
+      yAxis: 1,
+      data: applicationState.accountAmount,
+      color: 'rgba(83, 223, 223, .5)',
+    }, {
       name: 'Average',
       type: 'line',
       data: applicationState.average,

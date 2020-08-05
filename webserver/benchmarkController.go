@@ -188,6 +188,7 @@ func (b *BenchmarkController) GetBenchmarkExecutionStateHandler(w http.ResponseW
 					"higherBollingerBand": bson.M{"$avg": "$state.higherBollingerBand"},
 					"lowerBollingerBand":  bson.M{"$avg": "$state.lowerBollingerBand"},
 					"currentChange":       bson.M{"$avg": "$state.currentChange"},
+					"accountAmount":       bson.M{"$avg": "$state.accountAmount"},
 				},
 			}},
 	}

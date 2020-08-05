@@ -26,7 +26,6 @@ type BenchmarkOutput struct {
 	SellsPending int         `json:"sellsPending"`
 	FinalAmount  float32     `json:"finalAmount"`
 	Assets       *[]Asset    `json:"assets"`
-	Balances     [][]float32 `json:"balances"`
 }
 
 // String displays Output formatted

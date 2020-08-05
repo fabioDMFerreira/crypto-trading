@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -62,4 +63,26 @@ func (a *AccountsController) GetAccountAssetsHandler(w http.ResponseWriter, r *h
 	}
 
 	json.NewEncoder(w).Encode(assets)
+}
+
+func (a *AccountsController) GetAccountAssetsGroupedByStateHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	oid, err := primitive.ObjectIDFromHex(vars["id"])
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, err)
+		return
+	}
+
+	docs, err := a.assetsRepo.FindAll(oid)
+
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(assets.GroupAssetsByState(docs))
 }

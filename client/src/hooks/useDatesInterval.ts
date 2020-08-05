@@ -13,9 +13,15 @@ export default () => {
     startDate: getLastWeek(),
     endDate: new Date(),
   });
+  const [minDate, setMinDate] = useState<Date>();
+  const [maxDate, setMaxDate] = useState<Date>();
 
   return {
     datesInterval,
     setDatesInterval,
+    minDate,
+    setMinDate,
+    maxDate,
+    setMaxDate,
   };
 };

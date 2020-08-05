@@ -3,6 +3,7 @@ package domain
 import (
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -37,4 +38,5 @@ type ApplicationService interface {
 	GetLastState(appID primitive.ObjectID) (*ApplicationExecutionState, error)
 	DeleteByID(id string) error
 	GetLogEvents(appID primitive.ObjectID) (*[]EventLog, error)
+	GetStateAggregated(appID string, startDate, endDate time.Time) (*[]bson.M, error)
 }

@@ -38,12 +38,14 @@ func NewCryptoTradingServer(
 	accountsController := NewAccountsController(accounts, assets)
 	router.HandleFunc("/api/accounts/{id}", accountsController.GetAccountHandler)
 	router.HandleFunc("/api/accounts/{id}/assets", accountsController.GetAccountAssetsHandler)
+	router.HandleFunc("/api/accounts/{id}/buys-and-sells", accountsController.GetAccountAssetsGroupedByStateHandler)
 
 	applicationsController := NewApplicationsController(appService)
 	router.HandleFunc("/api/applications", applicationsController.GetApplicationsHandler)
 	router.HandleFunc("/api/applications/{id}/state/last", applicationsController.GetLastApplicationStateHandler)
 	router.HandleFunc("/api/applications/{id}/log-events", applicationsController.GetApplicationLogEventsHandler)
 	router.HandleFunc("/api/applications/{id}", applicationsController.ApplicationItemHandler)
+	router.HandleFunc("/api/applications/{id}/state", applicationsController.GetApplicationStateHandler)
 
 	router.Handle("/", http.HandlerFunc(server.versionHandler))
 

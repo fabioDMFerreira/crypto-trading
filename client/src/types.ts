@@ -10,7 +10,6 @@ export interface Asset {
 
 export interface BenchmarkOutput {
   finalAmount: number,
-  balances: [number, number][],
   buys: [number, number][],
   sells: [number, number][],
   assets: Asset[]
@@ -110,7 +109,7 @@ export interface ApplicationExecutionState {
 }
 
 export interface LogEvent {
-  "_id": string,
+  '_id': string,
   eventName: string,
   message: string,
   notified: boolean,

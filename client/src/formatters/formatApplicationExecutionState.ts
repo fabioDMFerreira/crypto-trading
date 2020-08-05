@@ -11,6 +11,8 @@ export interface ApplicationStateAggregatedByDate {
   currentChange: number
   lowerBollingerBand: number;
   higherBollingerBand: number;
+
+  accountAmount:number;
 }
 
 export interface ApplicationState {
@@ -19,11 +21,12 @@ export interface ApplicationState {
   lowerBollingerBand: [number, number][]
   higherBollingerBand: [number, number][]
   currentChange: [number, number][]
+  accountAmount: [number, number][]
 }
 
 export default (data: ApplicationStateAggregatedByDate[]): ApplicationState => {
   const defaultResult: ApplicationState = {
-    average: [], standardDeviation: [], higherBollingerBand: [], lowerBollingerBand: [], currentChange: [],
+    average: [], standardDeviation: [], higherBollingerBand: [], lowerBollingerBand: [], currentChange: [], accountAmount: [],
   };
 
   return data
@@ -43,6 +46,7 @@ export default (data: ApplicationStateAggregatedByDate[]): ApplicationState => {
           final.currentChange.push([time, applicationState.currentChange]);
           final.lowerBollingerBand.push([time, applicationState.lowerBollingerBand]);
           final.higherBollingerBand.push([time, applicationState.higherBollingerBand]);
+          final.accountAmount.push([time, applicationState.accountAmount]);
 
           return final;
         }, defaultResult,

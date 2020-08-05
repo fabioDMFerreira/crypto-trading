@@ -89,7 +89,7 @@ export default ({
         <JsonDisplayer json={application} />
       </Col>
     </Row>
-    <ApplicationChart asset={application.asset} />
+    <ApplicationChart asset={application.asset} appID={application._id} accountID={application.accountID} />
     {
         logEvents
         && (

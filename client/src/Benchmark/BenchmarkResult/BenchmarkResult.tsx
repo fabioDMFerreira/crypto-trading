@@ -21,15 +21,18 @@ export default ({ benchmark }: Props) => {
   const {
     datesInterval,
     setDatesInterval,
+    minDate,
+    setMinDate,
+    maxDate,
+    setMaxDate,
   } = useDatesInterval();
 
   const {
     assets,
-    balances,
     buys,
     sells,
     applicationState,
-  } = useBenchmark(benchmark, datesInterval, setDatesInterval);
+  } = useBenchmark(benchmark, datesInterval, setDatesInterval, setMinDate, setMaxDate);
 
   const {
     assetPrices: prices,
@@ -50,12 +53,10 @@ export default ({ benchmark }: Props) => {
         </div>
         <ChartFilters
           minimumDate={
-            benchmark.output.balances && benchmark.output.balances.length
-              ? new Date(benchmark.output.balances[0][0]) : undefined
+            minDate
           }
           maximumDate={
-            benchmark.output.balances && benchmark.output.balances.length
-              ? new Date(benchmark.output.balances[benchmark.output.balances.length - 1][0]) : undefined
+            maxDate
           }
           startDate={datesInterval?.startDate}
           endDate={datesInterval?.endDate}
@@ -64,11 +65,10 @@ export default ({ benchmark }: Props) => {
       </div>
       <div className="mb-5">
         {
-          prices && balances && sells && buys && applicationState
+          prices && sells && buys && applicationState
           && (
             <Chart
               prices={prices}
-              balances={balances}
               buys={buys}
               sells={sells}
               setDatesInterval={setDatesInterval}
