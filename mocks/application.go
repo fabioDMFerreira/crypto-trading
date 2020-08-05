@@ -7,8 +7,10 @@ package mocks
 import (
 	domain "github.com/fabiodmferreira/crypto-trading/domain"
 	gomock "github.com/golang/mock/gomock"
+	bson "go.mongodb.org/mongo-driver/bson"
 	primitive "go.mongodb.org/mongo-driver/bson/primitive"
 	reflect "reflect"
+	time "time"
 )
 
 // MockApplicationRepository is a mock of ApplicationRepository interface
@@ -173,4 +175,19 @@ func (m *MockApplicationService) GetLogEvents(appID primitive.ObjectID) (*[]doma
 func (mr *MockApplicationServiceMockRecorder) GetLogEvents(appID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogEvents", reflect.TypeOf((*MockApplicationService)(nil).GetLogEvents), appID)
+}
+
+// GetStateAggregated mocks base method
+func (m *MockApplicationService) GetStateAggregated(appID string, startDate, endDate time.Time) (*[]bson.M, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStateAggregated", appID, startDate, endDate)
+	ret0, _ := ret[0].(*[]bson.M)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStateAggregated indicates an expected call of GetStateAggregated
+func (mr *MockApplicationServiceMockRecorder) GetStateAggregated(appID, startDate, endDate interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStateAggregated", reflect.TypeOf((*MockApplicationService)(nil).GetStateAggregated), appID, startDate, endDate)
 }
