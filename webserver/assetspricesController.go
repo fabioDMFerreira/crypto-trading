@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
+	"github.com/fabiodmferreira/crypto-trading/utils"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -46,7 +47,7 @@ func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.R
 
 	var pipelineOptions mongo.Pipeline
 
-	groupByDatesClause := GetGroupByDatesIDClause(startDate, endDate)
+	groupByDatesClause := utils.GetGroupByDatesIDClause(startDate, endDate)
 
 	pipelineOptions = mongo.Pipeline{
 		{primitive.E{

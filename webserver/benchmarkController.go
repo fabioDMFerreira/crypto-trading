@@ -8,6 +8,7 @@ import (
 
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	"github.com/fabiodmferreira/crypto-trading/domain"
+	"github.com/fabiodmferreira/crypto-trading/utils"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -167,7 +168,7 @@ func (b *BenchmarkController) GetBenchmarkExecutionStateHandler(w http.ResponseW
 
 	var pipelineOptions mongo.Pipeline
 
-	groupByDatesClause := GetGroupByDatesIDClause(startDate, endDate)
+	groupByDatesClause := utils.GetGroupByDatesIDClause(startDate, endDate)
 
 	pipelineOptions = mongo.Pipeline{
 		{
