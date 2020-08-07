@@ -64,7 +64,7 @@ func (s *Service) DeleteByID(id string) error {
 		return err
 	}
 
-	go s.applicationExecutionStatesRepository.BulkDelete(id)
+	go s.applicationExecutionStatesRepository.BulkDeleteByExecutionID(id)
 
 	return nil
 }

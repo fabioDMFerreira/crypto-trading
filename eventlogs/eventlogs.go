@@ -65,3 +65,17 @@ func (e *EventLogsRepository) FindAll(filter interface{}) (*[]domain.EventLog, e
 
 	return &events, err
 }
+
+// BulkDeleteByApplicationID deletes rows related with an application id.
+func (e *EventLogsRepository) BulkDeleteByApplicationID(id string) error {
+
+	oid, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"applicationID": oid}
+
+	return e.repo.BulkDelete(filter)
+}

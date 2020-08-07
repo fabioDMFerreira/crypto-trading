@@ -14,6 +14,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/eventlogs"
+	"github.com/fabiodmferreira/crypto-trading/notifications"
 	"github.com/fabiodmferreira/crypto-trading/webserver"
 	"github.com/gorilla/handlers"
 	"github.com/joho/godotenv"
@@ -55,9 +56,12 @@ func main() {
 	logEventsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
 	logEventsRepository := eventlogs.NewEventLogsRepository(db.NewRepository(logEventsCollection), primitive.NewObjectID())
 
+	notificationsCollection := mongoDatabase.Collection(db.NOTIFICATIONS_COLLECTION)
+	notificationsRepository := notifications.NewRepository(db.NewRepository(notificationsCollection))
+
 	applicationsCollection := mongoDatabase.Collection(db.APPLICATIONS_COLLECTION)
 	applicationsRepository := app.NewRepository(db.NewRepository(applicationsCollection))
-	applicationsService := app.NewService(applicationsRepository, applicationExecutionStatesRepository, logEventsRepository)
+	applicationsService := app.NewService(applicationsRepository, applicationExecutionStatesRepository, logEventsRepository, notificationsRepository)
 
 	server, err := webserver.NewCryptoTradingServer(benchmarkService, assetspricesRepository, accountsRepository, assetsRepository, applicationsService)
 

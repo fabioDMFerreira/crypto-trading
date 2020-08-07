@@ -43,7 +43,7 @@ func (r *RepositoryInMemory) BulkCreate(documents *[]bson.M) error {
 	return nil
 }
 
-// BulkDelete deletes multiple documents
-func (r *RepositoryInMemory) BulkDelete(id string) error {
+// BulkDeleteByExecutionID deletes multiple documents
+func (r *RepositoryInMemory) BulkDeleteByExecutionID(id string) error {
 	return nil
 }

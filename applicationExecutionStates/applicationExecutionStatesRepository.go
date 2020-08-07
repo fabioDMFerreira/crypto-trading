@@ -59,8 +59,8 @@ func (r *Repository) BulkCreate(documents *[]bson.M) error {
 	return r.repo.BulkCreate(documents)
 }
 
-// BulkDelete deletes multiple documents
-func (r *Repository) BulkDelete(id string) error {
+// BulkDeleteByExecutionID deletes rows related with an execution id.
+func (r *Repository) BulkDeleteByExecutionID(id string) error {
 
 	oid, err := primitive.ObjectIDFromHex(id)
 

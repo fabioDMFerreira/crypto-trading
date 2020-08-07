@@ -1,78 +1,67 @@
 package notifications_test
 
 import (
+	"net/smtp"
 	"testing"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/mocks"
 	"github.com/fabiodmferreira/crypto-trading/notifications"
+	"github.com/golang/mock/gomock"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestSendEmail(t *testing.T) {
-	service, _, emailService := setupNotificationsService()
+	service, _, emailService := setupNotificationsService(t)
+
+	emailService.EXPECT().SendEmail("subject", "message").Times(1)
 
 	service.SendEmail("subject", "message")
-
-	got := len(emailService.SendMailCalls)
-	want := 1
-
-	if got != want {
-		t.Errorf("got %v want %v", got, want)
-	}
 }
 
 func TestCreateEmailNotification(t *testing.T) {
-	service, repository, _ := setupNotificationsService()
+
+	service, repository, _ := setupNotificationsService(t)
+
+	repository.EXPECT().Sent(gomock.Any()).Times(1)
+
+	repository.EXPECT().Create(gomock.Any()).Times(1)
 
 	err := service.CreateEmailNotification("subject", "message", "type")
 
 	if err != nil {
 		t.Errorf("not expected to receive an error")
 	}
-
-	got := len(repository.SentCalls)
-	want := 1
-	if got != want {
-		t.Errorf("expected repository.Sent to be called %v, but received %v", want, got)
-	}
-
-	got = len(repository.CreateCalls)
-	want = 1
-	if got != want {
-		t.Errorf("expected repository.Create to be called %v, but received %v", want, got)
-	}
 }
 
 func TestFindLastNotificationDate(t *testing.T) {
-	service, repository, _ := setupNotificationsService()
+	service, repository, _ := setupNotificationsService(t)
+
+	repository.EXPECT().FindLastEventLogsNotificationDate().Times(1)
 
 	service.FindLastEventLogsNotificationDate()
-
-	got := repository.FindLastEventLogsNotificationDateCalls
-	want := 1
-
-	if got != want {
-		t.Errorf("got %v want %v", got, want)
-	}
 }
 
 func TestShouldSendNotification(t *testing.T) {
-	service, repository, _ := setupNotificationsService()
+	service, repository, _ := setupNotificationsService(t)
+
+	repository.EXPECT().FindLastEventLogsNotificationDate().Times(1)
 
 	service.ShouldSendNotification()
-
-	got := repository.FindLastEventLogsNotificationDateCalls
-	want := 1
-
-	if got != want {
-		t.Errorf("got %v want %v", got, want)
-	}
 }
 
-func setupNotificationsService() (*notifications.Service, *mocks.NotificaitonsRepositorySpy, *mocks.EmailServiceSpy) {
-	repository := &mocks.NotificaitonsRepositorySpy{}
-	emailService := &mocks.EmailServiceSpy{}
+func setupNotificationsService(t *testing.T) (*notifications.Service, *mocks.MockNotificationsRepository, *mocks.MockNotificationsService) {
+	ctrl := gomock.NewController(t)
 
-	return notifications.NewService(repository, domain.NotificationOptions{Sender: "a", Receiver: "a", SenderPassword: "a"}, emailService.SendMail, primitive.NewObjectID()), repository, emailService
+	defer ctrl.Finish()
+
+	repository := mocks.NewMockNotificationsRepository(ctrl)
+	emailService := mocks.NewMockNotificationsService(ctrl)
+
+	return notifications.NewService(
+		repository,
+		domain.NotificationOptions{Sender: "a", Receiver: "a", SenderPassword: "a"},
+		func(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
+			return nil
+		}, primitive.NewObjectID()), repository, emailService
 }

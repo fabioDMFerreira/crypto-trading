@@ -3,6 +3,7 @@ package domain
 import (
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -31,6 +32,8 @@ type NotificationsService interface {
 	FindLastEventLogsNotificationDate() (time.Time, error)
 	CreateEmailNotification(subject, message, notificationType string) error
 	ShouldSendNotification() bool
+	BulkDeleteByApplicationID(id string) error
+	SendEmail(subject, body string) error
 }
 
 // NotificationsRepository stores and gets notifications
@@ -38,4 +41,6 @@ type NotificationsRepository interface {
 	Create(notification *Notification) error
 	FindLastEventLogsNotificationDate() (time.Time, error)
 	Sent(id primitive.ObjectID) error
+	BulkDelete(filter bson.M) error
+	BulkDeleteByApplicationID(id string) error
 }

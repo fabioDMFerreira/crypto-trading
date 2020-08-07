@@ -22,4 +22,5 @@ type EventsLog interface {
 	Create(logType, message string) error
 	MarkNotified(ids []primitive.ObjectID) error
 	FindAll(filter interface{}) (*[]EventLog, error)
+	BulkDeleteByApplicationID(id string) error
 }

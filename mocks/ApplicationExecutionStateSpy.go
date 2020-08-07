@@ -32,7 +32,7 @@ func (a *ApplicationExecutionStatesRepositorySpy) BulkCreate(documents *[]bson.M
 	return nil
 }
 
-func (a *ApplicationExecutionStatesRepositorySpy) BulkDelete(id string) error {
+func (a *ApplicationExecutionStatesRepositorySpy) BulkDeleteByExecutionID(id string) error {
 	a.BulkDeleteCalls = append(a.BulkDeleteCalls, id)
 	return nil
 }

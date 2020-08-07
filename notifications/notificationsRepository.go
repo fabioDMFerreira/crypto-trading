@@ -48,3 +48,22 @@ func (r *Repository) Sent(id primitive.ObjectID) error {
 
 	return r.repo.UpdateOne(filter, update)
 }
+
+// BulkDelete removes multiple notifications
+func (r *Repository) BulkDelete(filter bson.M) error {
+	return r.repo.BulkDelete(filter)
+}
+
+// BulkDeleteByApplicationID deletes all notifications associated with an application id
+func (r *Repository) BulkDeleteByApplicationID(id string) error {
+
+	oid, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"applicationID": oid}
+
+	return r.BulkDelete(filter)
+}

@@ -31,6 +31,6 @@ type ApplicationExecutionStateRepository interface {
 	Create(date time.Time, executionID primitive.ObjectID, state interface{}) error
 	Aggregate(pipeline mongo.Pipeline) (*[]bson.M, error)
 	BulkCreate(documents *[]bson.M) error
-	BulkDelete(id string) error
+	BulkDeleteByExecutionID(id string) error
 	FindLast(filter interface{}) (*ApplicationExecutionState, error)
 }

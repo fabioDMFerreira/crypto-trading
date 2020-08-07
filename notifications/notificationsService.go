@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -88,4 +89,18 @@ func (a *Service) ShouldSendNotification() bool {
 	lastNotificationTime, err := a.FindLastEventLogsNotificationDate()
 
 	return err != nil || time.Now().Sub(lastNotificationTime).Hours() > 12
+}
+
+// BulkDeleteByApplicationID deletes all notifications associated with an application id
+func (s *Service) BulkDeleteByApplicationID(id string) error {
+
+	oid, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"applicationID": oid}
+
+	return s.notificationsRepository.BulkDelete(filter)
 }
