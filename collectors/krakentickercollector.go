@@ -128,15 +128,11 @@ func (kc *KrakenCollector) Start() {
 func (kc *KrakenCollector) HandlePriceChangeMessage(price float32, date time.Time) error {
 	timeSinceLastPricePublished := date.Sub(kc.lastPricePublishDate).Minutes()
 
-	if timeSinceLastPricePublished < float64(kc.options.NewPriceTimeRate) {
-		return nil
-	}
-
 	changeVariance := kc.lastTickerPrice * kc.options.PriceVariationDetection
 
-	if kc.lastTickerPrice == 0 ||
+	if timeSinceLastPricePublished > float64(kc.options.NewPriceTimeRate) || (kc.lastTickerPrice == 0 ||
 		price > kc.lastTickerPrice+changeVariance ||
-		price < kc.lastTickerPrice-changeVariance {
+		price < kc.lastTickerPrice-changeVariance) {
 		kc.lastTickerPrice = price
 		for _, observable := range kc.observables {
 			observable(price, price, time.Now())

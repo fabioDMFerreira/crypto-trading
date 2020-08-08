@@ -62,7 +62,7 @@ func (ftc *FileTickerCollector) Start() {
 
 		timeSinceLastPricePublished := date.Sub(ftc.lastPricePublishDate).Minutes()
 
-		if timeSinceLastPricePublished > float64(ftc.options.NewPriceTimeRate) && (ftc.lastTickerPrice == 0 ||
+		if timeSinceLastPricePublished > float64(ftc.options.NewPriceTimeRate) || (ftc.lastTickerPrice == 0 ||
 			float32(price) > ftc.lastTickerPrice+changeVariance ||
 			float32(price) < ftc.lastTickerPrice-changeVariance) {
 			for _, observable := range ftc.observables {
