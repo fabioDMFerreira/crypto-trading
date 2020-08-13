@@ -290,8 +290,11 @@ func NotificationJob(
 		err = sendReport(notificationsService, message)
 
 		if err != nil {
-			markLogsEventsAsNotified(eventLogsRepository, eventLogs)
+			fmt.Println(err)
+			return
 		}
+
+		markLogsEventsAsNotified(eventLogsRepository, eventLogs)
 	}
 }
 
