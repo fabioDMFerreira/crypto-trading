@@ -35,39 +35,52 @@ func main() {
 		fmt.Println(".env file does not exist")
 	}
 
-	mongoURL := os.Getenv("MONGO_URL")
-	mongoDB := os.Getenv("MONGO_DB")
-	notificationsReceiver := os.Getenv("NOTIFICATIONS_RECEIVER")
-	notificationsSender := os.Getenv("NOTIFICATIONS_SENDER")
-	notificationsSenderPassword := os.Getenv("NOTIFICATIONS_SENDER_PASSWORD")
-	appEnv := os.Getenv("APP_ENV")
-	appID := os.Getenv("APP_ID")
+	env := domain.Env{
+		MongoURL:                    os.Getenv("MONGO_URL"),
+		MongoDB:                     os.Getenv("MONGO_DB"),
+		NotificationsReceiver:       os.Getenv("NOTIFICATIONS_RECEIVER"),
+		NotificationsSender:         os.Getenv("NOTIFICATIONS_SENDER"),
+		NotificationsSenderPassword: os.Getenv("NOTIFICATIONS_SENDER_PASSWORD"),
+		AppEnv:                      os.Getenv("APP_ENV"),
+		AppID:                       os.Getenv("APP_ID"),
+	}
 
 	// initialize third party instances
 	krakenKey := os.Getenv("KRAKEN_API_KEY")
 	krakenPrivateKey := os.Getenv("KRAKEN_PRIVATE_KEY")
 	krakenAPI := krakenapi.New(krakenKey, krakenPrivateKey)
 
-	dbClient, err := db.ConnectDB(mongoURL)
+	dbClient, err := db.ConnectDB(env.MongoURL)
 
 	if err != nil {
 		log.Fatal("connecting db", err)
 	}
 
-	mongoDatabase := dbClient.Database(mongoDB)
+	mongoDatabase := dbClient.Database(env.MongoDB)
+
+	application, err := setupApplication(env, mongoDatabase, krakenAPI)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	application.Start()
+}
+
+func setupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *krakenapi.KrakenAPI) (*app.App, error) {
+
+	notificationOptions := domain.NotificationOptions{
+		Receiver:       env.NotificationsReceiver,
+		Sender:         env.NotificationsSender,
+		SenderPassword: env.NotificationsSenderPassword,
+	}
 
 	var brokerService domain.Broker
-	if appEnv == "production" {
+	if env.AppEnv == "production" {
 		brokerService = broker.NewKrakenBroker(krakenAPI)
 	} else {
 		fmt.Println("Broker mocked!")
 		brokerService = broker.NewBrokerMock()
-	}
-
-	notificationOptions := domain.NotificationOptions{
-		Receiver:       notificationsReceiver,
-		Sender:         notificationsSender,
-		SenderPassword: notificationsSenderPassword,
 	}
 
 	assetsCollection := mongoDatabase.Collection(db.ASSETS_COLLECTION)
@@ -81,8 +94,8 @@ func main() {
 
 	var appMetaData *domain.Application
 	var accountService domain.AccountService
-	if appID == "" {
-		appMetaData, err = createDefaultApplicationMetaData(notificationOptions, applicationsRepository, accountsRepository)
+	if env.AppID == "" {
+		appMetaData, err := createDefaultApplicationMetaData(notificationOptions, applicationsRepository, accountsRepository)
 
 		if err != nil {
 			log.Fatalf("Not able to create a new application due to %v", err)
@@ -92,16 +105,16 @@ func main() {
 
 		fmt.Printf("Application created with id %v\n", appMetaData.ID)
 	} else {
-		appMetaData, err = applicationsRepository.FindByID(appID)
+		appMetaData, err := applicationsRepository.FindByID(env.AppID)
 
 		if err != nil {
-			log.Fatalf("Not able to get application with id %v due to %v", appID, err)
+			return nil, fmt.Errorf("Not able to get application with id %v due to %v", env.AppID, err)
 		}
 
 		account, err := accountsRepository.FindById(appMetaData.AccountID.Hex())
 
 		if err != nil {
-			log.Fatalf("Not able to get account with id %v due to %v", appMetaData.AccountID, err)
+			return nil, fmt.Errorf("Not able to get account with id %v due to %v", appMetaData.AccountID, err)
 		}
 
 		accountService = accounts.NewAccountService(account.ID.Hex(), accountsRepository, assetsRepository)
@@ -121,7 +134,7 @@ func main() {
 	lastAssetsPrices, err := assetsPricesService.GetLastAssetsPrices(appMetaData.Asset, statisticsOptions.NumberOfPointsHold)
 
 	if err != nil {
-		log.Panicf("%v", err)
+		return nil, fmt.Errorf("%v", err)
 	}
 
 	pricesStatistics := setupStatistics(statisticsOptions)
@@ -174,7 +187,7 @@ func main() {
 		applicationExecutionStateRepository.InsertOne(state)
 	})
 
-	application.Start()
+	return application, nil
 }
 
 func createDefaultApplicationMetaData(notificationOptions domain.NotificationOptions, repository domain.ApplicationRepository, accountsRepository *accounts.Repository) (*domain.Application, error) {
