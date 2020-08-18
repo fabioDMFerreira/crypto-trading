@@ -15,11 +15,11 @@ type Account struct {
 
 // AccountsRepository stores and fetches accounts
 type AccountsRepository interface {
-	FindById(id primitive.ObjectID) (*Account, error)
+	FindById(id string) (*Account, error)
 	FindByBroker(broker string) (*Account, error)
 	Create(broker string, amount float32) (*Account, error)
-	Withdraw(id primitive.ObjectID, amount float32) error
-	Deposit(id primitive.ObjectID, amount float32) error
+	Withdraw(id string, amount float32) error
+	Deposit(id string, amount float32) error
 }
 
 // AccountServiceReader reads information about one account
@@ -37,5 +37,5 @@ type AccountService interface {
 	Withdraw(amount float32) error
 	Deposit(amount float32) error
 	CreateAsset(amount, price float32, time time.Time) (*Asset, error)
-	SellAsset(assetID primitive.ObjectID, price float32, time time.Time) error
+	SellAsset(assetID string, price float32, time time.Time) error
 }

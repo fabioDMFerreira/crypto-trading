@@ -22,7 +22,7 @@ func NewTrader(accountService domain.AccountService, broker domain.Broker) *Trad
 
 // Sell updates asset status to sold, requests broker to sell an asset and updates account ammount
 func (t *Trader) Sell(asset *domain.Asset, price float32, sellTime time.Time) error {
-	err := t.accountService.SellAsset(asset.ID, price, sellTime)
+	err := t.accountService.SellAsset(asset.ID.Hex(), price, sellTime)
 
 	if err != nil {
 		return err

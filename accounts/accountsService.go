@@ -9,13 +9,13 @@ import (
 
 // AccountService interacts with accounts and assets repositories
 type AccountService struct {
-	ID               primitive.ObjectID
+	ID               string
 	repository       *Repository
 	assetsRepository domain.AssetsRepository
 }
 
 // NewAccountService returns an instance of account service
-func NewAccountService(ID primitive.ObjectID, repository *Repository, assetsRepository domain.AssetsRepository) *AccountService {
+func NewAccountService(ID string, repository *Repository, assetsRepository domain.AssetsRepository) *AccountService {
 	return &AccountService{ID, repository, assetsRepository}
 }
 
@@ -52,15 +52,21 @@ func (a *AccountService) FindAllAssets() (*[]domain.Asset, error) {
 
 // CreateAsset creates an asset hold by the account
 func (a *AccountService) CreateAsset(amount, price float32, time time.Time) (*domain.Asset, error) {
-	asset := &domain.Asset{ID: primitive.NewObjectID(), Amount: amount, BuyPrice: price, BuyTime: time, AccountID: a.ID}
+	accountOID, err := primitive.ObjectIDFromHex(a.ID)
 
-	err := a.assetsRepository.Create(asset)
+	if err != nil {
+		return nil, err
+	}
+
+	asset := &domain.Asset{ID: primitive.NewObjectID(), Amount: amount, BuyPrice: price, BuyTime: time, AccountID: accountOID}
+
+	err = a.assetsRepository.Create(asset)
 
 	return asset, err
 }
 
 // SellAsset updates asset status to sold
-func (a *AccountService) SellAsset(assetID primitive.ObjectID, price float32, time time.Time) error {
+func (a *AccountService) SellAsset(assetID string, price float32, time time.Time) error {
 	return a.assetsRepository.Sell(assetID, price, time)
 }
 

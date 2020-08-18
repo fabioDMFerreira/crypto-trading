@@ -14,12 +14,12 @@ type AccountServiceInMemory struct {
 	withdraws        int
 	deposits         int
 	assetsRepository domain.AssetsRepository
-	ID               primitive.ObjectID
+	ID               string
 }
 
 // NewAccountServiceInMemory returns an instance of AccountServiceInMemory
 func NewAccountServiceInMemory(initialAmount float32, assetsRepository domain.AssetsRepository) *AccountServiceInMemory {
-	return &AccountServiceInMemory{initialAmount, 0, 0, assetsRepository, primitive.NewObjectID()}
+	return &AccountServiceInMemory{initialAmount, 0, 0, assetsRepository, primitive.NewObjectID().Hex()}
 }
 
 // Deposit increases account amount
@@ -62,7 +62,7 @@ func (a *AccountServiceInMemory) CreateAsset(amount, price float32, time time.Ti
 	return asset, err
 }
 
-func (a *AccountServiceInMemory) SellAsset(assetID primitive.ObjectID, price float32, time time.Time) error {
+func (a *AccountServiceInMemory) SellAsset(assetID string, price float32, time time.Time) error {
 	return a.assetsRepository.Sell(assetID, price, time)
 }
 

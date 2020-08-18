@@ -8,7 +8,6 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // AccountsController has the accounts routes handlers
@@ -24,15 +23,7 @@ func NewAccountsController(repo domain.AccountsRepository, assetsRepo domain.Ass
 func (a *AccountsController) GetAccountHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	oid, err := primitive.ObjectIDFromHex(vars["id"])
-
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, err)
-		return
-	}
-
-	account, err := a.repo.FindById(oid)
+	account, err := a.repo.FindById(vars["id"])
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -46,15 +37,7 @@ func (a *AccountsController) GetAccountHandler(w http.ResponseWriter, r *http.Re
 func (a *AccountsController) GetAccountAssetsHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	oid, err := primitive.ObjectIDFromHex(vars["id"])
-
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, err)
-		return
-	}
-
-	assets, err := a.assetsRepo.FindAll(oid)
+	assets, err := a.assetsRepo.FindAll(vars["id"])
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -68,15 +51,7 @@ func (a *AccountsController) GetAccountAssetsHandler(w http.ResponseWriter, r *h
 func (a *AccountsController) GetAccountAssetsGroupedByStateHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	oid, err := primitive.ObjectIDFromHex(vars["id"])
-
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, err)
-		return
-	}
-
-	docs, err := a.assetsRepo.FindAll(oid)
+	docs, err := a.assetsRepo.FindAll(vars["id"])
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

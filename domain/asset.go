@@ -20,16 +20,16 @@ type Asset struct {
 
 // AssetsRepositoryReader fetches assets data
 type AssetsRepositoryReader interface {
-	FindAll(accountID primitive.ObjectID) (*[]Asset, error)
-	FindPendingAssets(accountID primitive.ObjectID) (*[]Asset, error)
-	FindCheaperAssetPrice(accountID primitive.ObjectID) (float32, error)
-	CheckAssetWithCloserPriceExists(accountID primitive.ObjectID, price float32, limit float32) (bool, error)
-	GetBalance(accountID primitive.ObjectID, startDate, endDate time.Time) (float32, error)
+	FindAll(accountID string) (*[]Asset, error)
+	FindPendingAssets(accountID string) (*[]Asset, error)
+	FindCheaperAssetPrice(accountID string) (float32, error)
+	CheckAssetWithCloserPriceExists(accountID string, price float32, limit float32) (bool, error)
+	GetBalance(accountID string, startDate, endDate time.Time) (float32, error)
 }
 
 // AssetsRepository stores and fetches assets
 type AssetsRepository interface {
 	AssetsRepositoryReader
-	Sell(id primitive.ObjectID, price float32, sellTime time.Time) error
+	Sell(id string, price float32, sellTime time.Time) error
 	Create(asset *Asset) error
 }

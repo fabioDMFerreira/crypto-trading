@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // AssetsRepositoryInMemory stores assets in memory
@@ -18,7 +17,7 @@ func NewAssetsRepositoryInMemory() *AssetsRepositoryInMemory {
 }
 
 // FindPendingAssets returns all assets sold stored
-func (ar *AssetsRepositoryInMemory) FindPendingAssets(accountID primitive.ObjectID) (*[]domain.Asset, error) {
+func (ar *AssetsRepositoryInMemory) FindPendingAssets(accountID string) (*[]domain.Asset, error) {
 
 	pendingAssets := []domain.Asset{}
 
@@ -31,12 +30,12 @@ func (ar *AssetsRepositoryInMemory) FindPendingAssets(accountID primitive.Object
 }
 
 // FindAll returns all assets stored
-func (ar *AssetsRepositoryInMemory) FindAll(accountID primitive.ObjectID) (*[]domain.Asset, error) {
+func (ar *AssetsRepositoryInMemory) FindAll(accountID string) (*[]domain.Asset, error) {
 	return &ar.Assets, nil
 }
 
 // FindCheaperAssetPrice returns the lowest price of non sold assets
-func (ar *AssetsRepositoryInMemory) FindCheaperAssetPrice(accountID primitive.ObjectID) (float32, error) {
+func (ar *AssetsRepositoryInMemory) FindCheaperAssetPrice(accountID string) (float32, error) {
 	var minimumPrice float32
 
 	for _, asset := range ar.Assets {
@@ -49,7 +48,7 @@ func (ar *AssetsRepositoryInMemory) FindCheaperAssetPrice(accountID primitive.Ob
 }
 
 // GetBalance mocks the returning of balance between two dates
-func (ar *AssetsRepositoryInMemory) GetBalance(accountID primitive.ObjectID, startDate, endDate time.Time) (float32, error) {
+func (ar *AssetsRepositoryInMemory) GetBalance(accountID string, startDate, endDate time.Time) (float32, error) {
 	return 0, nil
 }
 
@@ -60,10 +59,10 @@ func (ar *AssetsRepositoryInMemory) Create(asset *domain.Asset) error {
 }
 
 // Sell updates asset state to sold and other related attributes
-func (ar *AssetsRepositoryInMemory) Sell(id primitive.ObjectID, price float32, sellTime time.Time) error {
+func (ar *AssetsRepositoryInMemory) Sell(id string, price float32, sellTime time.Time) error {
 
 	for index, asset := range ar.Assets {
-		if asset.ID == id {
+		if asset.ID.Hex() == id {
 			ar.Assets[index].SellPrice = price
 			ar.Assets[index].Sold = true
 			ar.Assets[index].SellTime = sellTime
@@ -75,7 +74,7 @@ func (ar *AssetsRepositoryInMemory) Sell(id primitive.ObjectID, price float32, s
 }
 
 // CheckAssetWithCloserPriceExists checks whether exist an asset that has the same price within limits defined
-func (ar *AssetsRepositoryInMemory) CheckAssetWithCloserPriceExists(accountID primitive.ObjectID, price, limit float32) (bool, error) {
+func (ar *AssetsRepositoryInMemory) CheckAssetWithCloserPriceExists(accountID string, price, limit float32) (bool, error) {
 	lowerLimit := price - (price * limit)
 	upperLimit := price + (price * limit)
 

@@ -27,12 +27,18 @@ func NewRepository(repo domain.Repository) *Repository {
 }
 
 // FindPendingAssets returns all assets that weren't sold
-func (or *Repository) FindPendingAssets(accountID primitive.ObjectID) (*[]Asset, error) {
+func (or *Repository) FindPendingAssets(accountID string) (*[]Asset, error) {
 
-	query := bson.M{"sold": false, "accountID": accountID}
+	accountOID, err := primitive.ObjectIDFromHex(accountID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	query := bson.M{"sold": false, "accountID": accountOID}
 
 	var results []Asset
-	err := or.repo.FindAll(&results, query, nil)
+	err = or.repo.FindAll(&results, query, nil)
 
 	if err != nil {
 		return nil, err
@@ -55,11 +61,18 @@ func (or *Repository) FindOne(filter interface{}) (*Asset, error) {
 }
 
 // FindAll returns every order
-func (or *Repository) FindAll(accountID primitive.ObjectID) (*[]Asset, error) {
-	query := bson.M{"accountID": accountID}
+func (or *Repository) FindAll(accountID string) (*[]Asset, error) {
+
+	accountOID, err := primitive.ObjectIDFromHex(accountID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	query := bson.M{"accountID": accountOID}
 
 	var results []Asset
-	err := or.repo.FindAll(&results, query, nil)
+	err = or.repo.FindAll(&results, query, nil)
 
 	if err != nil {
 		return nil, err
@@ -69,10 +82,16 @@ func (or *Repository) FindAll(accountID primitive.ObjectID) (*[]Asset, error) {
 }
 
 // FindCheaperAssetPrice returns the asset with the lower buy price
-func (or *Repository) FindCheaperAssetPrice(accountID primitive.ObjectID) (float32, error) {
+func (or *Repository) FindCheaperAssetPrice(accountID string) (float32, error) {
+	accountOID, err := primitive.ObjectIDFromHex(accountID)
+
+	if err != nil {
+		return 0, err
+	}
+
 	opts := options.FindOne().SetSort(bson.M{"buyPrice": 1})
 	var foundDocument Asset
-	err := or.repo.FindOne(&foundDocument, bson.M{"sold": false, "accountID": accountID}, opts)
+	err = or.repo.FindOne(&foundDocument, bson.M{"sold": false, "accountID": accountOID}, opts)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -90,19 +109,31 @@ func (or *Repository) Create(asset *Asset) error {
 }
 
 // Sell updates asset sell fields
-func (or *Repository) Sell(id primitive.ObjectID, price float32, sellTime time.Time) error {
-	filter := bson.M{"_id": id}
+func (or *Repository) Sell(assetID string, price float32, sellTime time.Time) error {
+	assetOID, err := primitive.ObjectIDFromHex(assetID)
+
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": assetOID}
 	update := bson.M{"$set": bson.M{"sellPrice": price, "sold": true, "selltime": sellTime}}
-	err := or.repo.UpdateOne(filter, update)
+	err = or.repo.UpdateOne(filter, update)
 
 	return err
 }
 
 // GetBalance returns the assets balance based on buys and sells
-func (ar *Repository) GetBalance(accountID primitive.ObjectID, startDate, endDate time.Time) (float32, error) {
-	filter := bson.M{"sold": false, "accountID": accountID, "buytime": bson.M{"$gte": startDate, "$lte": endDate}}
+func (ar *Repository) GetBalance(accountID string, startDate, endDate time.Time) (float32, error) {
+	accountOID, err := primitive.ObjectIDFromHex(accountID)
+
+	if err != nil {
+		return 0, err
+	}
+
+	filter := bson.M{"sold": false, "accountID": accountOID, "buytime": bson.M{"$gte": startDate, "$lte": endDate}}
 	var assetsBought []Asset
-	err := ar.repo.FindAll(&assetsBought, filter, nil)
+	err = ar.repo.FindAll(&assetsBought, filter, nil)
 
 	if err != nil {
 		return 0, err
@@ -130,14 +161,20 @@ func (ar *Repository) GetBalance(accountID primitive.ObjectID, startDate, endDat
 }
 
 // CheckAssetWithCloserPriceExists checks whether an asset that has the same price within limits defined exists
-func (ar *Repository) CheckAssetWithCloserPriceExists(accountID primitive.ObjectID, price, limit float32) (bool, error) {
+func (ar *Repository) CheckAssetWithCloserPriceExists(accountID string, price, limit float32) (bool, error) {
+	accountOID, err := primitive.ObjectIDFromHex(accountID)
+
+	if err != nil {
+		return false, err
+	}
+
 	lowerLimit := price - (price * limit)
 	upperLimit := price + (price * limit)
 
-	filter := bson.M{"sold": false, "accountID": accountID, "buyPrice": bson.M{"$gte": lowerLimit, "$lte": upperLimit}}
+	filter := bson.M{"sold": false, "accountID": accountOID, "buyPrice": bson.M{"$gte": lowerLimit, "$lte": upperLimit}}
 
 	var assets []Asset
-	err := ar.repo.FindAll(&assets, filter, nil)
+	err = ar.repo.FindAll(&assets, filter, nil)
 
 	if err != nil {
 		return false, err

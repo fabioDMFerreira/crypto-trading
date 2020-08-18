@@ -18,10 +18,16 @@ func NewRepository(repo domain.Repository) *Repository {
 }
 
 // FindById returns an account with the id passed by argument
-func (r *Repository) FindById(id primitive.ObjectID) (*domain.Account, error) {
+func (r *Repository) FindById(id string) (*domain.Account, error) {
+	accountOID, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return nil, err
+	}
+
 	var foundDocument domain.Account
 
-	err := r.repo.FindOne(&foundDocument, bson.M{"_id": id}, options.FindOne())
+	err = r.repo.FindOne(&foundDocument, bson.M{"_id": accountOID}, options.FindOne())
 
 	if err != nil {
 		return nil, err
@@ -52,16 +58,28 @@ func (r *Repository) Create(broker string, amount float32) (*domain.Account, err
 }
 
 // Withdraw decrements an amount from the account
-func (r *Repository) Withdraw(id primitive.ObjectID, amount float32) error {
+func (r *Repository) Withdraw(id string, amount float32) error {
 
-	filter := bson.M{"_id": id, "amount": bson.M{"$gte": amount}}
+	accountOID, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": accountOID, "amount": bson.M{"$gte": amount}}
 	update := bson.M{"$inc": bson.M{"amount": amount * -1}}
 	return r.repo.UpdateOne(filter, update)
 }
 
 // Deposit increments an amount to the account
-func (r *Repository) Deposit(id primitive.ObjectID, amount float32) error {
-	filter := bson.M{"_id": id}
+func (r *Repository) Deposit(id string, amount float32) error {
+	accountOID, err := primitive.ObjectIDFromHex(id)
+
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": accountOID}
 	update := bson.M{"$inc": bson.M{"amount": amount}}
 
 	return r.repo.UpdateOne(filter, update)

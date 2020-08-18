@@ -88,7 +88,7 @@ func main() {
 			log.Fatalf("Not able to create a new application due to %v", err)
 		}
 
-		accountService = accounts.NewAccountService(appMetaData.AccountID, accountsRepository, assetsRepository)
+		accountService = accounts.NewAccountService(appMetaData.AccountID.Hex(), accountsRepository, assetsRepository)
 
 		fmt.Printf("Application created with id %v\n", appMetaData.ID)
 	} else {
@@ -98,13 +98,13 @@ func main() {
 			log.Fatalf("Not able to get application with id %v due to %v", appID, err)
 		}
 
-		account, err := accountsRepository.FindById(appMetaData.AccountID)
+		account, err := accountsRepository.FindById(appMetaData.AccountID.Hex())
 
 		if err != nil {
 			log.Fatalf("Not able to get account with id %v due to %v", appMetaData.AccountID, err)
 		}
 
-		accountService = accounts.NewAccountService(account.ID, accountsRepository, assetsRepository)
+		accountService = accounts.NewAccountService(account.ID.Hex(), accountsRepository, assetsRepository)
 	}
 
 	eventLogsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)

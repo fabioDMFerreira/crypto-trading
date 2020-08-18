@@ -7,7 +7,6 @@ package mocks
 import (
 	domain "github.com/fabiodmferreira/crypto-trading/domain"
 	gomock "github.com/golang/mock/gomock"
-	primitive "go.mongodb.org/mongo-driver/bson/primitive"
 	reflect "reflect"
 	time "time"
 )
@@ -36,7 +35,7 @@ func (m *MockAccountsRepository) EXPECT() *MockAccountsRepositoryMockRecorder {
 }
 
 // FindById mocks base method
-func (m *MockAccountsRepository) FindById(id primitive.ObjectID) (*domain.Account, error) {
+func (m *MockAccountsRepository) FindById(id string) (*domain.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindById", id)
 	ret0, _ := ret[0].(*domain.Account)
@@ -81,7 +80,7 @@ func (mr *MockAccountsRepositoryMockRecorder) Create(broker, amount interface{})
 }
 
 // Withdraw mocks base method
-func (m *MockAccountsRepository) Withdraw(id primitive.ObjectID, amount float32) error {
+func (m *MockAccountsRepository) Withdraw(id string, amount float32) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Withdraw", id, amount)
 	ret0, _ := ret[0].(error)
@@ -95,7 +94,7 @@ func (mr *MockAccountsRepositoryMockRecorder) Withdraw(id, amount interface{}) *
 }
 
 // Deposit mocks base method
-func (m *MockAccountsRepository) Deposit(id primitive.ObjectID, amount float32) error {
+func (m *MockAccountsRepository) Deposit(id string, amount float32) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Deposit", id, amount)
 	ret0, _ := ret[0].(error)
@@ -348,7 +347,7 @@ func (mr *MockAccountServiceMockRecorder) CreateAsset(amount, price, time interf
 }
 
 // SellAsset mocks base method
-func (m *MockAccountService) SellAsset(assetID primitive.ObjectID, price float32, time time.Time) error {
+func (m *MockAccountService) SellAsset(assetID string, price float32, time time.Time) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SellAsset", assetID, price, time)
 	ret0, _ := ret[0].(error)
