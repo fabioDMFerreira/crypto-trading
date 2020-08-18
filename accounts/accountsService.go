@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -15,8 +16,14 @@ type AccountService struct {
 }
 
 // NewAccountService returns an instance of account service
-func NewAccountService(ID string, repository *Repository, assetsRepository domain.AssetsRepository) *AccountService {
-	return &AccountService{ID, repository, assetsRepository}
+func NewAccountService(ID string, repository *Repository, assetsRepository domain.AssetsRepository) (*AccountService, error) {
+	_, err := repository.FindById(ID)
+
+	if err != nil {
+		return nil, fmt.Errorf("Not able to get account with id %v due to %v", ID, err)
+	}
+
+	return &AccountService{ID, repository, assetsRepository}, nil
 }
 
 // Withdraw decrements an amount from an account

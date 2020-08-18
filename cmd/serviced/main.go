@@ -94,16 +94,18 @@ func setupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 
 	var appMetaData *domain.Application
 	var accountService domain.AccountService
+	var accountID string
+
 	if env.AppID == "" {
-		appMetaData, err := createDefaultApplicationMetaData(notificationOptions, applicationsRepository, accountsRepository)
+		appMetaData, err := createDefaultApplication(notificationOptions, applicationsRepository, accountsRepository)
 
 		if err != nil {
 			log.Fatalf("Not able to create a new application due to %v", err)
 		}
 
-		accountService = accounts.NewAccountService(appMetaData.AccountID.Hex(), accountsRepository, assetsRepository)
-
 		fmt.Printf("Application created with id %v\n", appMetaData.ID)
+
+		accountID = appMetaData.AccountID.Hex()
 	} else {
 		appMetaData, err := applicationsRepository.FindByID(env.AppID)
 
@@ -111,13 +113,13 @@ func setupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 			return nil, fmt.Errorf("Not able to get application with id %v due to %v", env.AppID, err)
 		}
 
-		account, err := accountsRepository.FindById(appMetaData.AccountID.Hex())
+		accountID = appMetaData.AccountID.Hex()
+	}
 
-		if err != nil {
-			return nil, fmt.Errorf("Not able to get account with id %v due to %v", appMetaData.AccountID, err)
-		}
+	accountService, err := accounts.NewAccountService(accountID, accountsRepository, assetsRepository)
 
-		accountService = accounts.NewAccountService(account.ID.Hex(), accountsRepository, assetsRepository)
+	if err != nil {
+		return nil, err
 	}
 
 	eventLogsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
@@ -177,20 +179,24 @@ func setupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 	applicationExecutionStateCollection := mongoDatabase.Collection(db.APPLICATION_EXECUTION_STATES_COLLECTION)
 	applicationExecutionStateRepository := db.NewRepository(applicationExecutionStateCollection)
 
-	application.RegistOnTickerChange(func(ask, bid float32, date time.Time) {
-		state := domain.ApplicationExecutionState{
-			ID:          primitive.NewObjectID(),
-			ExecutionID: appMetaData.ID,
-			Date:        date,
-			State:       application.GetState(),
-		}
-		applicationExecutionStateRepository.InsertOne(state)
-	})
+	application.RegistOnTickerChange(SaveApplicationState(appMetaData.ID, application, applicationExecutionStateRepository))
 
 	return application, nil
 }
 
-func createDefaultApplicationMetaData(notificationOptions domain.NotificationOptions, repository domain.ApplicationRepository, accountsRepository *accounts.Repository) (*domain.Application, error) {
+func SaveApplicationState(ID primitive.ObjectID, application *app.App, applicationExecutionStateRepository domain.Repository) domain.OnTickerChange {
+	return func(ask, bid float32, date time.Time) {
+		state := domain.ApplicationExecutionState{
+			ID:          primitive.NewObjectID(),
+			ExecutionID: ID,
+			Date:        date,
+			State:       application.GetState(),
+		}
+		applicationExecutionStateRepository.InsertOne(state)
+	}
+}
+
+func createDefaultApplication(notificationOptions domain.NotificationOptions, repository domain.ApplicationRepository, accountsRepository *accounts.Repository) (*domain.Application, error) {
 	options := domain.ApplicationOptions{
 		NotificationOptions: notificationOptions,
 		StatisticsOptions:   domain.StatisticsOptions{NumberOfPointsHold: 5000},
