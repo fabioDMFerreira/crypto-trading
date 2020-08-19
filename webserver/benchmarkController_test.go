@@ -13,12 +13,14 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/mocks"
 	"github.com/fabiodmferreira/crypto-trading/webserver"
+	"github.com/golang/mock/gomock"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/gorilla/mux"
 )
 
 func TestBenchmarkControllerGetDataSources(t *testing.T) {
-	benchmarkController, benchmarkService := NewBenchmarkController()
+	benchmarkController, benchmarkService, _ := NewBenchmarkController(t)
 
 	req, err := http.NewRequest("GET", "/benchmark/data-sources", nil)
 
@@ -36,7 +38,7 @@ func TestBenchmarkControllerGetDataSources(t *testing.T) {
 }
 
 func TestBenchmarkControllerGetBenchmarks(t *testing.T) {
-	benchmarkController, benchmarkService := NewBenchmarkController()
+	benchmarkController, benchmarkService, _ := NewBenchmarkController(t)
 
 	req, err := http.NewRequest("GET", "/benchmark", nil)
 
@@ -54,7 +56,7 @@ func TestBenchmarkControllerGetBenchmarks(t *testing.T) {
 }
 
 func TestBenchmarkControllerCreateBenchmark(t *testing.T) {
-	benchmarkController, benchmarkService := NewBenchmarkController()
+	benchmarkController, benchmarkService, _ := NewBenchmarkController(t)
 
 	input := benchmark.Input{
 		DecisionMakerOptions: domain.DecisionMakerOptions{MaximumBuyAmount: 0.1, MinimumProfitPerSold: 0.03, MinimumPriceDropToBuy: 0.01},
@@ -82,7 +84,7 @@ func TestBenchmarkControllerCreateBenchmark(t *testing.T) {
 }
 
 func TestBenchmarkControllerDelete(t *testing.T) {
-	benchmarkController, benchmarkService := NewBenchmarkController()
+	benchmarkController, benchmarkService, _ := NewBenchmarkController(t)
 
 	req, err := http.NewRequest("DELETE", "/benchmark", nil)
 
@@ -103,7 +105,7 @@ func TestBenchmarkControllerDelete(t *testing.T) {
 
 func TestBenchmarkControllerGetBenchmarkExecutionState(t *testing.T) {
 	t.Run("should return 400 if no parameter is passed", func(t *testing.T) {
-		benchmarkController, benchmarkService := NewBenchmarkController()
+		benchmarkController, benchmarkService, _ := NewBenchmarkController(t)
 
 		req, err := http.NewRequest("GET", "/benchmark/id/state", nil)
 
@@ -123,7 +125,12 @@ func TestBenchmarkControllerGetBenchmarkExecutionState(t *testing.T) {
 	})
 
 	t.Run("should return 200 if parameters start date and end date are passed", func(t *testing.T) {
-		benchmarkController, benchmarkService := NewBenchmarkController()
+		benchmarkController, _, applicationService := NewBenchmarkController(t)
+
+		applicationService.
+			EXPECT().
+			GetStateAggregated(gomock.Any(), gomock.Any(), gomock.Any()).
+			Return(&[]bson.M{}, nil)
 
 		params := url.Values{"startDate": {"2006-01-02T15:04:05"}, "endDate": {"2006-01-02T15:04:05"}}
 
@@ -144,16 +151,17 @@ func TestBenchmarkControllerGetBenchmarkExecutionState(t *testing.T) {
 			t.Fatalf("wrong status code: got %d want %d", status, http.StatusOK)
 		}
 
-		if len(benchmarkService.AggregateApplicationStateCalls) != 1 {
-			t.Errorf("Expected benchmarkService.AggregateApplicationState to have been called 1 time")
-		}
 	})
 }
 
-func NewBenchmarkController() (*webserver.BenchmarkController, *mocks.BenchmarkServiceSpy) {
+func NewBenchmarkController(t *testing.T) (*webserver.BenchmarkController, *mocks.BenchmarkServiceSpy, *mocks.MockApplicationService) {
+	ctrl := gomock.NewController(t)
+
+	defer ctrl.Finish()
+
 	benchmarkService := &mocks.BenchmarkServiceSpy{}
-	applicationService := &mocks.MockApplicationService{}
+	applicationService := mocks.NewMockApplicationService(ctrl)
 	benchmarkController := webserver.NewBenchmarkController(benchmarkService, applicationService)
 
-	return benchmarkController, benchmarkService
+	return benchmarkController, benchmarkService, applicationService
 }

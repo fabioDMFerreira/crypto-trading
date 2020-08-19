@@ -29,7 +29,7 @@ func main() {
 	bitcoinHistoryCollector := collectors.NewFileTickerCollector(domain.CollectorOptions{PriceVariationDetection: 0.01, DataSource: historyFile})
 
 	statisticsOptions := domain.StatisticsOptions{NumberOfPointsHold: 38000}
-	macd := statistics.NewMACDContainer(statistics.MACDParams{12, 26, 9}, []float64{})
+	macd := statistics.NewMACDContainer(statistics.MACDParams{Fast: 12, Slow: 26, Lag: 9}, []float64{})
 	stats := statistics.NewStatistics(statisticsOptions, macd)
 
 	f.Write([]byte("Date,Price,Change,ChangeofChange,VelocityDirection,AccelerationDirection,Histogram\n"))
