@@ -27,7 +27,7 @@ import (
 )
 
 func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *krakenapi.KrakenAPI) (*app.App, error) {
-
+	// Setup repositories
 	assetsCollection := mongoDatabase.Collection(db.ASSETS_COLLECTION)
 	assetsRepository := assets.NewRepository(db.NewRepository(assetsCollection))
 
@@ -40,7 +40,15 @@ func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 	applicationExecutionStateCollection := mongoDatabase.Collection(db.APPLICATION_EXECUTION_STATES_COLLECTION)
 	applicationExecutionStateRepository := db.NewRepository(applicationExecutionStateCollection)
 
+	// Get application options
 	appMetaData, err := getAppMetadata(env, applicationsRepository, accountsRepository)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Setup services
+	accountService, err := accounts.NewAccountService(appMetaData.AccountID.Hex(), accountsRepository, assetsRepository)
 
 	if err != nil {
 		return nil, err
@@ -49,31 +57,8 @@ func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 	eventLogsCollection := mongoDatabase.Collection(db.EVENT_LOGS_COLLECTION)
 	eventLogsRepository := eventlogs.NewEventLogsRepository(db.NewRepository(eventLogsCollection), appMetaData.ID)
 
-	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
-	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
-	assetsPricesService := assetsprices.NewService(assetsPricesRepository, assetsprices.NewCoindeskRemoteSource(http.Get).FetchRemoteAssetsPrices)
-
-	statisticsOptions := appMetaData.Options.StatisticsOptions
-	lastAssetsPrices, err := getLastAssetsPrices(appMetaData.Asset, statisticsOptions.NumberOfPointsHold, assetsPricesService)
-
-	if err != nil {
-		return nil, fmt.Errorf("%v", err)
-	}
-
-	pricesStatistics := setupStatistics(statisticsOptions)
-	growthStatistics := setupStatistics(statisticsOptions)
-
-	points := []float64{}
-	for _, assetPrice := range *lastAssetsPrices {
-		points = append(points, float64(assetPrice.Value))
-	}
-	nPoints := len(points)
-	for i := nPoints - 1; i >= 0; i-- {
-		pricesStatistics.AddPoint(points[i])
-	}
-	fmt.Println("Completed")
-
-	accountService, err := accounts.NewAccountService(appMetaData.AccountID.Hex(), accountsRepository, assetsRepository)
+	assetsPricesService := setupAssetsPricesService(mongoDatabase)
+	pricesStatistics, growthStatistics, err := setupPricesStatistics(assetsPricesService, appMetaData.Asset, appMetaData.Options.StatisticsOptions)
 
 	if err != nil {
 		return nil, err
@@ -85,17 +70,13 @@ func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 	dbTrader := setupTrader(env.AppEnv, accountService, krakenAPI)
 	krakenCollector := collectors.NewKrakenCollector(appMetaData.Asset, appMetaData.Options.CollectorOptions, krakenAPI)
 
-	application := app.NewApp(
-		krakenCollector,
-		decisionMaker,
-		dbTrader,
-		accountService,
-	)
+	// Create application
+	application := app.NewApp(krakenCollector, decisionMaker, dbTrader, accountService)
 
 	application.Asset = appMetaData.Asset
-
 	application.SetEventsLog(eventLogsRepository)
 
+	// Regist events
 	application.RegistOnTickerChange(NotificationJob(notificationsService, eventLogsRepository, accountService))
 	application.RegistOnTickerChange(SaveAssetPrice(appMetaData.Asset, assetsPricesService))
 	application.RegistOnTickerChange(SaveApplicationState(appMetaData.ID, application, applicationExecutionStateRepository))
@@ -198,12 +179,6 @@ func setupDecisionMaker(
 	accountService domain.AccountService,
 ) domain.DecisionMaker {
 	return decisionmaker.NewDecisionMaker(accountService, decisionmakerOptions, pricesStatistics, growthStatistics)
-}
-
-func setupStatistics(statisticsOptions domain.StatisticsOptions) domain.Statistics {
-	macdParams := statistics.MACDParams{Fast: 24, Slow: 12, Lag: 9}
-	macd := statistics.NewMACDContainer(macdParams)
-	return statistics.NewStatistics(statisticsOptions, macd)
 }
 
 func NotificationJob(
@@ -317,4 +292,43 @@ func setupTrader(appEnv string, accountService domain.AccountService, krakenAPI 
 	}
 
 	return trader.NewTrader(accountService, brokerService)
+}
+
+func appendAssetsPricesToStatistics(statistics domain.Statistics, lastAssetsPrices *[]domain.AssetPrice) {
+	points := []float64{}
+	for _, assetPrice := range *lastAssetsPrices {
+		points = append(points, float64(assetPrice.Value))
+	}
+	nPoints := len(points)
+	for i := nPoints - 1; i >= 0; i-- {
+		statistics.AddPoint(points[i])
+	}
+}
+
+func setupAssetsPricesService(mongoDatabase *mongo.Database) domain.AssetsPricesService {
+	assetsPricesCollection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
+	assetsPricesRepository := assetsprices.NewRepository(db.NewRepository(assetsPricesCollection))
+
+	return assetsprices.NewService(assetsPricesRepository, assetsprices.NewCoindeskRemoteSource(http.Get).FetchRemoteAssetsPrices)
+}
+
+func setupPricesStatistics(assetsPricesService domain.AssetsPricesService, asset string, statisticsOptions domain.StatisticsOptions) (domain.Statistics, domain.Statistics, error) {
+	lastAssetsPrices, err := getLastAssetsPrices(asset, statisticsOptions.NumberOfPointsHold, assetsPricesService)
+
+	if err != nil {
+		return nil, nil, fmt.Errorf("%v", err)
+	}
+
+	pricesStatistics := setupStatistics(statisticsOptions)
+	growthStatistics := setupStatistics(statisticsOptions)
+
+	appendAssetsPricesToStatistics(pricesStatistics, lastAssetsPrices)
+
+	return pricesStatistics, growthStatistics, nil
+}
+
+func setupStatistics(statisticsOptions domain.StatisticsOptions) domain.Statistics {
+	macdParams := statistics.MACDParams{Fast: 24, Slow: 12, Lag: 9}
+	macd := statistics.NewMACDContainer(macdParams)
+	return statistics.NewStatistics(statisticsOptions, macd)
 }
