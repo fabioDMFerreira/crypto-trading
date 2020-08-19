@@ -27,6 +27,7 @@ type TickerMessage struct {
 var Pairs = map[string]string{
 	"BTC": "XBT/EUR",
 	"ETH": "ETH/EUR",
+	"ADA": "ADA/EUR",
 }
 
 // KrakenCollector collects data from kraken exchange
@@ -37,6 +38,7 @@ type KrakenCollector struct {
 	observables          []domain.OnTickerChange
 	lastPricePublishDate time.Time
 	pair                 string
+	wscon                *websocket.Conn
 }
 
 // NewKrakenCollector returns an instance of KrakenCollector
@@ -48,7 +50,7 @@ func NewKrakenCollector(asset string, options domain.CollectorOptions, krakenAPI
 		log.Fatalf("%v does not have a valid kraken pair", asset)
 	}
 
-	return &KrakenCollector{options, krakenAPI, 0, []domain.OnTickerChange{}, time.Time{}, pair}
+	return &KrakenCollector{options, krakenAPI, 0, []domain.OnTickerChange{}, time.Time{}, pair, nil}
 }
 
 // Start connects to a kraken websocket that send prices variations
@@ -59,12 +61,15 @@ func (kc *KrakenCollector) Start() {
 		Path:   "/",
 	}
 
-	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	con, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+
+	kc.wscon = con
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer c.Close()
+	defer kc.wscon.Close()
 
 	subscribeEventMessage := fmt.Sprintf(`{
 		"event": "subscribe",
@@ -76,7 +81,7 @@ func (kc *KrakenCollector) Start() {
 		}
 	}`, kc.pair)
 
-	err = c.WriteMessage(
+	err = kc.wscon.WriteMessage(
 		websocket.TextMessage,
 		[]byte(subscribeEventMessage),
 	)
@@ -86,10 +91,10 @@ func (kc *KrakenCollector) Start() {
 
 	// receive message
 	for {
-		_, message, err := c.ReadMessage()
+		_, message, err := kc.wscon.ReadMessage()
 
 		if err != nil {
-			log.Fatal(err)
+			break
 		}
 
 		var e SocketEvent
@@ -121,6 +126,13 @@ func (kc *KrakenCollector) Start() {
 			}
 
 		}
+	}
+}
+
+// Stop closes connection with kraken websocket
+func (kc *KrakenCollector) Stop() {
+	if kc.wscon != nil {
+		kc.wscon.Close()
 	}
 }
 

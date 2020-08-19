@@ -14,7 +14,6 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/broker"
-	"github.com/fabiodmferreira/crypto-trading/collectors"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/decisionmaker"
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -26,7 +25,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *krakenapi.KrakenAPI) (*app.App, error) {
+func SetupApplication(appMetaData *domain.Application, mongoDatabase *mongo.Database, broker domain.Broker, collector domain.Collector) (*app.App, error) {
 	// Setup repositories
 	assetsCollection := mongoDatabase.Collection(db.ASSETS_COLLECTION)
 	assetsRepository := assets.NewRepository(db.NewRepository(assetsCollection))
@@ -34,18 +33,8 @@ func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 	accountsCollection := mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)
 	accountsRepository := accounts.NewRepository(db.NewRepository(accountsCollection))
 
-	applicationsCollection := mongoDatabase.Collection(db.APPLICATIONS_COLLECTION)
-	applicationsRepository := app.NewRepository(db.NewRepository(applicationsCollection))
-
 	applicationExecutionStateCollection := mongoDatabase.Collection(db.APPLICATION_EXECUTION_STATES_COLLECTION)
 	applicationExecutionStateRepository := db.NewRepository(applicationExecutionStateCollection)
-
-	// Get application options
-	appMetaData, err := getAppMetadata(env, applicationsRepository, accountsRepository)
-
-	if err != nil {
-		return nil, err
-	}
 
 	// Setup services
 	accountService, err := accounts.NewAccountService(appMetaData.AccountID.Hex(), accountsRepository, assetsRepository)
@@ -66,11 +55,10 @@ func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 
 	notificationsService := setupNotificationsService(mongoDatabase, appMetaData.Options.NotificationOptions, appMetaData.ID)
 	decisionMaker := setupDecisionMaker(appMetaData.Options.DecisionMakerOptions, pricesStatistics, growthStatistics, accountService)
-	dbTrader := setupTrader(env.AppEnv, accountService, krakenAPI)
-	krakenCollector := collectors.NewKrakenCollector(appMetaData.Asset, appMetaData.Options.CollectorOptions, krakenAPI)
+	dbTrader := trader.NewTrader(accountService, broker)
 
 	// Create application
-	application := app.NewApp(krakenCollector, decisionMaker, dbTrader, accountService)
+	application := app.NewApp(collector, decisionMaker, dbTrader, accountService)
 	application.Asset = appMetaData.Asset
 	application.SetEventsLog(eventLogsRepository)
 
@@ -82,7 +70,7 @@ func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 	return application, nil
 }
 
-func getAppMetadata(env domain.Env, applicationsRepository domain.ApplicationRepository, accountsRepository domain.AccountsRepository) (*domain.Application, error) {
+func FindOrCreateAppMetaData(env domain.Env, applicationsRepository domain.ApplicationRepository, accountsRepository domain.AccountsRepository) (*domain.Application, error) {
 	var appMetaData *domain.Application
 	var err error
 
@@ -144,7 +132,7 @@ func createDefaultAppMetadata(notificationOptions domain.NotificationOptions, re
 		},
 		CollectorOptions: domain.CollectorOptions{
 			PriceVariationDetection: 0.01,
-			NewPriceTimeRate:        15,
+			NewPriceTimeRate:        1,
 		},
 	}
 
@@ -280,18 +268,6 @@ func getLastAssetsPrices(asset string, numberOfPoints int, assetsPricesService d
 	return assetsPricesService.GetLastAssetsPrices(asset, numberOfPoints)
 }
 
-func setupTrader(appEnv string, accountService domain.AccountService, krakenAPI *krakenapi.KrakenAPI) domain.Trader {
-	var brokerService domain.Broker
-	if appEnv == "production" {
-		brokerService = broker.NewKrakenBroker(krakenAPI)
-	} else {
-		fmt.Println("Broker mocked!")
-		brokerService = broker.NewBrokerMock()
-	}
-
-	return trader.NewTrader(accountService, brokerService)
-}
-
 func appendAssetsPricesToStatistics(statistics domain.Statistics, lastAssetsPrices *[]domain.AssetPrice) {
 	points := []float64{}
 	for _, assetPrice := range *lastAssetsPrices {
@@ -329,4 +305,15 @@ func setupStatistics(statisticsOptions domain.StatisticsOptions) domain.Statisti
 	macdParams := statistics.MACDParams{Fast: 24, Slow: 12, Lag: 9}
 	macd := statistics.NewMACDContainer(macdParams)
 	return statistics.NewStatistics(statisticsOptions, macd)
+}
+
+func GetBroker(appEnv string, krakenAPI *krakenapi.KrakenAPI) domain.Broker {
+	var brokerService domain.Broker
+	if appEnv == "production" {
+		brokerService = broker.NewKrakenBroker(krakenAPI)
+	} else {
+		fmt.Println("Broker mocked!")
+		brokerService = broker.NewBrokerMock()
+	}
+	return brokerService
 }

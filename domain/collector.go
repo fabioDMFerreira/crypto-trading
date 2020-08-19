@@ -15,6 +15,7 @@ type CollectorOptions struct {
 // Collector notifies when price asset changes
 type Collector interface {
 	Start()
+	Stop()
 	Regist(observable OnTickerChange)
 }
 

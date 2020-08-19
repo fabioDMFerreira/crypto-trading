@@ -55,6 +55,11 @@ func (a *App) Start() {
 	a.collector.Start()
 }
 
+// Stop stops collecting data
+func (a *App) Stop() {
+	a.collector.Stop()
+}
+
 // RegistOnTickerChange executes function when the collector receives a change
 func (a *App) RegistOnTickerChange(observable domain.OnTickerChange) {
 	a.collector.Regist(observable)

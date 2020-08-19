@@ -12,6 +12,7 @@ services:
       - ~/mongo/crypto-trading-db:/data/db
     ports:
       - '27017:27017'
+    command: [ "/usr/bin/mongod", "--bind_ip_all", "--replSet", "rs0" ]
   backend:
       build: .
       ports:

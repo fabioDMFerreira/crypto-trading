@@ -75,6 +75,9 @@ func (ftc *FileTickerCollector) Start() {
 	}
 }
 
+// Stop is a stub
+func (ftc *FileTickerCollector) Stop() {}
+
 // Regist add function to be executed when a new price is received
 func (ftc *FileTickerCollector) Regist(observable domain.OnTickerChange) {
 	ftc.observables = append(ftc.observables, observable)
