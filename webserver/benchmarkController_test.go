@@ -152,7 +152,8 @@ func TestBenchmarkControllerGetBenchmarkExecutionState(t *testing.T) {
 
 func NewBenchmarkController() (*webserver.BenchmarkController, *mocks.BenchmarkServiceSpy) {
 	benchmarkService := &mocks.BenchmarkServiceSpy{}
-	benchmarkController := webserver.NewBenchmarkController(benchmarkService)
+	applicationService := &mocks.MockApplicationService{}
+	benchmarkController := webserver.NewBenchmarkController(benchmarkService, applicationService)
 
 	return benchmarkController, benchmarkService
 }

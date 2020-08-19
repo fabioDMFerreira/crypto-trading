@@ -8,21 +8,18 @@ import (
 
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	"github.com/fabiodmferreira/crypto-trading/domain"
-	"github.com/fabiodmferreira/crypto-trading/utils"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // BenchmarkController has the handlers of benchmark routes
 type BenchmarkController struct {
-	benchmark domain.BenchmarkService
+	benchmark   domain.BenchmarkService
+	application domain.ApplicationService
 }
 
 // NewBenchmarkController returns an instance of BenchmarkController
-func NewBenchmarkController(benchmark domain.BenchmarkService) *BenchmarkController {
-	return &BenchmarkController{benchmark}
+func NewBenchmarkController(benchmark domain.BenchmarkService, application domain.ApplicationService) *BenchmarkController {
+	return &BenchmarkController{benchmark, application}
 }
 
 // GetBenchmarkDataSources returns list of all available data sources
@@ -154,47 +151,12 @@ func (b *BenchmarkController) GetBenchmarkExecutionStateHandler(w http.ResponseW
 		return
 	}
 
-	benchmarkID, err := primitive.ObjectIDFromHex(vars["id"])
-
-	if err != nil {
-		fmt.Fprint(w, "invalid benchmark id")
-		return
-	}
-
 	// TODO: Validate query parameters.
 
 	startDate, _ := time.Parse("2006-01-02T15:04:05", queryVars["startDate"][0])
 	endDate, _ := time.Parse("2006-01-02T15:04:05", queryVars["endDate"][0])
 
-	var pipelineOptions mongo.Pipeline
-
-	groupByDatesClause := utils.GetGroupByDatesIDClause(startDate, endDate)
-
-	pipelineOptions = mongo.Pipeline{
-		{
-			primitive.E{
-				Key: "$match",
-				Value: bson.M{
-					"executionId": benchmarkID,
-					"date":        bson.M{"$gte": startDate, "$lte": endDate}},
-			},
-		},
-		{
-			primitive.E{
-				Key: "$group",
-				Value: bson.M{
-					"_id":                 groupByDatesClause,
-					"average":             bson.M{"$avg": "$state.average"},
-					"standardDeviation":   bson.M{"$avg": "$state.standardDeviation"},
-					"higherBollingerBand": bson.M{"$avg": "$state.higherBollingerBand"},
-					"lowerBollingerBand":  bson.M{"$avg": "$state.lowerBollingerBand"},
-					"currentChange":       bson.M{"$avg": "$state.currentChange"},
-					"accountAmount":       bson.M{"$avg": "$state.accountAmount"},
-				},
-			}},
-	}
-
-	benchmarkStates, err := b.benchmark.AggregateApplicationState(pipelineOptions)
+	benchmarkStates, err := b.application.GetStateAggregated(vars["id"], startDate, endDate)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)

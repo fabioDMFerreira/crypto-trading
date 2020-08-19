@@ -26,7 +26,7 @@ func NewCryptoTradingServer(
 
 	router := mux.NewRouter()
 
-	benchmarkController := NewBenchmarkController(benchmark)
+	benchmarkController := NewBenchmarkController(benchmark, appService)
 	router.Handle("/api/benchmark", http.HandlerFunc(benchmarkController.BenchmarkHandler))
 	router.Handle("/api/benchmark/data-sources", http.HandlerFunc(benchmarkController.GetBenchmarkDataSourcesHandler))
 	router.HandleFunc("/api/benchmark/{id}", benchmarkController.ResourceHandler)

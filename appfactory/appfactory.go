@@ -65,14 +65,12 @@ func SetupApplication(env domain.Env, mongoDatabase *mongo.Database, krakenAPI *
 	}
 
 	notificationsService := setupNotificationsService(mongoDatabase, appMetaData.Options.NotificationOptions, appMetaData.ID)
-	decisionmakerOptions := appMetaData.Options.DecisionMakerOptions
-	decisionMaker := setupDecisionMaker(decisionmakerOptions, pricesStatistics, growthStatistics, accountService)
+	decisionMaker := setupDecisionMaker(appMetaData.Options.DecisionMakerOptions, pricesStatistics, growthStatistics, accountService)
 	dbTrader := setupTrader(env.AppEnv, accountService, krakenAPI)
 	krakenCollector := collectors.NewKrakenCollector(appMetaData.Asset, appMetaData.Options.CollectorOptions, krakenAPI)
 
 	// Create application
 	application := app.NewApp(krakenCollector, decisionMaker, dbTrader, accountService)
-
 	application.Asset = appMetaData.Asset
 	application.SetEventsLog(eventLogsRepository)
 
