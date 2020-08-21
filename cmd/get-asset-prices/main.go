@@ -36,23 +36,23 @@ func main() {
 	dateLayout := "2006-01-02 15:04:05"
 
 	startDate, _ := time.Parse(dateLayout, "2019-01-01 00:00:00")
-	endDate, _ := time.Parse(dateLayout, "2020-07-15 23:59:59")
+	endDate, _ := time.Parse(dateLayout, "2020-08-15 23:59:59")
 
 	iterations := []struct {
 		filePath string
 		coin     string
 	}{
-		{"ada/last-year-minute.csv", "ADA"},
+		{"ada/2019-current.csv", "ADA"},
 		{"btc/2019-current.csv", "BTC"},
-		{"btc-cash/last-year-minute.csv", "BCH"},
-		{"btc-sv/last-year-minute.csv", "BSV"},
-		{"eos/last-year-minute.csv", "EOS"},
-		{"etc/last-year-minute.csv", "ETC"},
-		{"eth/last-year-minute.csv", "ETH"},
-		{"ltc/last-year-minute.csv", "LTC"},
-		{"monero/last-year-minute.csv", "XMR"},
-		{"stellar/last-year-minute.csv", "XLM"},
-		{"xrp/last-year-minute.csv", "XRP"},
+		{"btc-cash/2019-current.csv", "BCH"},
+		{"btc-sv/2019-current.csv", "BSV"},
+		{"eos/2019-current.csv", "EOS"},
+		{"etc/2019-current.csv", "ETC"},
+		{"eth/2019-current.csv", "ETH"},
+		{"ltc/2019-current.csv", "LTC"},
+		{"monero/2019-current.csv", "XMR"},
+		{"stellar/2019-current.csv", "XLM"},
+		{"xrp/2019-current.csv", "XRP"},
 	}
 
 	assetsPricesRepository := assetsprices.NewRepositoryInMemory()

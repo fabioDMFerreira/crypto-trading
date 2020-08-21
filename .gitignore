@@ -7,3 +7,4 @@ reports/benchmark-reports/*
 reports/orders-reports/*
 bin
 coverage.txt
+gin-bin

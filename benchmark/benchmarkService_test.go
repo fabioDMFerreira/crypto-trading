@@ -74,33 +74,43 @@ func TestServiceGetDatSources(t *testing.T) {
 		},
 		"btc-cash": map[string]string{
 			"Last Year Minute": btccashdatahistory.LastYearMinute,
+			"2019 - Current":   btccashdatahistory.Twenty19Current,
 		},
 		"btc-sv": map[string]string{
 			"Last Year Minute": btcsvdatahistory.LastYearMinute,
+			"2019 - Current":   btcsvdatahistory.Twenty19Current,
 		},
 		"eos": map[string]string{
 			"Last Year Minute": eosdatahistory.LastYearMinute,
+			"2019 - Current":   eosdatahistory.Twenty19Current,
 		},
 		"etc": map[string]string{
 			"Last Year Minute": etcdatahistory.LastYearMinute,
+			"2019 - Current":   etcdatahistory.Twenty19Current,
 		},
 		"ltc": map[string]string{
 			"Last Year Minute": ltcdatahistory.LastYearMinute,
+			"2019 - Current":   ltcdatahistory.Twenty19Current,
 		},
 		"monero": map[string]string{
 			"Last Year Minute": monerodatahistory.LastYearMinute,
+			"2019 - Current":   monerodatahistory.Twenty19Current,
 		},
 		"stellar": map[string]string{
 			"Last Year Minute": stellardatahistory.LastYearMinute,
+			"2019 - Current":   stellardatahistory.Twenty19Current,
 		},
 		"xrp": map[string]string{
 			"Last Year Minute": xrpdatahistory.LastYearMinute,
+			"2019 - Current":   xrpdatahistory.Twenty19Current,
 		},
 		"eth": map[string]string{
 			"Last Year Minute": ethdatahistory.LastYearMinute,
+			"2019 - Current":   ethdatahistory.Twenty19Current,
 		},
 		"ada": map[string]string{
 			"Last Year Minute": adadatahistory.LastYearMinute,
+			"2019 - Current":   adadatahistory.Twenty19Current,
 		},
 	}
 

@@ -14,12 +14,25 @@ type DecisionMakerOptions struct {
 
 // DecisionMakerState represents the decision maker state
 type DecisionMakerState struct {
-	Average             float64 `bson:"average,truncate" json:"average"`
-	StandardDeviation   float64 `bson:"standardDeviation,truncate" json:"standardDeviation"`
-	LowerBollingerBand  float64 `bson:"lowerBollingerBand,truncate" json:"lowerBollingerBand"`
-	HigherBollingerBand float64 `bson:"higherBollingerBand,truncate" json:"higherBollingerBand"`
-	CurrentPrice        float32 `bson:"currentPrice,truncate" json:"currentPrice"`
-	CurrentChange       float32 `bson:"currentChange,truncate" json:"currentChange"`
+	Price                  float32 `bson:"price,truncate" json:"price"`
+	PriceAverage           float64 `bson:"priceAverage,truncate" json:"priceAverage"`
+	PriceStandardDeviation float64 `bson:"priceStandardDeviation,truncate" json:"priceStandardDeviation"`
+	PriceUpperLimit        float64 `bson:"priceUpperLimit,truncate" json:"priceUpperLimit"`
+	PriceLowerLimit        float64 `bson:"priceLowerLimit,truncate" json:"priceLowerLimit"`
+
+	Change                  float32 `bson:"change,truncate" json:"change"`
+	ChangeAverage           float64 `bson:"changeAverage,truncate" json:"changeAverage"`
+	ChangeStandardDeviation float64 `bson:"changeStandardDeviation,truncate" json:"changeStandardDeviation"`
+	ChangeUpperLimit        float64 `bson:"changeUpperLimit,truncate" json:"changeUpperLimit"`
+	ChangeLowerLimit        float64 `bson:"changeLowerLimit,truncate" json:"changeLowerLimit"`
+
+	Acceleration                  float32 `bson:"acceleration,truncate" json:"acceleration"`
+	AccelerationAverage           float64 `bson:"accelerationAverage,truncate" json:"accelerationAverage"`
+	AccelerationStandardDeviation float64 `bson:"accelerationStandardDeviation,truncate" json:"accelerationStandardDeviation"`
+	AccelerationUpperLimit        float64 `bson:"accelerationUpperLimit,truncate" json:"accelerationUpperLimit"`
+	AccelerationLowerLimit        float64 `bson:"accelerationLowerLimit,truncate" json:"accelerationLowerLimit"`
+
+	AccountAmount float64 `bson:"accountAmount,truncate" json:"accountAmount"`
 }
 
 // DecisionMaker makes decisions to buy or sell assets

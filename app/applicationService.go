@@ -87,13 +87,26 @@ func (a *Service) GetStateAggregated(appID string, startDate, endDate time.Time)
 			primitive.E{
 				Key: "$group",
 				Value: bson.M{
-					"_id":                 groupByDatesClause,
-					"average":             bson.M{"$avg": "$state.average"},
-					"standardDeviation":   bson.M{"$avg": "$state.standardDeviation"},
-					"higherBollingerBand": bson.M{"$avg": "$state.higherBollingerBand"},
-					"lowerBollingerBand":  bson.M{"$avg": "$state.lowerBollingerBand"},
-					"currentChange":       bson.M{"$avg": "$state.currentChange"},
-					"accountAmount":       bson.M{"$avg": "$state.accountAmount"},
+					"_id": groupByDatesClause,
+
+					"priceAverage":           bson.M{"$avg": "$state.priceAverage"},
+					"priceStandardDeviation": bson.M{"$avg": "$state.priceStandardDeviation"},
+					"priceUpperLimit":        bson.M{"$avg": "$state.priceUpperLimit"},
+					"priceLowerLimit":        bson.M{"$avg": "$state.priceLowerLimit"},
+
+					"change":                  bson.M{"$avg": "$state.change"},
+					"changeAverage":           bson.M{"$avg": "$state.changeAverage"},
+					"changeStandardDeviation": bson.M{"$avg": "$state.changeStandardDeviation"},
+					"changeUpperLimit":        bson.M{"$avg": "$state.changeUpperLimit"},
+					"changeLowerLimit":        bson.M{"$avg": "$state.changeLowerLimit"},
+
+					"acceleration":                  bson.M{"$avg": "$state.acceleration"},
+					"accelerationAverage":           bson.M{"$avg": "$state.accelerationAverage"},
+					"accelerationStandardDeviation": bson.M{"$avg": "$state.accelerationStandardDeviation"},
+					"accelerationUpperLimit":        bson.M{"$avg": "$state.accelerationUpperLimit"},
+					"accelerationLowerLimit":        bson.M{"$avg": "$state.accelerationLowerLimit"},
+
+					"accountAmount": bson.M{"$avg": "$state.accountAmount"},
 				},
 			}},
 	}

@@ -69,7 +69,7 @@ func main() {
 		log.Fatalf("problem creating server, %v ", err)
 	}
 
-	if err := http.ListenAndServe(":5000", handlers.LoggingHandler(os.Stdout, server)); err != nil {
-		log.Fatalf("could not listen on port 5000 %v", err)
+	if err := http.ListenAndServe(":4000", handlers.LoggingHandler(os.Stdout, server)); err != nil {
+		log.Fatalf("could not listen on port 4000 %v", err)
 	}
 }

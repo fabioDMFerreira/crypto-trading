@@ -45,8 +45,6 @@ func (a *App) SetEventsLog(eventsLog domain.EventsLog) {
 func (a *App) log(subject, message string) {
 	if a.eventLogsRepository != nil {
 		a.eventLogsRepository.Create(subject, message)
-	} else {
-		fmt.Printf("%v: %v", subject, message)
 	}
 }
 

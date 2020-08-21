@@ -47,14 +47,14 @@ func SetupApplication(appMetaData *domain.Application, mongoDatabase *mongo.Data
 	eventLogsRepository := eventlogs.NewEventLogsRepository(db.NewRepository(eventLogsCollection), appMetaData.ID)
 
 	assetsPricesService := setupAssetsPricesService(mongoDatabase)
-	pricesStatistics, growthStatistics, err := setupPricesStatistics(assetsPricesService, appMetaData.Asset, appMetaData.Options.StatisticsOptions)
+	pricesStatistics, growthStatistics, accelerationStatistics, err := setupPricesStatistics(assetsPricesService, appMetaData.Asset, appMetaData.Options.StatisticsOptions)
 
 	if err != nil {
 		return nil, err
 	}
 
 	notificationsService := setupNotificationsService(mongoDatabase, appMetaData.Options.NotificationOptions, appMetaData.ID)
-	decisionMaker := setupDecisionMaker(appMetaData.Options.DecisionMakerOptions, pricesStatistics, growthStatistics, accountService)
+	decisionMaker := setupDecisionMaker(appMetaData.Options.DecisionMakerOptions, pricesStatistics, growthStatistics, accelerationStatistics, accountService)
 	dbTrader := trader.NewTrader(accountService, broker)
 
 	// Create application
@@ -162,9 +162,10 @@ func setupDecisionMaker(
 	decisionmakerOptions domain.DecisionMakerOptions,
 	pricesStatistics domain.Statistics,
 	growthStatistics domain.Statistics,
+	accelerationStatistics domain.Statistics,
 	accountService domain.AccountService,
 ) domain.DecisionMaker {
-	return decisionmaker.NewDecisionMaker(accountService, decisionmakerOptions, pricesStatistics, growthStatistics)
+	return decisionmaker.NewDecisionMaker(accountService, decisionmakerOptions, pricesStatistics, growthStatistics, accelerationStatistics)
 }
 
 func NotificationJob(
@@ -286,19 +287,20 @@ func setupAssetsPricesService(mongoDatabase *mongo.Database) domain.AssetsPrices
 	return assetsprices.NewService(assetsPricesRepository, assetsprices.NewCoindeskRemoteSource(http.Get).FetchRemoteAssetsPrices)
 }
 
-func setupPricesStatistics(assetsPricesService domain.AssetsPricesService, asset string, statisticsOptions domain.StatisticsOptions) (domain.Statistics, domain.Statistics, error) {
+func setupPricesStatistics(assetsPricesService domain.AssetsPricesService, asset string, statisticsOptions domain.StatisticsOptions) (domain.Statistics, domain.Statistics, domain.Statistics, error) {
 	lastAssetsPrices, err := getLastAssetsPrices(asset, statisticsOptions.NumberOfPointsHold, assetsPricesService)
 
 	if err != nil {
-		return nil, nil, fmt.Errorf("%v", err)
+		return nil, nil, nil, fmt.Errorf("%v", err)
 	}
 
 	pricesStatistics := setupStatistics(statisticsOptions)
 	growthStatistics := setupStatistics(statisticsOptions)
+	accelerationStatistics := setupStatistics(statisticsOptions)
 
 	appendAssetsPricesToStatistics(pricesStatistics, lastAssetsPrices)
 
-	return pricesStatistics, growthStatistics, nil
+	return pricesStatistics, growthStatistics, accelerationStatistics, nil
 }
 
 func setupStatistics(statisticsOptions domain.StatisticsOptions) domain.Statistics {

@@ -8,31 +8,51 @@ import (
 
 // DecisionMaker decides to buy or sell
 type DecisionMaker struct {
-	account          domain.AccountService
-	options          domain.DecisionMakerOptions
-	statistics       domain.Statistics
-	growthStatistics domain.Statistics
+	account                domain.AccountService
+	options                domain.DecisionMakerOptions
+	statistics             domain.Statistics
+	growthStatistics       domain.Statistics
+	accelerationStatistics domain.Statistics
 
-	currentPrice  float32
-	lastPrice     float32
-	currentChange float32
+	currentPrice        float32
+	lastPrice           float32
+	currentChange       float32
+	lastChange          float32
+	currentAcceleration float32
+	lastAcceleration    float32
 }
 
 // NewDecisionMaker returns a new instance of DecisionMaker
-func NewDecisionMaker(account domain.AccountService, options domain.DecisionMakerOptions, statistics domain.Statistics, growthStatistics domain.Statistics) *DecisionMaker {
-	return &DecisionMaker{account, options, statistics, growthStatistics, 0, 0, 0}
+func NewDecisionMaker(
+	account domain.AccountService,
+	options domain.DecisionMakerOptions,
+	statistics domain.Statistics,
+	growthStatistics domain.Statistics,
+	accelerationStatistics domain.Statistics,
+) *DecisionMaker {
+	return &DecisionMaker{account, options, statistics, growthStatistics, accelerationStatistics, 0, 0, 0, 0, 0, 0}
 }
 
 // NewValue adds a new price to recalculate statistics
 func (dm *DecisionMaker) NewValue(price float32, date time.Time) {
-	change := price - dm.lastPrice
-
-	dm.currentChange = change
-
 	dm.statistics.AddPoint(float64(price))
 
 	if dm.lastPrice > 0 {
-		dm.growthStatistics.AddPoint(float64(price - dm.lastPrice))
+		change := price - dm.lastPrice
+
+		dm.lastChange = dm.currentChange
+		dm.currentChange = change
+
+		dm.growthStatistics.AddPoint(float64(change))
+	}
+
+	if dm.lastChange != 0 {
+		acceleration := dm.currentChange - dm.lastChange
+
+		dm.accelerationStatistics.AddPoint(float64(acceleration))
+
+		dm.lastAcceleration = dm.currentAcceleration
+		dm.currentAcceleration = acceleration
 	}
 
 	dm.lastPrice = dm.currentPrice
@@ -53,7 +73,8 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 
 	if assetWithCloserPrice ||
 		float32(dm.statistics.GetAverage()-dm.statistics.GetStandardDeviation()) < price ||
-		dm.currentChange < dm.options.GrowthDecreaseLimit {
+		dm.currentChange < dm.options.GrowthDecreaseLimit ||
+		((float32(dm.accelerationStatistics.GetAverage()) > 0) && (float32(dm.growthStatistics.GetAverage()) < 0)) {
 		return false, nil
 	}
 
@@ -64,7 +85,8 @@ func (dm *DecisionMaker) ShouldBuy(price float32, buyTime time.Time) (bool, erro
 func (dm *DecisionMaker) ShouldSell(asset *domain.Asset, price float32, byTime time.Time) (bool, error) {
 	if !dm.statistics.HasRequiredNumberOfPoints() ||
 		asset.BuyPrice+(asset.BuyPrice*dm.options.MinimumProfitPerSold) > price ||
-		float32(dm.statistics.GetAverage()+dm.statistics.GetStandardDeviation()) > price {
+		float32(dm.statistics.GetAverage()+dm.statistics.GetStandardDeviation()) > price ||
+		((float32(dm.accelerationStatistics.GetAverage()) > 0) && (float32(dm.growthStatistics.GetAverage()) > 0)) {
 		return false, nil
 	}
 
@@ -99,15 +121,32 @@ func (dm *DecisionMaker) getMaximumBuyAmountBasedOnOptions(price float32) float3
 
 // GetState returns decision maker state
 func (dm *DecisionMaker) GetState() domain.DecisionMakerState {
-	average := dm.statistics.GetAverage()
-	std := dm.statistics.GetStandardDeviation()
+	priceAverage := dm.statistics.GetAverage()
+	priceStd := dm.statistics.GetStandardDeviation()
+
+	changeAverage := dm.growthStatistics.GetAverage()
+	changeStd := dm.growthStatistics.GetStandardDeviation()
+
+	accelerationAverage := dm.accelerationStatistics.GetAverage()
+	accelerationStd := dm.accelerationStatistics.GetStandardDeviation()
 
 	return domain.DecisionMakerState{
-		Average:             average,
-		StandardDeviation:   std,
-		LowerBollingerBand:  average - std,
-		HigherBollingerBand: average + std,
-		CurrentPrice:        dm.currentPrice,
-		CurrentChange:       dm.currentChange,
+		Price:                  dm.currentPrice,
+		PriceAverage:           priceAverage,
+		PriceStandardDeviation: priceStd,
+		PriceUpperLimit:        priceAverage + priceStd,
+		PriceLowerLimit:        priceAverage - priceStd,
+
+		Change:                  dm.currentChange,
+		ChangeAverage:           changeAverage,
+		ChangeStandardDeviation: changeStd,
+		ChangeUpperLimit:        changeAverage + changeStd,
+		ChangeLowerLimit:        changeAverage - changeStd,
+
+		Acceleration:                  dm.currentAcceleration,
+		AccelerationAverage:           accelerationAverage,
+		AccelerationStandardDeviation: accelerationStd,
+		AccelerationUpperLimit:        accelerationAverage + accelerationStd,
+		AccelerationLowerLimit:        accelerationAverage - accelerationStd,
 	}
 }

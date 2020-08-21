@@ -137,11 +137,12 @@ func (s *Service) setupApplication(input Input) (*app.App, error) {
 	macd := statistics.NewMACDContainer(statistics.MACDParams{Fast: 12, Slow: 26, Lag: 9}, []float64{})
 	statisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
 	growthStatisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
+	accelerationStatisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
 	assetsRepository := &assets.AssetsRepositoryInMemory{}
 	accountService := accounts.NewAccountServiceInMemory(float32(input.AccountInitialAmount), assetsRepository)
 
 	decisionMakerOptions := input.DecisionMakerOptions
-	decisionMaker := decisionmaker.NewDecisionMaker(accountService, decisionMakerOptions, statisticsService, growthStatisticsService)
+	decisionMaker := decisionmaker.NewDecisionMaker(accountService, decisionMakerOptions, statisticsService, growthStatisticsService, accelerationStatisticsService)
 
 	_, currentFilePath, _, _ := runtime.Caller(0)
 	currentDir := path.Dir(currentFilePath)
@@ -191,33 +192,43 @@ func (s *Service) GetDataSources() map[string]map[string]string {
 		},
 		"btc-cash": map[string]string{
 			"Last Year Minute": btccashdatahistory.LastYearMinute,
+			"2019 - Current":   btccashdatahistory.Twenty19Current,
 		},
 		"btc-sv": map[string]string{
 			"Last Year Minute": btcsvdatahistory.LastYearMinute,
+			"2019 - Current":   btcsvdatahistory.Twenty19Current,
 		},
 		"eos": map[string]string{
 			"Last Year Minute": eosdatahistory.LastYearMinute,
+			"2019 - Current":   eosdatahistory.Twenty19Current,
 		},
 		"etc": map[string]string{
 			"Last Year Minute": etcdatahistory.LastYearMinute,
+			"2019 - Current":   etcdatahistory.Twenty19Current,
 		},
 		"ltc": map[string]string{
 			"Last Year Minute": ltcdatahistory.LastYearMinute,
+			"2019 - Current":   ltcdatahistory.Twenty19Current,
 		},
 		"monero": map[string]string{
 			"Last Year Minute": monerodatahistory.LastYearMinute,
+			"2019 - Current":   monerodatahistory.Twenty19Current,
 		},
 		"stellar": map[string]string{
 			"Last Year Minute": stellardatahistory.LastYearMinute,
+			"2019 - Current":   stellardatahistory.Twenty19Current,
 		},
 		"xrp": map[string]string{
 			"Last Year Minute": xrpdatahistory.LastYearMinute,
+			"2019 - Current":   xrpdatahistory.Twenty19Current,
 		},
 		"eth": map[string]string{
 			"Last Year Minute": ethdatahistory.LastYearMinute,
+			"2019 - Current":   ethdatahistory.Twenty19Current,
 		},
 		"ada": map[string]string{
 			"Last Year Minute": adadatahistory.LastYearMinute,
+			"2019 - Current":   adadatahistory.Twenty19Current,
 		},
 	}
 }
