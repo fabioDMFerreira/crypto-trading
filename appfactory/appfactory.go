@@ -81,7 +81,7 @@ func FindOrCreateAppMetaData(env domain.Env, applicationsRepository domain.Appli
 			SenderPassword: env.NotificationsSenderPassword,
 		}
 
-		appMetaData, err = createDefaultAppMetadata(notificationOptions, applicationsRepository, accountsRepository)
+		appMetaData, err = CreateDefaultAppMetadata(notificationOptions, applicationsRepository, accountsRepository)
 
 		if err != nil {
 			log.Fatalf("Not able to create a new application due to %v", err)
@@ -119,7 +119,7 @@ func SaveApplicationState(ID primitive.ObjectID, application *app.App, applicati
 	}
 }
 
-func createDefaultAppMetadata(notificationOptions domain.NotificationOptions, repository domain.ApplicationRepository, accountsRepository domain.AccountsRepository) (*domain.Application, error) {
+func CreateDefaultAppMetadata(notificationOptions domain.NotificationOptions, repository domain.ApplicationRepository, accountsRepository domain.AccountsRepository) (*domain.Application, error) {
 	options := domain.ApplicationOptions{
 		NotificationOptions: notificationOptions,
 		StatisticsOptions:   domain.StatisticsOptions{NumberOfPointsHold: 5000},

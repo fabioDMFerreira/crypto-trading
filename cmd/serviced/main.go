@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	krakenapi "github.com/beldur/kraken-go-api-client"
+	"github.com/fabiodmferreira/crypto-trading/accounts"
 	"github.com/fabiodmferreira/crypto-trading/app"
 	"github.com/fabiodmferreira/crypto-trading/appfactory"
 	"github.com/fabiodmferreira/crypto-trading/collectors"
@@ -66,6 +67,32 @@ func main() {
 
 	for _, metadata := range *applications {
 		application, err := startApplication(&metadata, env.AppEnv)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		appManager[metadata.ID.Hex()] = application
+	}
+
+	if len(appManager) == 0 {
+		fmt.Printf("Creating a default application")
+
+		notificationOptions := domain.NotificationOptions{
+			Receiver:       env.NotificationsReceiver,
+			Sender:         env.NotificationsSender,
+			SenderPassword: env.NotificationsSenderPassword,
+		}
+
+		accountsRepository := accounts.NewRepository(db.NewRepository(mongoDatabase.Collection(db.ACCOUNTS_COLLECTION)))
+
+		metadata, err := appfactory.CreateDefaultAppMetadata(notificationOptions, applicationsRepository, accountsRepository)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		application, err := startApplication(metadata, env.AppEnv)
 
 		if err != nil {
 			log.Fatal(err)

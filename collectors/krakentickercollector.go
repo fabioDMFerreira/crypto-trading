@@ -22,6 +22,7 @@ type SocketEvent struct {
 type TickerMessage struct {
 	A []interface{}
 	B []interface{}
+	V []interface{}
 }
 
 var Pairs = map[string]string{
@@ -89,6 +90,10 @@ func (kc *KrakenCollector) Start() {
 		log.Fatal(err)
 	}
 
+	var currentMinute int
+	var currentAskVolume float64
+	var currentBidVolume float64
+
 	// receive message
 	for {
 		_, message, err := kc.wscon.ReadMessage()
@@ -107,9 +112,28 @@ func (kc *KrakenCollector) Start() {
 
 			if err == nil {
 				askStr := msg[1].(*TickerMessage).A[0].(string)
-				// bidStr := msg[1].(*TickerMessage).B[0].(string)
 				ask, err := strconv.ParseFloat(askStr, 32)
-				// bid, err2 := strconv.ParseFloat(bidStr, 32)
+
+				askVolumeStr := msg[1].(*TickerMessage).A[2].(string)
+				askVolume, _ := strconv.ParseFloat(askVolumeStr, 32)
+
+				bidVolumeStr := msg[1].(*TickerMessage).A[2].(string)
+				bidVolume, _ := strconv.ParseFloat(bidVolumeStr, 32)
+				// bidStr := msg[1].(*TickerMessage).B[0].(string)
+				// bid, _ := strconv.ParseFloat(bidStr, 32)
+
+				_, minutes, seconds := time.Now().Clock()
+
+				if currentMinute == minutes {
+					currentAskVolume += askVolume
+					currentBidVolume += bidVolume
+				} else {
+					currentAskVolume = askVolume
+					currentBidVolume = bidVolume
+					currentMinute = minutes
+				}
+
+				fmt.Printf("%v:%v %v %v %v\n", currentMinute, seconds, currentAskVolume, currentBidVolume, currentAskVolume-currentBidVolume)
 
 				if err != nil {
 					fmt.Printf("error parsing price in message: %v", err)
