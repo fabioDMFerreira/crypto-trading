@@ -48,7 +48,7 @@ func (ftc *FileTickerCollector) Start() {
 		volume, err4 := strconv.ParseFloat(record[5], 32)
 
 		if err != nil || err1 != nil || err2 != nil || err3 != nil || err4 != nil {
-			log.Fatalf("Error on converting price from file:\n%v %v %v %v %v", err, err2, err3, err4)
+			log.Fatalf("Error on converting price from file:\n%v %v %v %v %v", err, err1, err2, err3, err4)
 		}
 
 		unixTime, err := strconv.ParseInt(record[0], 10, 64)

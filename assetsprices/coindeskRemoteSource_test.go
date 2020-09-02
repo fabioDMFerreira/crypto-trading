@@ -38,11 +38,19 @@ func TestCoindeskRemoteSource(t *testing.T) {
 			{
 				"asset": "BTC",
 				"date":  time.Unix(1596183599999/1000, 0),
-				"value": float32(11201.3598739665) * utils.DollarEuroRate,
+				"c":     float32(11201.3598739665) * utils.DollarEuroRate,
+				"l":     float32(11201.3598739665) * utils.DollarEuroRate,
+				"o":     float32(11201.3598739665) * utils.DollarEuroRate,
+				"h":     float32(11201.3598739665) * utils.DollarEuroRate,
+				"v":     0,
 			}, {
 				"asset": "BTC",
 				"date":  time.Unix(1596183659999/1000, 0),
-				"value": float32(11209.1649879131) * utils.DollarEuroRate,
+				"c":     float32(11209.1649879131) * utils.DollarEuroRate,
+				"l":     float32(11209.1649879131) * utils.DollarEuroRate,
+				"o":     float32(11209.1649879131) * utils.DollarEuroRate,
+				"h":     float32(11209.1649879131) * utils.DollarEuroRate,
+				"v":     0,
 			},
 		}
 

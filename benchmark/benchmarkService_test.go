@@ -68,44 +68,44 @@ func TestServiceGetDatSources(t *testing.T) {
 
 	got := service.GetDataSources()
 	want := map[string]map[string]string{
-		"btc": map[string]string{
+		"btc": {
 			"2019":         btcdatahistory.Twenty19,
 			"2020 H1":      btcdatahistory.TwentyTwentyH1,
 			"2019-2020 H1": btcdatahistory.Twenty1920H1,
 		},
-		"btc-cash": map[string]string{
+		"btc-cash": {
 			"2019":    btccashdatahistory.Twenty19,
 			"2020 H1": btccashdatahistory.TwentyTwentyH1,
 		},
-		"eos": map[string]string{
+		"eos": {
 			"2019":    eosdatahistory.Twenty19,
 			"2020 H1": eosdatahistory.TwentyTwentyH1,
 		},
-		"etc": map[string]string{
+		"etc": {
 			"2019":    etcdatahistory.Twenty19,
 			"2020 H1": etcdatahistory.TwentyTwentyH1,
 		},
-		"ltc": map[string]string{
+		"ltc": {
 			"2019":    ltcdatahistory.Twenty19,
 			"2020 H1": ltcdatahistory.TwentyTwentyH1,
 		},
-		"monero": map[string]string{
+		"monero": {
 			"2019":    monerodatahistory.Twenty19,
 			"2020 H1": monerodatahistory.TwentyTwentyH1,
 		},
-		"stellar": map[string]string{
+		"stellar": {
 			"2019":    stellardatahistory.Twenty19,
 			"2020 H1": stellardatahistory.TwentyTwentyH1,
 		},
-		"xrp": map[string]string{
+		"xrp": {
 			"2019":    xrpdatahistory.Twenty19,
 			"2020 H1": xrpdatahistory.TwentyTwentyH1,
 		},
-		"eth": map[string]string{
+		"eth": {
 			"2019":    ethdatahistory.Twenty19,
 			"2020 H1": ethdatahistory.TwentyTwentyH1,
 		},
-		"ada": map[string]string{
+		"ada": {
 			"2019":    adadatahistory.Twenty19,
 			"2020 H1": adadatahistory.TwentyTwentyH1,
 		},
