@@ -15,15 +15,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 	adadatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ada"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
-	btccashdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-cash"
-	btcsvdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-sv"
-	eosdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eos"
-	etcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/etc"
 	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
-	ltcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ltc"
-	monerodatahistory "github.com/fabiodmferreira/crypto-trading/data-history/monero"
-	stellardatahistory "github.com/fabiodmferreira/crypto-trading/data-history/stellar"
-	xrpdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/xrp"
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -56,17 +48,16 @@ func main() {
 	collection := mongoDatabase.Collection(db.ASSETS_PRICES_COLLECTION)
 
 	assetsPricesFiles := map[string]string{
-		"ADA":      adadatahistory.LastYearMinute,
-		"BTC":      btcdatahistory.Twenty19Current,
-		"BTC-CASH": btccashdatahistory.LastYearMinute,
-		"BTC-SV":   btcsvdatahistory.LastYearMinute,
-		"EOS":      eosdatahistory.LastYearMinute,
-		"ETC":      etcdatahistory.LastYearMinute,
-		"ETH":      ethdatahistory.LastYearMinute,
-		"LTC":      ltcdatahistory.LastYearMinute,
-		"MONERO":   monerodatahistory.LastYearMinute,
-		"STELLAR":  stellardatahistory.LastYearMinute,
-		"XRP":      xrpdatahistory.LastYearMinute,
+		"ADA": adadatahistory.Twenty1920H1,
+		"BTC": btcdatahistory.Twenty1920H1,
+		// "BTC-CASH": btccashdatahistory.Twenty19,
+		// "EOS":      eosdatahistory.Twenty19,
+		// "ETC":      etcdatahistory.Twenty19,
+		"ETH": ethdatahistory.Twenty1920H1,
+		// "LTC":      ltcdatahistory.Twenty19,
+		// "MONERO":   monerodatahistory.Twenty19,
+		// "STELLAR":  stellardatahistory.Twenty19,
+		// "XRP":      xrpdatahistory.Twenty19,
 	}
 
 	repo := db.NewRepository(collection)
@@ -129,7 +120,7 @@ func getFileAssetsPrices(asset string, historyFile *csv.Reader) (*[]bson.M, erro
 		documents = append(documents,
 			bson.M{
 				"asset": asset,
-				"value": price,
+				"c":     price,
 				"date":  time.Unix(unixTime, 0),
 			},
 		)

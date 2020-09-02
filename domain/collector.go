@@ -16,8 +16,19 @@ type CollectorOptions struct {
 type Collector interface {
 	Start()
 	Stop()
-	Regist(observable OnTickerChange)
+	Regist(observable OnNewAssetPrice)
 }
 
-// OnTickerChange is a function that receives 2 floats (ask and bid) and the timestamp of a price change
-type OnTickerChange = func(float32, float32, time.Time)
+// OHLC is a type with interval asset prices
+type OHLC struct {
+	Time    time.Time `json:"time"`
+	EndTime time.Time `json:"etime"`
+	Open    float32   `json:"open"`
+	Close   float32   `json:"close"`
+	High    float32   `json:"high"`
+	Low     float32   `json:"low"`
+	Volume  float32   `json:"volume"`
+}
+
+// OnNewAssetPrice
+type OnNewAssetPrice = func(ohlc *OHLC)

@@ -1,6 +1,6 @@
 package etccashdatahistory
 
 const (
-	LastYearMinute  = "etc/last-year-minute.csv"
-	Twenty19Current = "etc/2019-current.csv"
+	TwentyTwentyH1 = "etc/2020-h1.csv"
+	Twenty19       = "etc/2019.csv"
 )

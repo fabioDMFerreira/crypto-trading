@@ -2,9 +2,9 @@ package assetsprices_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
+	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/mocks"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -52,7 +52,7 @@ func TestRepositoryFindOne(t *testing.T) {
 func TestRepositoryCreate(t *testing.T) {
 	assetspricesRepository, repository := setupAssetsPricesRepository()
 
-	assetspricesRepository.Create(time.Now(), 1000, "BTC")
+	assetspricesRepository.Create(&domain.OHLC{}, "BTC")
 
 	got := len(repository.InsertOneCalls)
 	want := 1

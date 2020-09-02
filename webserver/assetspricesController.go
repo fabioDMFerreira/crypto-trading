@@ -67,7 +67,7 @@ func (a *AssetsPricesController) GetAssetPrices(w http.ResponseWriter, r *http.R
 					},
 					primitive.E{
 						Key:   "price",
-						Value: bson.M{"$last": "$value"},
+						Value: bson.M{"$last": "$c"},
 					},
 				},
 			},

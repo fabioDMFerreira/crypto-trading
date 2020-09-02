@@ -1,6 +1,6 @@
 package monerodatahistory
 
 const (
-	LastYearMinute  = "monero/last-year-minute.csv"
-	Twenty19Current = "monero/2019-current.csv"
+	TwentyTwentyH1 = "monero/2020-h1.csv"
+	Twenty19       = "monero/2019.csv"
 )

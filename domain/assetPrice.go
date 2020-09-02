@@ -10,15 +10,20 @@ import (
 
 // AssetPrice represents the price of an asset on a moment
 type AssetPrice struct {
-	ID    primitive.ObjectID `bson:"_id" json:"_id"`
-	Date  time.Time          `bson:"date" json:"date"`
-	Value float32            `bson:"value" json:"value"`
-	Asset string             `bson:"asset" json:"asset"`
+	ID      primitive.ObjectID `bson:"_id" json:"_id"`
+	Date    time.Time          `bson:"date" json:"date"`
+	EndDate time.Time          `bson:"endDate" json:"endDate"`
+	Open    float32            `bson:"o" json:"o"`
+	Close   float32            `bson:"c" json:"c"`
+	High    float32            `bson:"h" json:"h"`
+	Low     float32            `bson:"l" json:"l"`
+	Volume  float32            `bson:"v" json:"v"`
+	Asset   string             `bson:"asset" json:"asset"`
 }
 
 // AssetPriceRepository stores and gets assets prices
 type AssetPriceRepository interface {
-	Create(date time.Time, value float32, asset string) error
+	Create(ohlc *OHLC, asset string) error
 	FindAll(filter interface{}) (*[]AssetPrice, error)
 	Aggregate(pipeline mongo.Pipeline) (*[]bson.M, error)
 	GetLastAssetsPrices(asset string, limit int) (*[]AssetPrice, error)
@@ -41,7 +46,7 @@ type AssetPriceAggregatedByDate struct {
 // AssetsPricesService provides assets prices related methods
 type AssetsPricesService interface {
 	GetLastAssetsPrices(asset string, limit int) (*[]AssetPrice, error)
-	Create(date time.Time, value float32, asset string) error
+	Create(ohlc *OHLC, asset string) error
 	FetchAndStoreAssetPrices(asset string, endDate time.Time) error
 }
 

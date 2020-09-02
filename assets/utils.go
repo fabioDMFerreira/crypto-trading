@@ -3,9 +3,10 @@ package assets
 import "github.com/fabiodmferreira/crypto-trading/domain"
 
 type BenchmarkAssetsInfo struct {
-	Buys         [][]float32 `json:"buys"`
-	Sells        [][]float32 `json:"sells"`
-	SellsPending int         `json:"sellsPending"`
+	Buys                [][]float32 `json:"buys"`
+	Sells               [][]float32 `json:"sells"`
+	SellsPending        int         `json:"sellsPending"`
+	AssetsAmountPending float32     `json:"assetsAmountPending"`
 }
 
 // GroupAssetsByState returns assets bought and sold
@@ -14,6 +15,7 @@ func GroupAssetsByState(assets *[]domain.Asset) BenchmarkAssetsInfo {
 
 	Buys := [][]float32{}
 	Sells := [][]float32{}
+	var AssetsAmountPending float32
 
 	for _, asset := range *assets {
 		Buys = append(Buys, []float32{float32(asset.BuyTime.Unix()) * 1000, asset.BuyPrice})
@@ -21,12 +23,15 @@ func GroupAssetsByState(assets *[]domain.Asset) BenchmarkAssetsInfo {
 		if asset.Sold {
 			Sells = append(Sells, []float32{float32(asset.SellTime.Unix()) * 1000, asset.SellPrice})
 			sells++
+		} else {
+			AssetsAmountPending += asset.Amount
 		}
 	}
 
 	return BenchmarkAssetsInfo{
-		Buys:         Buys,
-		Sells:        Sells,
-		SellsPending: len(*assets) - sells,
+		Buys:                Buys,
+		Sells:               Sells,
+		SellsPending:        len(*assets) - sells,
+		AssetsAmountPending: AssetsAmountPending,
 	}
 }

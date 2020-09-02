@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	historyFile, err := collectors.GetCsv(fmt.Sprintf("./data-history/%v", btcdatahistory.TwentyTwentyMinute))
+	historyFile, err := collectors.GetCsv(fmt.Sprintf("./data-history/%v", btcdatahistory.TwentyTwentyH1))
 
 	if err != nil {
 		log.Fatal(err)
@@ -41,10 +41,10 @@ func main() {
 	var accelerationCurrentDirection bool
 	var timesSameAccelerationDirection int
 
-	bitcoinHistoryCollector.Regist(func(ask, bid float32, buyTime time.Time) {
-		stats.AddPoint(float64(ask))
+	bitcoinHistoryCollector.Regist(func(ohlc *domain.OHLC) {
+		stats.AddPoint(float64(ohlc.Close))
 		if lastPrice > 0 {
-			change := ask - lastPrice
+			change := ohlc.Close - lastPrice
 			changeOfChange := change - lastChange
 			if accelerationCurrentDirection && changeOfChange > 0 || !accelerationCurrentDirection && changeOfChange < 0 {
 				timesSameAccelerationDirection++
@@ -60,13 +60,13 @@ func main() {
 				velocityCurrentDirection = !velocityCurrentDirection
 			}
 
-			f.WriteString(fmt.Sprintf("%v,%.2f,%.2f,%.2f,%d,%d,%.2f\n", buyTime.Format("2006-01-02T15:04:05"), ask, change, changeOfChange, timesSameVelocityDirection, timesSameAccelerationDirection, stats.MACD.GetLastHistogramPoint()))
+			f.WriteString(fmt.Sprintf("%v,%.2f,%.2f,%.2f,%d,%d,%.2f\n", ohlc.Time.Format("2006-01-02T15:04:05"), ohlc.Close, change, changeOfChange, timesSameVelocityDirection, timesSameAccelerationDirection, stats.MACD.GetLastHistogramPoint()))
 
-			lastPrice = ask
+			lastPrice = ohlc.Close
 			lastChange = change
 		} else {
-			f.WriteString(fmt.Sprintf("%v,%.2f,%d,%d\n", buyTime, ask, 0, 0))
-			lastPrice = ask
+			f.WriteString(fmt.Sprintf("%v,%.2f,%d,%d\n", ohlc.Time, ohlc.Close, 0, 0))
+			lastPrice = ohlc.Close
 		}
 	})
 

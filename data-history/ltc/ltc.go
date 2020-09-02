@@ -1,6 +1,6 @@
 package ltcdatahistory
 
 const (
-	LastYearMinute  = "ltc/last-year-minute.csv"
-	Twenty19Current = "ltc/2019-current.csv"
+	TwentyTwentyH1 = "ltc/2020-h1.csv"
+	Twenty19       = "ltc/2019.csv"
 )

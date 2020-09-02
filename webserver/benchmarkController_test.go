@@ -63,7 +63,7 @@ func TestBenchmarkControllerCreateBenchmark(t *testing.T) {
 		StatisticsOptions:    domain.StatisticsOptions{NumberOfPointsHold: 200},
 		CollectorOptions:     domain.CollectorOptions{PriceVariationDetection: 0.01, DataSource: nil},
 		AccountInitialAmount: 2000,
-		DataSourceFilePath:   btcdatahistory.May2020,
+		DataSourceFilePath:   btcdatahistory.March2020,
 	}
 
 	body, _ := json.Marshal(input)

@@ -18,7 +18,7 @@ import (
 func ExecuteBenchmark(done chan domain.BenchmarkResult) int {
 	filesPaths := []string{
 		// fmt.Sprintf("ada/%v", adadatahistory.LastYearMinute),
-		fmt.Sprintf("%v", btcdatahistory.LastYearMinute),
+		fmt.Sprintf("%v", btcdatahistory.TwentyTwentyH1),
 		// fmt.Sprintf("btc-cash/%v", btccashdatahistory.LastYearMinute),
 		// fmt.Sprintf("btc-sv/%v", btcsvdatahistory.LastYearMinute),
 		// fmt.Sprintf("eos/%v", eosdatahistory.LastYearMinute),

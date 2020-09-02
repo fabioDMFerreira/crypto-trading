@@ -32,7 +32,7 @@ func NewApp(
 		trader:         trader,
 		accountService: accountService,
 	}
-	app.collector.Regist(app.OnTickerChange)
+	app.collector.Regist(app.OnNewAssetPrice)
 	return app
 }
 
@@ -58,8 +58,8 @@ func (a *App) Stop() {
 	a.collector.Stop()
 }
 
-// RegistOnTickerChange executes function when the collector receives a change
-func (a *App) RegistOnTickerChange(observable domain.OnTickerChange) {
+// RegistOnNewAssetPrice executes function when the collector receives a change
+func (a *App) RegistOnNewAssetPrice(observable domain.OnNewAssetPrice) {
 	a.collector.Regist(observable)
 }
 
@@ -119,19 +119,19 @@ func (a *App) DecideToSell(price float32, currentTime time.Time) error {
 	return nil
 }
 
-// OnTickerChange do operations based on asset new price
-func (a *App) OnTickerChange(ask, bid float32, currentTime time.Time) {
+// OnNewAssetPrice do operations based on asset new price
+func (a *App) OnNewAssetPrice(ohlc *domain.OHLC) {
 
-	a.decisionMaker.NewValue(ask, currentTime)
-	a.log("Price change", fmt.Sprintf("%v PRICE: %v", a.Asset, ask))
+	a.decisionMaker.NewValue(ohlc)
+	a.log("Price change", fmt.Sprintf("%v PRICE: %v", a.Asset, ohlc.Close))
 
-	err := a.DecideToBuy(ask, currentTime)
+	err := a.DecideToBuy(ohlc.Close, ohlc.Time)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = a.DecideToSell(ask, currentTime)
+	err = a.DecideToSell(ohlc.Close, ohlc.Time)
 
 	if err != nil {
 		log.Fatal(err)

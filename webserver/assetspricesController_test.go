@@ -3,17 +3,18 @@ package webserver_test
 import (
 	"net/http"
 	"net/url"
-	"reflect"
 	"testing"
 
 	"github.com/fabiodmferreira/crypto-trading/mocks"
 	"github.com/fabiodmferreira/crypto-trading/webserver"
+	"github.com/golang/mock/gomock"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func TestGetAssetPrices(t *testing.T) {
 
 	t.Run("should return 400 if no date paremeNter is passed", func(t *testing.T) {
-		assetspricesController, _ := NewAssetsPricesController()
+		assetspricesController, _ := NewAssetsPricesController(t)
 
 		req, err := http.NewRequest("GET", "/assets-prices", nil)
 
@@ -27,7 +28,9 @@ func TestGetAssetPrices(t *testing.T) {
 	})
 
 	t.Run("should return 200 if start date and end date are passed as parameters", func(t *testing.T) {
-		assetspricesController, assetspricesRepository := NewAssetsPricesController()
+		assetspricesController, assetspricesRepository := NewAssetsPricesController(t)
+
+		assetspricesRepository.EXPECT().Aggregate(gomock.Any()).Return(&[]primitive.M{}, nil).Times(1)
 
 		params := url.Values{"startDate": {"2006-01-02T15:04:05"}, "endDate": {"2006-01-02T15:04:05"}}
 
@@ -40,21 +43,18 @@ func TestGetAssetPrices(t *testing.T) {
 		rr := NewHttpResponse(NewGetAssetsPricesHandler(assetspricesController), req)
 
 		AssertResponseStatusCode(t, rr, http.StatusOK)
-
-		got := len(assetspricesRepository.AggregateCalls)
-		want := 1
-
-		if reflect.DeepEqual(got, want) != true {
-			t.Errorf("got %v want %v", got, want)
-		}
 	})
 }
 
-func NewAssetsPricesController() (*webserver.AssetsPricesController, *mocks.AssetPriceRepositorySpy) {
-	assetsRepository := &mocks.AssetPriceRepositorySpy{}
-	assetspricesController := webserver.NewAssetsPricesController(assetsRepository)
+func NewAssetsPricesController(t *testing.T) (*webserver.AssetsPricesController, *mocks.MockAssetPriceRepository) {
+	ctrl := gomock.NewController(t)
 
-	return assetspricesController, assetsRepository
+	defer ctrl.Finish()
+
+	assetsPricesRepository := mocks.NewMockAssetPriceRepository(ctrl)
+	assetspricesController := webserver.NewAssetsPricesController(assetsPricesRepository)
+
+	return assetspricesController, assetsPricesRepository
 }
 
 func NewGetAssetsPricesHandler(assetspricesController *webserver.AssetsPricesController) http.HandlerFunc {

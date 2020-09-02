@@ -1,6 +1,6 @@
 package xrpdatahistory
 
 const (
-	LastYearMinute  = "xrp/last-year-minute.csv"
-	Twenty19Current = "xrp/2019-current.csv"
+	TwentyTwentyH1 = "xrp/2020-h1.csv"
+	Twenty19       = "xrp/2019.csv"
 )

@@ -36,7 +36,7 @@ type KrakenCollector struct {
 	options              domain.CollectorOptions
 	krakenAPI            *krakenapi.KrakenAPI
 	lastTickerPrice      float32
-	observables          []domain.OnTickerChange
+	observables          []domain.OnNewAssetPrice
 	lastPricePublishDate time.Time
 	pair                 string
 	wscon                *websocket.Conn
@@ -51,7 +51,7 @@ func NewKrakenCollector(asset string, options domain.CollectorOptions, krakenAPI
 		log.Fatalf("%v does not have a valid kraken pair", asset)
 	}
 
-	return &KrakenCollector{options, krakenAPI, 0, []domain.OnTickerChange{}, time.Time{}, pair, nil}
+	return &KrakenCollector{options, krakenAPI, 0, []domain.OnNewAssetPrice{}, time.Time{}, pair, nil}
 }
 
 // Start connects to a kraken websocket that send prices variations
@@ -78,7 +78,8 @@ func (kc *KrakenCollector) Start() {
 			"%v"
 		],
 		"subscription": {
-			"name": "ticker"
+			"name": "ohlc",
+			"interval": 1
 		}
 	}`, kc.pair)
 
@@ -90,9 +91,7 @@ func (kc *KrakenCollector) Start() {
 		log.Fatal(err)
 	}
 
-	var currentMinute int
-	var currentAskVolume float64
-	var currentBidVolume float64
+	var currentOHLC *domain.OHLC
 
 	// receive message
 	for {
@@ -107,46 +106,60 @@ func (kc *KrakenCollector) Start() {
 
 		if e.Event != "heartbeat" {
 			// https://eagain.net/articles/go-json-array-to-struct/
-			msg := []interface{}{0, &TickerMessage{}, "", ""}
+			var payload []interface{}
+			msg := []interface{}{0, &payload, "", ""}
 			err = json.Unmarshal(message, &msg)
 
 			if err == nil {
-				askStr := msg[1].(*TickerMessage).A[0].(string)
-				ask, err := strconv.ParseFloat(askStr, 32)
+				ohlc := getOHLCFromPayload(payload)
 
-				askVolumeStr := msg[1].(*TickerMessage).A[2].(string)
-				askVolume, _ := strconv.ParseFloat(askVolumeStr, 32)
+				if currentOHLC != nil && currentOHLC.Open != ohlc.Open {
+					startDate, endDate := GetPreviousIntervalDates(time.Now())
 
-				bidVolumeStr := msg[1].(*TickerMessage).A[2].(string)
-				bidVolume, _ := strconv.ParseFloat(bidVolumeStr, 32)
-				// bidStr := msg[1].(*TickerMessage).B[0].(string)
-				// bid, _ := strconv.ParseFloat(bidStr, 32)
+					currentOHLC.Time = startDate
+					currentOHLC.EndTime = endDate
 
-				_, minutes, seconds := time.Now().Clock()
-
-				if currentMinute == minutes {
-					currentAskVolume += askVolume
-					currentBidVolume += bidVolume
-				} else {
-					currentAskVolume = askVolume
-					currentBidVolume = bidVolume
-					currentMinute = minutes
+					kc.PublishAssetPrice(currentOHLC)
 				}
 
-				fmt.Printf("%v:%v %v %v %v\n", currentMinute, seconds, currentAskVolume, currentBidVolume, currentAskVolume-currentBidVolume)
+				currentOHLC = ohlc
 
-				if err != nil {
-					fmt.Printf("error parsing price in message: %v", err)
-					return
-				}
+				// askStr := msg[1].(*TickerMessage).A[0].(string)
+				// ask, err := strconv.ParseFloat(askStr, 32)
 
-				price := float32(ask)
+				// askVolumeStr := msg[1].(*TickerMessage).A[2].(string)
+				// askVolume, _ := strconv.ParseFloat(askVolumeStr, 32)
 
-				err = kc.HandlePriceChangeMessage(price, time.Now())
+				// bidVolumeStr := msg[1].(*TickerMessage).A[2].(string)
+				// bidVolume, _ := strconv.ParseFloat(bidVolumeStr, 32)
+				// // bidStr := msg[1].(*TickerMessage).B[0].(string)
+				// // bid, _ := strconv.ParseFloat(bidStr, 32)
 
-				if err != nil {
-					fmt.Printf("error on handling price change message: %v", err)
-				}
+				// _, minutes, seconds := time.Now().Clock()
+
+				// if currentMinute == minutes {
+				// 	currentAskVolume += askVolume
+				// 	currentBidVolume += bidVolume
+				// } else {
+				// 	currentAskVolume = askVolume
+				// 	currentBidVolume = bidVolume
+				// 	currentMinute = minutes
+				// }
+
+				// fmt.Printf("%v:%v %v %v %v\n", currentMinute, seconds, currentAskVolume, currentBidVolume, currentAskVolume-currentBidVolume)
+
+				// if err != nil {
+				// 	fmt.Printf("error parsing price in message: %v", err)
+				// 	return
+				// }
+
+				// price := float32(ask)
+
+				// err = kc.HandlePriceChangeMessage(price, time.Now())
+
+				// if err != nil {
+				// 	fmt.Printf("error on handling price change message: %v", err)
+				// }
 			}
 
 		}
@@ -160,27 +173,65 @@ func (kc *KrakenCollector) Stop() {
 	}
 }
 
-// HandlePriceChangeMessage receives message, extracts parameters and call observable functions with the current asset price
-func (kc *KrakenCollector) HandlePriceChangeMessage(price float32, date time.Time) error {
-	timeSinceLastPricePublished := date.Sub(kc.lastPricePublishDate).Minutes()
-
-	changeVariance := kc.lastTickerPrice * kc.options.PriceVariationDetection
-
-	if timeSinceLastPricePublished > float64(kc.options.NewPriceTimeRate) || (kc.lastTickerPrice == 0 ||
-		price > kc.lastTickerPrice+changeVariance ||
-		price < kc.lastTickerPrice-changeVariance) {
-		kc.lastTickerPrice = price
-		for _, observable := range kc.observables {
-			observable(price, price, time.Now())
-
-			kc.lastPricePublishDate = date
-		}
+func (kc *KrakenCollector) PublishAssetPrice(ohlc *domain.OHLC) error {
+	for _, observable := range kc.observables {
+		observable(ohlc)
 	}
 
 	return nil
 }
 
+// HandlePriceChangeMessage receives message, extracts parameters and call observable functions with the current asset price
+// func (kc *KrakenCollector) HandlePriceChangeMessage(price float32, date time.Time) error {
+// 	timeSinceLastPricePublished := date.Sub(kc.lastPricePublishDate).Minutes()
+
+// 	changeVariance := kc.lastTickerPrice * kc.options.PriceVariationDetection
+
+// 	if timeSinceLastPricePublished > float64(kc.options.NewPriceTimeRate) || (kc.lastTickerPrice == 0 ||
+// 		price > kc.lastTickerPrice+changeVariance ||
+// 		price < kc.lastTickerPrice-changeVariance) {
+// 		kc.lastTickerPrice = price
+// 		for _, observable := range kc.observables {
+// 			observable(price, price, time.Now())
+
+// 			kc.lastPricePublishDate = date
+// 		}
+// 	}
+
+// 	return nil
+// }
+
+func GetPreviousIntervalDates(date time.Time) (time.Time, time.Time) {
+	date = date.Add(time.Second * time.Duration(date.Second()) * -1)
+
+	return date.Add(time.Minute * -1), date
+}
+
 // Regist add function to be executed when ticker price changes
-func (kc *KrakenCollector) Regist(observable domain.OnTickerChange) {
+func (kc *KrakenCollector) Regist(observable domain.OnNewAssetPrice) {
 	kc.observables = append(kc.observables, observable)
+}
+
+func getOHLCFromPayload(msg []interface{}) *domain.OHLC {
+	sTime, _ := strconv.ParseFloat(msg[0].(string), 32)
+	startTime := time.Unix(int64(sTime), 0)
+
+	etime, _ := strconv.ParseFloat(msg[1].(string), 32)
+	endTime := time.Unix(int64(etime), 0)
+
+	open, _ := strconv.ParseFloat(msg[2].(string), 32)
+	high, _ := strconv.ParseFloat(msg[3].(string), 32)
+	low, _ := strconv.ParseFloat(msg[4].(string), 32)
+	close, _ := strconv.ParseFloat(msg[5].(string), 32)
+	volume, _ := strconv.ParseFloat(msg[7].(string), 32)
+
+	return &domain.OHLC{
+		Time:    startTime,
+		EndTime: endTime,
+		Open:    float32(open),
+		High:    float32(high),
+		Low:     float32(low),
+		Close:   float32(close),
+		Volume:  float32(volume),
+	}
 }

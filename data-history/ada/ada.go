@@ -1,6 +1,7 @@
 package adadatahistory
 
 const (
-	LastYearMinute  = "ada/last-year-minute.csv"
-	Twenty19Current = "ada/2019-current.csv"
+	TwentyTwentyH1 = "ada/2020-h1.csv"
+	Twenty19       = "ada/2019.csv"
+	Twenty1920H1   = "ada/2019-2020-h1.csv"
 )

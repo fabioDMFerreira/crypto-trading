@@ -32,12 +32,22 @@ type DecisionMakerState struct {
 	AccelerationUpperLimit        float64 `bson:"accelerationUpperLimit,truncate" json:"accelerationUpperLimit"`
 	AccelerationLowerLimit        float64 `bson:"accelerationLowerLimit,truncate" json:"accelerationLowerLimit"`
 
+	Volume           float32 `bson:"volume" json:"volume"`
+	VolumeAverage    float64 `bson:"volumeAverage" json:"volumeAverage"`
+	VolumeUpperLimit float64 `bson:"volumeUpperLimit" json:"volumeUpperLimit"`
+	VolumeLowerLimit float64 `bson:"volumeLowerLimit" json:"volumeLowerLimit"`
+
+	Open  float32 `bson:"open" json:"open"`
+	Close float32 `bson:"close" json:"close"`
+	High  float32 `bson:"high" json:"high"`
+	Low   float32 `bson:"low" json:"low"`
+
 	AccountAmount float64 `bson:"accountAmount,truncate" json:"accountAmount"`
 }
 
 // DecisionMaker makes decisions to buy or sell assets
 type DecisionMaker interface {
-	NewValue(price float32, date time.Time)
+	NewValue(ohlc *OHLC)
 	ShouldBuy(price float32, buyTime time.Time) (bool, error)
 	ShouldSell(asset *Asset, price float32, buyTime time.Time) (bool, error)
 	HowMuchAmountShouldBuy(price float32) (float32, error)

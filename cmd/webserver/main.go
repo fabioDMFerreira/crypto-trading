@@ -30,12 +30,21 @@ func main() {
 
 	mongoURL := os.Getenv("MONGO_URL")
 	mongoDB := os.Getenv("MONGO_DB")
+	var serverPort string
+
+	if os.Getenv("SERVER_PORT") != "" {
+		serverPort = os.Getenv("SERVER_PORT")
+	} else {
+		serverPort = "5000"
+	}
 
 	dbClient, err := db.ConnectDB(mongoURL)
 
 	if err != nil {
 		log.Fatal("connecting db", err)
 	}
+
+	fmt.Printf("Connected to db successfully!\n")
 
 	mongoDatabase := dbClient.Database(mongoDB)
 	benchmarksCollection := mongoDatabase.Collection(db.BENCHMARKS_COLLECTION)
@@ -69,7 +78,9 @@ func main() {
 		log.Fatalf("problem creating server, %v ", err)
 	}
 
-	if err := http.ListenAndServe(":4000", handlers.LoggingHandler(os.Stdout, server)); err != nil {
-		log.Fatalf("could not listen on port 4000 %v", err)
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), handlers.LoggingHandler(os.Stdout, server)); err != nil {
+		log.Fatalf("could not listen on port %s %v", serverPort, err)
 	}
+
+	fmt.Printf("Listening on port %s\n", serverPort)
 }

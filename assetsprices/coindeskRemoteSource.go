@@ -42,7 +42,11 @@ func (c *CoindeskRemoteSource) FetchRemoteAssetsPrices(startDate, endDate time.T
 			bson.M{
 				"asset": asset,
 				"date":  time.Unix(int64(entry[0])/1000, 0),
-				"value": float32(entry[1]) * utils.DollarEuroRate,
+				"o":     float32(entry[1]) * utils.DollarEuroRate,
+				"c":     float32(entry[1]) * utils.DollarEuroRate,
+				"h":     float32(entry[1]) * utils.DollarEuroRate,
+				"l":     float32(entry[1]) * utils.DollarEuroRate,
+				"v":     0,
 			})
 	}
 

@@ -1,8 +1,6 @@
 package assetsprices
 
 import (
-	"time"
-
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -63,8 +61,17 @@ func (r *Repository) FindOne(filter interface{}) (interface{}, error) {
 }
 
 // Create stores an asset price
-func (r *Repository) Create(date time.Time, value float32, asset string) error {
-	filter := bson.M{"date": date, "value": value, "asset": asset}
+func (r *Repository) Create(ohlc *domain.OHLC, asset string) error {
+	filter := bson.M{
+		"date":    ohlc.Time,
+		"endDate": ohlc.EndTime,
+		"o":       ohlc.Open,
+		"c":       ohlc.Close,
+		"h":       ohlc.High,
+		"l":       ohlc.Low,
+		"v":       ohlc.Volume,
+		"asset":   asset,
+	}
 
 	assets, err := r.FindAll(filter)
 
@@ -72,7 +79,17 @@ func (r *Repository) Create(date time.Time, value float32, asset string) error {
 		return err
 	}
 
-	assetPrice := domain.AssetPrice{ID: primitive.NewObjectID(), Date: date, Value: value, Asset: asset}
+	assetPrice := domain.AssetPrice{
+		ID:      primitive.NewObjectID(),
+		Date:    ohlc.Time,
+		EndDate: ohlc.EndTime,
+		Open:    ohlc.Open,
+		Close:   ohlc.Close,
+		High:    ohlc.High,
+		Low:     ohlc.Low,
+		Volume:  ohlc.Volume,
+		Asset:   asset,
+	}
 
 	return r.repo.InsertOne(assetPrice)
 }

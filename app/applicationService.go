@@ -89,6 +89,7 @@ func (a *Service) GetStateAggregated(appID string, startDate, endDate time.Time)
 				Value: bson.M{
 					"_id": groupByDatesClause,
 
+					"price":                  bson.M{"$avg": "$state.price"},
 					"priceAverage":           bson.M{"$avg": "$state.priceAverage"},
 					"priceStandardDeviation": bson.M{"$avg": "$state.priceStandardDeviation"},
 					"priceUpperLimit":        bson.M{"$avg": "$state.priceUpperLimit"},
@@ -105,6 +106,11 @@ func (a *Service) GetStateAggregated(appID string, startDate, endDate time.Time)
 					"accelerationStandardDeviation": bson.M{"$avg": "$state.accelerationStandardDeviation"},
 					"accelerationUpperLimit":        bson.M{"$avg": "$state.accelerationUpperLimit"},
 					"accelerationLowerLimit":        bson.M{"$avg": "$state.accelerationLowerLimit"},
+
+					"volume":           bson.M{"$avg": "$state.volume"},
+					"volumeAverage":    bson.M{"$avg": "$state.volumeAverage"},
+					"volumeUpperLimit": bson.M{"$avg": "$state.volumeUpperLimit"},
+					"volumeLowerLimit": bson.M{"$avg": "$state.volumeLowerLimit"},
 
 					"accountAmount": bson.M{"$avg": "$state.accountAmount"},
 				},

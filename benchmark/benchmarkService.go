@@ -22,7 +22,6 @@ import (
 	adadatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ada"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
 	btccashdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-cash"
-	btcsvdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-sv"
 	eosdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eos"
 	etcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/etc"
 	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
@@ -97,11 +96,12 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 	}
 
 	var states []bson.M
+	var LastPrice float32
 
-	benchmarkApplication.RegistOnTickerChange(func(ask, bid float32, time time.Time) {
+	benchmarkApplication.RegistOnNewAssetPrice(func(ohlc *domain.OHLC) {
 		if benchmarkID != nil {
 			states = append(states, bson.M{
-				"date":        time,
+				"date":        ohlc.Time,
 				"executionId": *benchmarkID,
 				"state":       benchmarkApplication.GetState(),
 			})
@@ -110,6 +110,8 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 				s.applicationExecutionStatesRepository.BulkCreate(&states)
 				states = []bson.M{}
 			}
+
+			LastPrice = ohlc.Close
 		}
 	})
 
@@ -122,11 +124,14 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 	amount, _ := benchmarkApplication.GetAccountAmount()
 
 	output := domain.BenchmarkOutput{
-		Buys:         benchmarkAssetsInfo.Buys,
-		Sells:        benchmarkAssetsInfo.Sells,
-		SellsPending: benchmarkAssetsInfo.SellsPending,
-		FinalAmount:  amount,
-		Assets:       assetsDocs,
+		Buys:                benchmarkAssetsInfo.Buys,
+		Sells:               benchmarkAssetsInfo.Sells,
+		SellsPending:        benchmarkAssetsInfo.SellsPending,
+		AssetsAmountPending: benchmarkAssetsInfo.AssetsAmountPending,
+		AssetsValuePending:  LastPrice * benchmarkAssetsInfo.AssetsAmountPending,
+		LastPrice:           LastPrice,
+		FinalAmount:         amount,
+		Assets:              assetsDocs,
 	}
 
 	return &output, nil
@@ -136,13 +141,20 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 func (s *Service) setupApplication(input Input) (*app.App, error) {
 	macd := statistics.NewMACDContainer(statistics.MACDParams{Fast: 12, Slow: 26, Lag: 9}, []float64{})
 	statisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
-	growthStatisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
-	accelerationStatisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
+
+	statisticsOptions := domain.StatisticsOptions{
+		NumberOfPointsHold: input.StatisticsOptions.NumberOfPointsHold / 2,
+	}
+
+	growthStatisticsService := statistics.NewStatistics(statisticsOptions, macd)
+	accelerationStatisticsService := statistics.NewStatistics(statisticsOptions, macd)
+	volumeStatistics := statistics.NewStatistics(statisticsOptions, macd)
+
 	assetsRepository := &assets.AssetsRepositoryInMemory{}
 	accountService := accounts.NewAccountServiceInMemory(float32(input.AccountInitialAmount), assetsRepository)
 
 	decisionMakerOptions := input.DecisionMakerOptions
-	decisionMaker := decisionmaker.NewDecisionMaker(accountService, decisionMakerOptions, statisticsService, growthStatisticsService, accelerationStatisticsService)
+	decisionMaker := decisionmaker.NewDecisionMaker(accountService, decisionMakerOptions, statisticsService, growthStatisticsService, accelerationStatisticsService, volumeStatistics)
 
 	_, currentFilePath, _, _ := runtime.Caller(0)
 	currentDir := path.Dir(currentFilePath)
@@ -187,48 +199,45 @@ func (s *Service) HandleBenchmark(benchmark *domain.Benchmark) error {
 func (s *Service) GetDataSources() map[string]map[string]string {
 	return map[string]map[string]string{
 		"btc": map[string]string{
-			"Last Year Minute": btcdatahistory.LastYearMinute,
-			"2019 - Current":   btcdatahistory.Twenty19Current,
+			"2019":         btcdatahistory.Twenty19,
+			"2020 H1":      btcdatahistory.TwentyTwentyH1,
+			"2019-2020 H1": btcdatahistory.Twenty1920H1,
 		},
 		"btc-cash": map[string]string{
-			"Last Year Minute": btccashdatahistory.LastYearMinute,
-			"2019 - Current":   btccashdatahistory.Twenty19Current,
-		},
-		"btc-sv": map[string]string{
-			"Last Year Minute": btcsvdatahistory.LastYearMinute,
-			"2019 - Current":   btcsvdatahistory.Twenty19Current,
+			"2019":    btccashdatahistory.Twenty19,
+			"2020 H1": btccashdatahistory.TwentyTwentyH1,
 		},
 		"eos": map[string]string{
-			"Last Year Minute": eosdatahistory.LastYearMinute,
-			"2019 - Current":   eosdatahistory.Twenty19Current,
+			"2019":    eosdatahistory.Twenty19,
+			"2020 H1": eosdatahistory.TwentyTwentyH1,
 		},
 		"etc": map[string]string{
-			"Last Year Minute": etcdatahistory.LastYearMinute,
-			"2019 - Current":   etcdatahistory.Twenty19Current,
+			"2019":    etcdatahistory.Twenty19,
+			"2020 H1": etcdatahistory.TwentyTwentyH1,
 		},
 		"ltc": map[string]string{
-			"Last Year Minute": ltcdatahistory.LastYearMinute,
-			"2019 - Current":   ltcdatahistory.Twenty19Current,
+			"2019":    ltcdatahistory.Twenty19,
+			"2020 H1": ltcdatahistory.TwentyTwentyH1,
 		},
 		"monero": map[string]string{
-			"Last Year Minute": monerodatahistory.LastYearMinute,
-			"2019 - Current":   monerodatahistory.Twenty19Current,
+			"2019":    monerodatahistory.Twenty19,
+			"2020 H1": monerodatahistory.TwentyTwentyH1,
 		},
 		"stellar": map[string]string{
-			"Last Year Minute": stellardatahistory.LastYearMinute,
-			"2019 - Current":   stellardatahistory.Twenty19Current,
+			"2019":    stellardatahistory.Twenty19,
+			"2020 H1": stellardatahistory.TwentyTwentyH1,
 		},
 		"xrp": map[string]string{
-			"Last Year Minute": xrpdatahistory.LastYearMinute,
-			"2019 - Current":   xrpdatahistory.Twenty19Current,
+			"2019":    xrpdatahistory.Twenty19,
+			"2020 H1": xrpdatahistory.TwentyTwentyH1,
 		},
 		"eth": map[string]string{
-			"Last Year Minute": ethdatahistory.LastYearMinute,
-			"2019 - Current":   ethdatahistory.Twenty19Current,
+			"2019":    ethdatahistory.Twenty19,
+			"2020 H1": ethdatahistory.TwentyTwentyH1,
 		},
 		"ada": map[string]string{
-			"Last Year Minute": adadatahistory.LastYearMinute,
-			"2019 - Current":   adadatahistory.Twenty19Current,
+			"2019":    adadatahistory.Twenty19,
+			"2020 H1": adadatahistory.TwentyTwentyH1,
 		},
 	}
 }

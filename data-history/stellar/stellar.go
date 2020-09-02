@@ -1,6 +1,6 @@
 package stellardatahistory
 
 const (
-	LastYearMinute  = "stellar/last-year-minute.csv"
-	Twenty19Current = "stellar/2019-current.csv"
+	TwentyTwentyH1 = "stellar/2020-h1.csv"
+	Twenty19       = "stellar/2019.csv"
 )

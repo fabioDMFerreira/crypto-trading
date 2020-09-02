@@ -1,6 +1,6 @@
 package btccashdatahistory
 
 const (
-	LastYearMinute  = "btc-cash/last-year-minute.csv"
-	Twenty19Current = "btc-cash/2019-current.csv"
+	TwentyTwentyH1 = "btc-cash/2020-h1.csv"
+	Twenty19       = "btc-cash/2019.csv"
 )

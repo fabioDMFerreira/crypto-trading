@@ -8,3 +8,4 @@ reports/orders-reports/*
 bin
 coverage.txt
 gin-bin
+data-history/**/dataset.csv

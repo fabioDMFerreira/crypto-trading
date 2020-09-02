@@ -24,7 +24,7 @@ func TestGetBenchmarkDataSources(t *testing.T) {
 
 	AssertResponseStatusCode(t, res, http.StatusOK)
 
-	AssertRequestResponse(t, res, fmt.Sprintf("%v\n", `{"ada":{"Last Year Minute":"ada/last-year-minute.csv"},"btc":{"2019 - Current":"btc/2019-current.csv","Last Year Minute":"btc/last-year-minute.csv"},"btc-cash":{"Last Year Minute":"btc-cash/last-year-minute.csv"},"btc-sv":{"Last Year Minute":"btc-sv/last-year-minute.csv"},"eos":{"Last Year Minute":"eos/last-year-minute.csv"},"etc":{"Last Year Minute":"etc/last-year-minute.csv"},"eth":{"Last Year Minute":"eth/last-year-minute.csv"},"ltc":{"Last Year Minute":"ltc/last-year-minute.csv"},"monero":{"Last Year Minute":"monero/last-year-minute.csv"},"stellar":{"Last Year Minute":"stellar/last-year-minute.csv"},"xrp":{"Last Year Minute":"xrp/last-year-minute.csv"}}`))
+	AssertRequestResponse(t, res, fmt.Sprintf("%v\n", `{"ada":{"2019 - Current":"ada/2019-current.csv","Last Year Minute":"ada/last-year-minute.csv"},"btc":{"2019 - Current":"btc/2019-current.csv","Last Year Minute":"btc/last-year-minute.csv"},"btc-cash":{"2019 - Current":"btc-cash/2019-current.csv","Last Year Minute":"btc-cash/last-year-minute.csv"},"btc-sv":{"2019 - Current":"btc-sv/2019-current.csv","Last Year Minute":"btc-sv/last-year-minute.csv"},"eos":{"2019 - Current":"eos/2019-current.csv","Last Year Minute":"eos/last-year-minute.csv"},"etc":{"2019 - Current":"etc/2019-current.csv","Last Year Minute":"etc/last-year-minute.csv"},"eth":{"2019 - Current":"eth/2019-current.csv","Last Year Minute":"eth/last-year-minute.csv"},"ltc":{"2019 - Current":"ltc/2019-current.csv","Last Year Minute":"ltc/last-year-minute.csv"},"monero":{"2019 - Current":"monero/2019-current.csv","Last Year Minute":"monero/last-year-minute.csv"},"stellar":{"2019 - Current":"stellar/2019-current.csv","Last Year Minute":"stellar/last-year-minute.csv"},"xrp":{"2019 - Current":"xrp/2019-current.csv","Last Year Minute":"xrp/last-year-minute.csv"}}`))
 }
 
 func TestGetBenchmarkList(t *testing.T) {
@@ -49,7 +49,7 @@ func TestCreateBenchmarkResource(t *testing.T) {
 		StatisticsOptions:    domain.StatisticsOptions{NumberOfPointsHold: 200},
 		CollectorOptions:     domain.CollectorOptions{PriceVariationDetection: 0.01, DataSource: nil},
 		AccountInitialAmount: 2000,
-		DataSourceFilePath:   btcdatahistory.May2020,
+		DataSourceFilePath:   btcdatahistory.March2020,
 	}
 
 	body, _ := json.Marshal(input)

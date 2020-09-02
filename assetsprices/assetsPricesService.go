@@ -63,8 +63,8 @@ func (s *Service) FetchAndStoreAssetPrices(asset string, endDate time.Time) erro
 }
 
 // Create creates an asset price in repository
-func (s *Service) Create(date time.Time, value float32, asset string) error {
-	return s.repo.Create(date, value, asset)
+func (s *Service) Create(ohlc *domain.OHLC, asset string) error {
+	return s.repo.Create(ohlc, asset)
 }
 
 // GetLastAssetsPrices returns the last price of an asset in the repository

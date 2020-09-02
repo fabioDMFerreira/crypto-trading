@@ -47,14 +47,14 @@ func SetupApplication(appMetaData *domain.Application, mongoDatabase *mongo.Data
 	eventLogsRepository := eventlogs.NewEventLogsRepository(db.NewRepository(eventLogsCollection), appMetaData.ID)
 
 	assetsPricesService := setupAssetsPricesService(mongoDatabase)
-	pricesStatistics, growthStatistics, accelerationStatistics, err := setupPricesStatistics(assetsPricesService, appMetaData.Asset, appMetaData.Options.StatisticsOptions)
+	pricesStatistics, growthStatistics, accelerationStatistics, volumeStatistics, err := setupPricesStatistics(assetsPricesService, appMetaData.Asset, appMetaData.Options.StatisticsOptions)
 
 	if err != nil {
 		return nil, err
 	}
 
 	notificationsService := setupNotificationsService(mongoDatabase, appMetaData.Options.NotificationOptions, appMetaData.ID)
-	decisionMaker := setupDecisionMaker(appMetaData.Options.DecisionMakerOptions, pricesStatistics, growthStatistics, accelerationStatistics, accountService)
+	decisionMaker := setupDecisionMaker(appMetaData.Options.DecisionMakerOptions, pricesStatistics, growthStatistics, accelerationStatistics, volumeStatistics, accountService)
 	dbTrader := trader.NewTrader(accountService, broker)
 
 	// Create application
@@ -63,9 +63,9 @@ func SetupApplication(appMetaData *domain.Application, mongoDatabase *mongo.Data
 	application.SetEventsLog(eventLogsRepository)
 
 	// Regist events
-	application.RegistOnTickerChange(NotificationJob(notificationsService, eventLogsRepository, accountService))
-	application.RegistOnTickerChange(SaveAssetPrice(appMetaData.Asset, assetsPricesService))
-	application.RegistOnTickerChange(SaveApplicationState(appMetaData.ID, application, applicationExecutionStateRepository))
+	application.RegistOnNewAssetPrice(NotificationJob(notificationsService, eventLogsRepository, accountService))
+	application.RegistOnNewAssetPrice(SaveAssetPrice(appMetaData.Asset, assetsPricesService))
+	application.RegistOnNewAssetPrice(SaveApplicationState(appMetaData.ID, application, applicationExecutionStateRepository))
 
 	return application, nil
 }
@@ -101,18 +101,18 @@ func FindOrCreateAppMetaData(env domain.Env, applicationsRepository domain.Appli
 	return appMetaData, nil
 }
 
-func SaveAssetPrice(asset string, assetsPricesService domain.AssetsPricesService) domain.OnTickerChange {
-	return func(ask, bid float32, date time.Time) {
-		assetsPricesService.Create(date, ask, asset)
+func SaveAssetPrice(asset string, assetsPricesService domain.AssetsPricesService) domain.OnNewAssetPrice {
+	return func(ohlc *domain.OHLC) {
+		assetsPricesService.Create(ohlc, asset)
 	}
 }
 
-func SaveApplicationState(ID primitive.ObjectID, application *app.App, applicationExecutionStateRepository domain.Repository) domain.OnTickerChange {
-	return func(ask, bid float32, date time.Time) {
+func SaveApplicationState(ID primitive.ObjectID, application *app.App, applicationExecutionStateRepository domain.Repository) domain.OnNewAssetPrice {
+	return func(ohlc *domain.OHLC) {
 		state := domain.ApplicationExecutionState{
 			ID:          primitive.NewObjectID(),
 			ExecutionID: ID,
-			Date:        date,
+			Date:        ohlc.Time,
 			State:       application.GetState(),
 		}
 		applicationExecutionStateRepository.InsertOne(state)
@@ -163,17 +163,18 @@ func setupDecisionMaker(
 	pricesStatistics domain.Statistics,
 	growthStatistics domain.Statistics,
 	accelerationStatistics domain.Statistics,
+	volumeStatistics domain.Statistics,
 	accountService domain.AccountService,
 ) domain.DecisionMaker {
-	return decisionmaker.NewDecisionMaker(accountService, decisionmakerOptions, pricesStatistics, growthStatistics, accelerationStatistics)
+	return decisionmaker.NewDecisionMaker(accountService, decisionmakerOptions, pricesStatistics, growthStatistics, accelerationStatistics, volumeStatistics)
 }
 
 func NotificationJob(
 	notificationsService domain.NotificationsService,
 	eventLogsRepository domain.EventsLog,
 	accountService domain.AccountService,
-) func(ask, bid float32, date time.Time) {
-	return func(ask, bid float32, date time.Time) {
+) func(ohlc *domain.OHLC) {
+	return func(ohlc *domain.OHLC) {
 
 		shouldSendNotification := notificationsService.ShouldSendNotification()
 
@@ -272,7 +273,7 @@ func getLastAssetsPrices(asset string, numberOfPoints int, assetsPricesService d
 func appendAssetsPricesToStatistics(statistics domain.Statistics, lastAssetsPrices *[]domain.AssetPrice) {
 	points := []float64{}
 	for _, assetPrice := range *lastAssetsPrices {
-		points = append(points, float64(assetPrice.Value))
+		points = append(points, float64(assetPrice.Close))
 	}
 	nPoints := len(points)
 	for i := nPoints - 1; i >= 0; i-- {
@@ -287,20 +288,21 @@ func setupAssetsPricesService(mongoDatabase *mongo.Database) domain.AssetsPrices
 	return assetsprices.NewService(assetsPricesRepository, assetsprices.NewCoindeskRemoteSource(http.Get).FetchRemoteAssetsPrices)
 }
 
-func setupPricesStatistics(assetsPricesService domain.AssetsPricesService, asset string, statisticsOptions domain.StatisticsOptions) (domain.Statistics, domain.Statistics, domain.Statistics, error) {
+func setupPricesStatistics(assetsPricesService domain.AssetsPricesService, asset string, statisticsOptions domain.StatisticsOptions) (domain.Statistics, domain.Statistics, domain.Statistics, domain.Statistics, error) {
 	lastAssetsPrices, err := getLastAssetsPrices(asset, statisticsOptions.NumberOfPointsHold, assetsPricesService)
 
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("%v", err)
+		return nil, nil, nil, nil, fmt.Errorf("%v", err)
 	}
 
 	pricesStatistics := setupStatistics(statisticsOptions)
 	growthStatistics := setupStatistics(statisticsOptions)
 	accelerationStatistics := setupStatistics(statisticsOptions)
+	volumeStatistics := setupStatistics(statisticsOptions)
 
 	appendAssetsPricesToStatistics(pricesStatistics, lastAssetsPrices)
 
-	return pricesStatistics, growthStatistics, accelerationStatistics, nil
+	return pricesStatistics, growthStatistics, accelerationStatistics, volumeStatistics, nil
 }
 
 func setupStatistics(statisticsOptions domain.StatisticsOptions) domain.Statistics {

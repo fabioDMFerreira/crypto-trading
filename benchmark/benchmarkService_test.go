@@ -8,7 +8,6 @@ import (
 	adadatahistory "github.com/fabiodmferreira/crypto-trading/data-history/ada"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
 	btccashdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-cash"
-	btcsvdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc-sv"
 	eosdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eos"
 	etcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/etc"
 	ethdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/eth"
@@ -18,12 +17,13 @@ import (
 	xrpdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/xrp"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/mocks"
+	"github.com/golang/mock/gomock"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func TestBenchmarkServiceFindAll(t *testing.T) {
-	service, benchmarkRepository, _, _ := NewBenchmarkService()
+	service, benchmarkRepository, _, _ := NewBenchmarkService(t)
 
 	service.FindAll()
 
@@ -36,7 +36,7 @@ func TestBenchmarkServiceFindAll(t *testing.T) {
 }
 
 func TestHandleBenchmark(t *testing.T) {
-	service, benchmarkRepository, _, _ := NewBenchmarkService()
+	service, benchmarkRepository, _, _ := NewBenchmarkService(t)
 
 	benchmarkID := primitive.NewObjectID()
 
@@ -64,53 +64,50 @@ func TestHandleBenchmark(t *testing.T) {
 }
 
 func TestServiceGetDatSources(t *testing.T) {
-	service, _, _, _ := NewBenchmarkService()
+	service, _, _, _ := NewBenchmarkService(t)
 
 	got := service.GetDataSources()
 	want := map[string]map[string]string{
 		"btc": map[string]string{
-			"Last Year Minute": btcdatahistory.LastYearMinute,
-			"2019 - Current":   btcdatahistory.Twenty19Current,
+			"2019":         btcdatahistory.Twenty19,
+			"2020 H1":      btcdatahistory.TwentyTwentyH1,
+			"2019-2020 H1": btcdatahistory.Twenty1920H1,
 		},
 		"btc-cash": map[string]string{
-			"Last Year Minute": btccashdatahistory.LastYearMinute,
-			"2019 - Current":   btccashdatahistory.Twenty19Current,
-		},
-		"btc-sv": map[string]string{
-			"Last Year Minute": btcsvdatahistory.LastYearMinute,
-			"2019 - Current":   btcsvdatahistory.Twenty19Current,
+			"2019":    btccashdatahistory.Twenty19,
+			"2020 H1": btccashdatahistory.TwentyTwentyH1,
 		},
 		"eos": map[string]string{
-			"Last Year Minute": eosdatahistory.LastYearMinute,
-			"2019 - Current":   eosdatahistory.Twenty19Current,
+			"2019":    eosdatahistory.Twenty19,
+			"2020 H1": eosdatahistory.TwentyTwentyH1,
 		},
 		"etc": map[string]string{
-			"Last Year Minute": etcdatahistory.LastYearMinute,
-			"2019 - Current":   etcdatahistory.Twenty19Current,
+			"2019":    etcdatahistory.Twenty19,
+			"2020 H1": etcdatahistory.TwentyTwentyH1,
 		},
 		"ltc": map[string]string{
-			"Last Year Minute": ltcdatahistory.LastYearMinute,
-			"2019 - Current":   ltcdatahistory.Twenty19Current,
+			"2019":    ltcdatahistory.Twenty19,
+			"2020 H1": ltcdatahistory.TwentyTwentyH1,
 		},
 		"monero": map[string]string{
-			"Last Year Minute": monerodatahistory.LastYearMinute,
-			"2019 - Current":   monerodatahistory.Twenty19Current,
+			"2019":    monerodatahistory.Twenty19,
+			"2020 H1": monerodatahistory.TwentyTwentyH1,
 		},
 		"stellar": map[string]string{
-			"Last Year Minute": stellardatahistory.LastYearMinute,
-			"2019 - Current":   stellardatahistory.Twenty19Current,
+			"2019":    stellardatahistory.Twenty19,
+			"2020 H1": stellardatahistory.TwentyTwentyH1,
 		},
 		"xrp": map[string]string{
-			"Last Year Minute": xrpdatahistory.LastYearMinute,
-			"2019 - Current":   xrpdatahistory.Twenty19Current,
+			"2019":    xrpdatahistory.Twenty19,
+			"2020 H1": xrpdatahistory.TwentyTwentyH1,
 		},
 		"eth": map[string]string{
-			"Last Year Minute": ethdatahistory.LastYearMinute,
-			"2019 - Current":   ethdatahistory.Twenty19Current,
+			"2019":    ethdatahistory.Twenty19,
+			"2020 H1": ethdatahistory.TwentyTwentyH1,
 		},
 		"ada": map[string]string{
-			"Last Year Minute": adadatahistory.LastYearMinute,
-			"2019 - Current":   adadatahistory.Twenty19Current,
+			"2019":    adadatahistory.Twenty19,
+			"2020 H1": adadatahistory.TwentyTwentyH1,
 		},
 	}
 
@@ -120,7 +117,7 @@ func TestServiceGetDatSources(t *testing.T) {
 }
 
 func TestServiceAggregateApplicationState(t *testing.T) {
-	service, _, _, applicationExecutionStatesRepository := NewBenchmarkService()
+	service, _, _, applicationExecutionStatesRepository := NewBenchmarkService(t)
 
 	service.AggregateApplicationState(mongo.Pipeline{})
 
@@ -130,7 +127,7 @@ func TestServiceAggregateApplicationState(t *testing.T) {
 }
 
 func TestServiceCreate(t *testing.T) {
-	service, benchmarkRepository, _, _ := NewBenchmarkService()
+	service, benchmarkRepository, _, _ := NewBenchmarkService(t)
 
 	service.Create(*NewBenchmarkInput())
 
@@ -140,7 +137,7 @@ func TestServiceCreate(t *testing.T) {
 }
 
 func TestServiceDeletedById(t *testing.T) {
-	service, benchmarkRepository, _, _ := NewBenchmarkService()
+	service, benchmarkRepository, _, _ := NewBenchmarkService(t)
 
 	ID := "test-id-1"
 
@@ -176,10 +173,14 @@ func NewBenchmarkInput() *domain.BenchmarkInput {
 	}
 }
 
-func NewBenchmarkService() (*benchmark.Service, *mocks.BenchmarkRepositorySpy, *mocks.AssetPriceRepositorySpy, *mocks.ApplicationExecutionStatesRepositorySpy) {
+func NewBenchmarkService(t *testing.T) (*benchmark.Service, *mocks.BenchmarkRepositorySpy, *mocks.MockAssetPriceRepository, *mocks.ApplicationExecutionStatesRepositorySpy) {
+	ctrl := gomock.NewController(t)
+
+	defer ctrl.Finish()
+
 	repository := &mocks.BenchmarkRepositorySpy{}
-	assetPriceRepository := &mocks.AssetPriceRepositorySpy{}
+	assetsPriceRepo := mocks.NewMockAssetPriceRepository(ctrl)
 	applicationExecutionStatesRepository := &mocks.ApplicationExecutionStatesRepositorySpy{}
 
-	return benchmark.NewService(repository, assetPriceRepository, applicationExecutionStatesRepository), repository, assetPriceRepository, applicationExecutionStatesRepository
+	return benchmark.NewService(repository, assetsPriceRepo, applicationExecutionStatesRepository), repository, assetsPriceRepo, applicationExecutionStatesRepository
 }

@@ -28,7 +28,7 @@ func (r *RepositoryInMemory) FindOne(date time.Time, value float32, asset string
 	var assetPrice domain.AssetPrice
 
 	for _, assetP := range r.assetsPrices {
-		if assetP.Date == date && assetP.Value == value && assetP.Asset == asset {
+		if assetP.Date == date && assetP.Close == value && assetP.Asset == asset {
 			assetPrice = assetP
 		}
 	}
@@ -37,8 +37,8 @@ func (r *RepositoryInMemory) FindOne(date time.Time, value float32, asset string
 }
 
 // Create stores an asset price
-func (r *RepositoryInMemory) Create(date time.Time, value float32, asset string) error {
-	foundDocument, err := r.FindOne(date, value, asset)
+func (r *RepositoryInMemory) Create(ohlc *domain.OHLC, asset string) error {
+	foundDocument, err := r.FindOne(ohlc.Time, ohlc.Close, asset)
 
 	if err != nil {
 		return err
@@ -48,7 +48,7 @@ func (r *RepositoryInMemory) Create(date time.Time, value float32, asset string)
 		return nil
 	}
 
-	assetPrice := domain.AssetPrice{Date: date, Value: value, Asset: asset}
+	assetPrice := domain.AssetPrice{Date: ohlc.Time, Close: ohlc.Close, Asset: asset}
 
 	r.assetsPrices = append(r.assetsPrices, assetPrice)
 

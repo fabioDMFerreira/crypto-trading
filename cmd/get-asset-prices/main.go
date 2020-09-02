@@ -45,7 +45,6 @@ func main() {
 		{"ada/2019-current.csv", "ADA"},
 		{"btc/2019-current.csv", "BTC"},
 		{"btc-cash/2019-current.csv", "BCH"},
-		{"btc-sv/2019-current.csv", "BSV"},
 		{"eos/2019-current.csv", "EOS"},
 		{"etc/2019-current.csv", "ETC"},
 		{"eth/2019-current.csv", "ETH"},

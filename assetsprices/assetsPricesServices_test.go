@@ -7,6 +7,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/mocks"
+	"github.com/golang/mock/gomock"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -86,27 +87,41 @@ func TestTransverseDatesRanges(t *testing.T) {
 }
 
 func TestServiceCreate(t *testing.T) {
-	service, repo, _ := NewAssetsPricesService()
+	service, repo, _ := NewAssetsPricesService(t)
 
-	service.Create(time.Now(), 30, "BTC")
+	ohlc := domain.OHLC{Close: 30, Time: time.Now()}
 
-	if len(repo.CreateCalls) != 1 {
+	repo.EXPECT().Create(&ohlc, "BTC").Return(nil).Times(1)
+
+	got := service.Create(&ohlc, "BTC")
+	var want error
+
+	if got != want {
 		t.Errorf("Expected AssetsPricesRepository.Create to be called 1 time")
 	}
 }
 
 func TestServiceGetLastAssetsPrices(t *testing.T) {
-	service, repo, _ := NewAssetsPricesService()
+	service, repo, _ := NewAssetsPricesService(t)
 
-	service.GetLastAssetsPrices("BTC", 10)
+	repo.EXPECT().GetLastAssetsPrices("BTC", 10).Return(&[]domain.AssetPrice{}, nil).Times(1)
 
-	if len(repo.GetLastAssetsPricesCalls) != 1 {
-		t.Errorf("Expected AssetsPricesRepository.GetLastAssetsPricesCalls to be called 1 time")
+	assetsPrices, err := service.GetLastAssetsPrices("BTC", 10)
+
+	if err != nil {
+		t.Errorf("Should not return error")
+	}
+
+	if len(*assetsPrices) != 0 {
+		t.Errorf("Expected assetsPrices to be empty")
 	}
 }
 
 func TestServiceFetchAndStore(t *testing.T) {
-	service, _, fetchRemotePrices := NewAssetsPricesService()
+	service, assetsPriceRepo, fetchRemotePrices := NewAssetsPricesService(t)
+
+	assetsPriceRepo.EXPECT().GetLastAssetsPrices("BTC", 1).Return(&[]domain.AssetPrice{{Date: time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC)}}, nil).Times(1)
+	assetsPriceRepo.EXPECT().BulkCreate(gomock.Any()).Return(nil).Times(2)
 
 	service.FetchAndStoreAssetPrices("BTC", time.Date(2020, 4, 3, 0, 0, 0, 0, time.UTC))
 
@@ -118,15 +133,12 @@ func TestServiceFetchAndStore(t *testing.T) {
 	}
 }
 
-func NewAssetsPricesService() (*assetsprices.Service, *mocks.AssetPriceRepositorySpy, *FetchRemotePrice) {
-	assetsPriceRepo := &mocks.AssetPriceRepositorySpy{
-		AssetsPrices: &[]domain.AssetPrice{
-			{
-				Date: time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC),
-			},
-		},
-	}
-	fetchRemotePrices := &FetchRemotePrice{}
+func NewAssetsPricesService(t *testing.T) (*assetsprices.Service, *mocks.MockAssetPriceRepository, *FetchRemotePrice) {
+	ctrl := gomock.NewController(t)
 
+	defer ctrl.Finish()
+
+	assetsPriceRepo := mocks.NewMockAssetPriceRepository(ctrl)
+	fetchRemotePrices := &FetchRemotePrice{}
 	return assetsprices.NewService(assetsPriceRepo, fetchRemotePrices.fetch), assetsPriceRepo, fetchRemotePrices
 }

@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fabiodmferreira/crypto-trading/domain"
@@ -17,23 +16,17 @@ import (
 type FileTickerCollector struct {
 	options              domain.CollectorOptions
 	lastTickerPrice      float32
-	observables          []domain.OnTickerChange
+	observables          []domain.OnNewAssetPrice
 	lastPricePublishDate time.Time
 }
 
 // NewFileTickerCollector returns an instance of FileTickerCollector
 func NewFileTickerCollector(options domain.CollectorOptions) *FileTickerCollector {
-	return &FileTickerCollector{options, 0, []domain.OnTickerChange{}, time.Time{}}
+	return &FileTickerCollector{options, 0, []domain.OnNewAssetPrice{}, time.Time{}}
 }
 
 // Start starts collecting data from data source
 func (ftc *FileTickerCollector) Start() {
-	// read header
-	_, err := ftc.options.DataSource.Read()
-	if err == io.EOF {
-		log.Fatalf("Error on reading header file: %v", err)
-	}
-
 	for {
 		// Read each record from csv
 		record, err := ftc.options.DataSource.Read()
@@ -44,11 +37,18 @@ func (ftc *FileTickerCollector) Start() {
 			log.Fatal(err)
 		}
 
-		priceStr := strings.ReplaceAll(record[1], ",", "")
-		price, err := strconv.ParseFloat(priceStr, 32)
+		if len(record) < 6 {
+			break
+		}
 
-		if err != nil {
-			log.Fatalf("Error on converting price from file:\n%v", err)
+		open, err := strconv.ParseFloat(record[1], 32)
+		high, err1 := strconv.ParseFloat(record[2], 32)
+		low, err2 := strconv.ParseFloat(record[3], 32)
+		close, err3 := strconv.ParseFloat(record[4], 32)
+		volume, err4 := strconv.ParseFloat(record[5], 32)
+
+		if err != nil || err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+			log.Fatalf("Error on converting price from file:\n%v %v %v %v %v", err, err2, err3, err4)
 		}
 
 		unixTime, err := strconv.ParseInt(record[0], 10, 64)
@@ -58,18 +58,18 @@ func (ftc *FileTickerCollector) Start() {
 
 		date := time.Unix(unixTime, 0)
 
-		changeVariance := float32(ftc.lastTickerPrice * ftc.options.PriceVariationDetection)
-
-		timeSinceLastPricePublished := date.Sub(ftc.lastPricePublishDate).Minutes()
-
-		if timeSinceLastPricePublished > float64(ftc.options.NewPriceTimeRate) || (ftc.lastTickerPrice == 0 ||
-			float32(price) > ftc.lastTickerPrice+changeVariance ||
-			float32(price) < ftc.lastTickerPrice-changeVariance) {
-			for _, observable := range ftc.observables {
-				observable(float32(price), float32(price), date)
-
-				ftc.lastPricePublishDate = date
+		for _, observable := range ftc.observables {
+			ohlc := &domain.OHLC{
+				Time:    date,
+				EndTime: date,
+				Open:    float32(open),
+				Close:   float32(close),
+				High:    float32(high),
+				Low:     float32(low),
+				Volume:  float32(volume),
 			}
+
+			observable(ohlc)
 		}
 
 	}
@@ -79,7 +79,7 @@ func (ftc *FileTickerCollector) Start() {
 func (ftc *FileTickerCollector) Stop() {}
 
 // Regist add function to be executed when a new price is received
-func (ftc *FileTickerCollector) Regist(observable domain.OnTickerChange) {
+func (ftc *FileTickerCollector) Regist(observable domain.OnNewAssetPrice) {
 	ftc.observables = append(ftc.observables, observable)
 }
 

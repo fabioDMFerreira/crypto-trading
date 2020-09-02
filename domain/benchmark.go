@@ -21,11 +21,14 @@ type BenchmarkInput struct {
 
 // BenchmarkOutput is the output of the benchmark
 type BenchmarkOutput struct {
-	Buys         [][]float32 `json:"buys"`
-	Sells        [][]float32 `json:"sells"`
-	SellsPending int         `json:"sellsPending"`
-	FinalAmount  float32     `json:"finalAmount"`
-	Assets       *[]Asset    `json:"assets"`
+	Buys                [][]float32 `json:"buys"`
+	Sells               [][]float32 `json:"sells"`
+	SellsPending        int         `json:"sellsPending"`
+	FinalAmount         float32     `json:"finalAmount"`
+	Assets              *[]Asset    `json:"assets"`
+	AssetsAmountPending float32     `json:"assetsAmountPending"`
+	AssetsValuePending  float32     `json:"assetsValuePending"`
+	LastPrice           float32     `json:"lastPrice"`
 }
 
 // String displays Output formatted
