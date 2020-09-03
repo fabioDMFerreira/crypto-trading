@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
+	"github.com/fabiodmferreira/crypto-trading/application-execution-states"
 	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/benchmark"

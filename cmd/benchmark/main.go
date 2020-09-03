@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
+	applicationExecutionStates "github.com/fabiodmferreira/crypto-trading/application-execution-states"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"

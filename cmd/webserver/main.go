@@ -8,7 +8,7 @@ import (
 
 	"github.com/fabiodmferreira/crypto-trading/accounts"
 	"github.com/fabiodmferreira/crypto-trading/app"
-	"github.com/fabiodmferreira/crypto-trading/applicationExecutionStates"
+	"github.com/fabiodmferreira/crypto-trading/application-execution-states"
 	"github.com/fabiodmferreira/crypto-trading/assets"
 	"github.com/fabiodmferreira/crypto-trading/assetsprices"
 	"github.com/fabiodmferreira/crypto-trading/benchmark"
@@ -78,9 +78,10 @@ func main() {
 		log.Fatalf("problem creating server, %v ", err)
 	}
 
+	fmt.Printf("Webserver::Listening on port %s\n", serverPort)
+
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", serverPort), handlers.LoggingHandler(os.Stdout, server)); err != nil {
 		log.Fatalf("could not listen on port %s %v", serverPort, err)
 	}
 
-	fmt.Printf("Listening on port %s\n", serverPort)
 }

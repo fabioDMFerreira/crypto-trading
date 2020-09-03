@@ -13,4 +13,4 @@ RUN go get github.com/codegangsta/gin
 
 WORKDIR /usr/src/app/cmd/webserver
 
-CMD ["gin","-p","5000","-a","4000","--all"]
+CMD ["gin","-p","5000","-a","4000","--all","run","main"]
