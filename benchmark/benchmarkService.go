@@ -13,7 +13,7 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 	"github.com/fabiodmferreira/crypto-trading/decisionmaker"
 	"github.com/fabiodmferreira/crypto-trading/domain"
-	"github.com/fabiodmferreira/crypto-trading/statistics"
+	"github.com/fabiodmferreira/crypto-trading/indicators"
 	"github.com/fabiodmferreira/crypto-trading/trader"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -139,22 +139,20 @@ func (s *Service) Run(input Input, benchmarkID *primitive.ObjectID) (*Output, er
 
 // setupApplication create the necessary application to run the benchmark
 func (s *Service) setupApplication(input Input) (*app.App, error) {
-	macd := statistics.NewMACDContainer(statistics.MACDParams{Fast: 12, Slow: 26, Lag: 9}, []float64{})
-	statisticsService := statistics.NewStatistics(input.StatisticsOptions, macd)
-
 	statisticsOptions := domain.StatisticsOptions{
 		NumberOfPointsHold: input.StatisticsOptions.NumberOfPointsHold / 2,
 	}
 
-	growthStatisticsService := statistics.NewStatistics(statisticsOptions, macd)
-	accelerationStatisticsService := statistics.NewStatistics(statisticsOptions, macd)
-	volumeStatistics := statistics.NewStatistics(statisticsOptions, macd)
+	priceIndicator := indicators.NewPriceIndicator(indicators.NewMetricStatisticsIndicator(statisticsOptions))
+	volumeIndicator := indicators.NewVolumeIndicator(indicators.NewMetricStatisticsIndicator(statisticsOptions))
 
 	assetsRepository := &assets.AssetsRepositoryInMemory{}
 	accountService := accounts.NewAccountServiceInMemory(float32(input.AccountInitialAmount), assetsRepository)
 
-	decisionMakerOptions := input.DecisionMakerOptions
-	decisionMaker := decisionmaker.NewDecisionMaker(accountService, decisionMakerOptions, statisticsService, growthStatisticsService, accelerationStatisticsService, volumeStatistics)
+	buyStrategy := decisionmaker.NewBuyStrategy(priceIndicator, volumeIndicator, accountService, input.DecisionMakerOptions)
+	sellStrategy := decisionmaker.NewSellStrategy(priceIndicator, volumeIndicator, accountService, input.DecisionMakerOptions)
+
+	decisionMaker := decisionmaker.NewDecisionMaker(buyStrategy, sellStrategy)
 
 	_, currentFilePath, _, _ := runtime.Caller(0)
 	currentDir := path.Dir(currentFilePath)
@@ -166,12 +164,12 @@ func (s *Service) setupApplication(input Input) (*app.App, error) {
 
 	input.CollectorOptions.DataSource = historyFile
 
-	collector := collectors.NewFileTickerCollector(input.CollectorOptions)
+	collector := collectors.NewFileTickerCollector(input.CollectorOptions, &[]domain.Indicator{priceIndicator, volumeIndicator})
 
 	broker := broker.NewBrokerMock()
-	trader := trader.NewTrader(accountService, broker)
+	trader := trader.NewTrader(broker)
 
-	application := app.NewApp(collector, decisionMaker, trader, accountService)
+	application := app.NewApp(&[]domain.Collector{collector}, decisionMaker, trader, accountService)
 
 	return application, err
 }

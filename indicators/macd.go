@@ -1,4 +1,4 @@
-package statistics
+package indicators
 
 // MACDParams has params to calculate MACD
 type MACDParams struct {

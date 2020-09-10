@@ -1,4 +1,4 @@
-package statistics
+package indicators
 
 // Average calculates the average of a set of float64 numbers
 func Average(data []float64) float64 {

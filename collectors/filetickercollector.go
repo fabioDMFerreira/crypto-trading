@@ -18,11 +18,19 @@ type FileTickerCollector struct {
 	lastTickerPrice      float32
 	observables          []domain.OnNewAssetPrice
 	lastPricePublishDate time.Time
+	indicators           *[]domain.Indicator
 }
 
 // NewFileTickerCollector returns an instance of FileTickerCollector
-func NewFileTickerCollector(options domain.CollectorOptions) *FileTickerCollector {
-	return &FileTickerCollector{options, 0, []domain.OnNewAssetPrice{}, time.Time{}}
+func NewFileTickerCollector(options domain.CollectorOptions, indicators *[]domain.Indicator) *FileTickerCollector {
+	return &FileTickerCollector{
+		options:    options,
+		indicators: indicators,
+	}
+}
+
+func (ftc *FileTickerCollector) SetIndicators(indicators *[]domain.Indicator) {
+	ftc.indicators = indicators
 }
 
 // Start starts collecting data from data source
@@ -58,17 +66,21 @@ func (ftc *FileTickerCollector) Start() {
 
 		date := time.Unix(unixTime, 0)
 
-		for _, observable := range ftc.observables {
-			ohlc := &domain.OHLC{
-				Time:    date,
-				EndTime: date,
-				Open:    float32(open),
-				Close:   float32(close),
-				High:    float32(high),
-				Low:     float32(low),
-				Volume:  float32(volume),
-			}
+		ohlc := &domain.OHLC{
+			Time:    date,
+			EndTime: date,
+			Open:    float32(open),
+			Close:   float32(close),
+			High:    float32(high),
+			Low:     float32(low),
+			Volume:  float32(volume),
+		}
 
+		for _, indicator := range *ftc.indicators {
+			indicator.AddValue(ohlc)
+		}
+
+		for _, observable := range ftc.observables {
 			observable(ohlc)
 		}
 

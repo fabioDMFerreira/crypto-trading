@@ -9,7 +9,7 @@ import (
 
 func TestGetPreviousIntervalDates(t *testing.T) {
 
-	gotSD, gotED := collectors.GetPreviousIntervalDates(time.Date(2019, 3, 1, 9, 23, 23, 0, time.UTC))
+	gotSD, gotED := collectors.GetPreviousIntervalDates(time.Date(2019, 3, 1, 9, 23, 23, 0, time.UTC), 1)
 	wantSD, wantED := time.Date(2019, 3, 1, 9, 22, 0, 0, time.UTC), time.Date(2019, 3, 1, 9, 23, 0, 0, time.UTC)
 
 	if gotSD != wantSD {

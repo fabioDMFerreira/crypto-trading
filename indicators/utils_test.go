@@ -1,6 +1,10 @@
-package statistics
+package indicators_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/fabiodmferreira/crypto-trading/indicators"
+)
 
 func TestAverage(t *testing.T) {
 	t.Run("should return average", func(t *testing.T) {
@@ -16,7 +20,7 @@ func TestAverage(t *testing.T) {
 		}
 
 		for index, tt := range tests {
-			got := Average(tt.sample)
+			got := indicators.Average(tt.sample)
 			want := tt.want
 
 			if got != want {
@@ -39,7 +43,7 @@ func TestVariance(t *testing.T) {
 		}
 
 		for index, tt := range tests {
-			got := Variance(tt.sample)
+			got := indicators.Variance(tt.sample)
 			want := tt.want
 
 			if got != want {
@@ -60,7 +64,7 @@ func TestVariance(t *testing.T) {
 		}
 
 		for index, tt := range tests {
-			got := Variance(tt.sample)
+			got := indicators.Variance(tt.sample)
 			want := tt.want
 
 			if got != want {

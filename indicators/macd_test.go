@@ -1,14 +1,14 @@
-package statistics_test
+package indicators_test
 
 import (
 	"testing"
 
-	"github.com/fabiodmferreira/crypto-trading/statistics"
+	"github.com/fabiodmferreira/crypto-trading/indicators"
 )
 
 func TestEMA(t *testing.T) {
 	t.Run("should return right EMA", func(t *testing.T) {
-		got := float32(statistics.EMA(461.14, 12, 449.823954868254))
+		got := float32(indicators.EMA(461.14, 12, 449.823954868254))
 		want := float32(451.564884888523)
 
 		if got != want {
@@ -19,7 +19,7 @@ func TestEMA(t *testing.T) {
 
 func TestMACDContainerAddPoint(t *testing.T) {
 	t.Run("after adding 12 points should add first point to fast EMA", func(t *testing.T) {
-		params := statistics.MACDParams{12, 26, 9}
+		params := indicators.MACDParams{12, 26, 9}
 		holdPoints := []float64{
 			459.99,
 			448.85,
@@ -34,7 +34,7 @@ func TestMACDContainerAddPoint(t *testing.T) {
 			431.14,
 		}
 
-		mc := statistics.NewMACDContainer(params, holdPoints)
+		mc := indicators.NewMACDContainer(params, holdPoints)
 
 		mc.AddPoint(425.66)
 
@@ -50,7 +50,7 @@ func TestMACDContainerAddPoint(t *testing.T) {
 	})
 
 	t.Run("after adding 26 points should add first point to slow EMA and MACD", func(t *testing.T) {
-		params := statistics.MACDParams{12, 26, 9}
+		params := indicators.MACDParams{12, 26, 9}
 		holdPoints := []float64{
 			459.99,
 			448.85,
@@ -94,7 +94,7 @@ func TestMACDContainerAddPoint(t *testing.T) {
 			447.322855753391,
 			449.823954868254,
 		}
-		mc := statistics.NewMACDContainer(params, holdPoints, fastEma)
+		mc := indicators.NewMACDContainer(params, holdPoints, fastEma)
 
 		mc.AddPoint(461.14)
 
@@ -123,7 +123,7 @@ func TestMACDContainerAddPoint(t *testing.T) {
 	})
 
 	t.Run("after adding 35 points should add first point to lag EMA", func(t *testing.T) {
-		params := statistics.MACDParams{12, 26, 9}
+		params := indicators.MACDParams{12, 26, 9}
 		holdPoints := []float64{
 			459.99,
 			448.85,
@@ -203,7 +203,7 @@ func TestMACDContainerAddPoint(t *testing.T) {
 			0.1029814912,
 			-1.258401952802,
 		}
-		mc := statistics.NewMACDContainer(params, holdPoints, fastEma, slowEma, macd)
+		mc := indicators.NewMACDContainer(params, holdPoints, fastEma, slowEma, macd)
 
 		mc.AddPoint(426.21)
 

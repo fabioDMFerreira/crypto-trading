@@ -8,7 +8,7 @@ import (
 
 	btcdatahistory "github.com/fabiodmferreira/crypto-trading/data-history/btc"
 	"github.com/fabiodmferreira/crypto-trading/domain"
-	"github.com/fabiodmferreira/crypto-trading/statistics"
+	"github.com/fabiodmferreira/crypto-trading/indicators"
 
 	"github.com/fabiodmferreira/crypto-trading/collectors"
 )
@@ -26,11 +26,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bitcoinHistoryCollector := collectors.NewFileTickerCollector(domain.CollectorOptions{PriceVariationDetection: 0.01, DataSource: historyFile})
+	bitcoinHistoryCollector := collectors.NewFileTickerCollector(domain.CollectorOptions{PriceVariationDetection: 0.01, DataSource: historyFile}, &[]domain.Indicator{})
 
 	statisticsOptions := domain.StatisticsOptions{NumberOfPointsHold: 38000}
-	macd := statistics.NewMACDContainer(statistics.MACDParams{Fast: 12, Slow: 26, Lag: 9}, []float64{})
-	stats := statistics.NewStatistics(statisticsOptions, macd)
+	stats := indicators.NewStatistics(statisticsOptions)
 
 	f.Write([]byte("Date,Price,Change,ChangeofChange,VelocityDirection,AccelerationDirection,Histogram\n"))
 
@@ -60,7 +59,12 @@ func main() {
 				velocityCurrentDirection = !velocityCurrentDirection
 			}
 
-			f.WriteString(fmt.Sprintf("%v,%.2f,%.2f,%.2f,%d,%d,%.2f\n", ohlc.Time.Format("2006-01-02T15:04:05"), ohlc.Close, change, changeOfChange, timesSameVelocityDirection, timesSameAccelerationDirection, stats.MACD.GetLastHistogramPoint()))
+			f.WriteString(
+				fmt.Sprintf(
+					"%v,%.2f,%.2f,%.2f,%d,%d\n",
+					ohlc.Time.Format("2006-01-02T15:04:05"), ohlc.Close, change, changeOfChange, timesSameVelocityDirection, timesSameAccelerationDirection,
+				),
+			)
 
 			lastPrice = ohlc.Close
 			lastChange = change

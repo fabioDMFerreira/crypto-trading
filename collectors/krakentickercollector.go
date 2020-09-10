@@ -40,10 +40,11 @@ type KrakenCollector struct {
 	lastPricePublishDate time.Time
 	pair                 string
 	wscon                *websocket.Conn
+	indicators           *[]domain.Indicator
 }
 
 // NewKrakenCollector returns an instance of KrakenCollector
-func NewKrakenCollector(asset string, options domain.CollectorOptions, krakenAPI *krakenapi.KrakenAPI) *KrakenCollector {
+func NewKrakenCollector(asset string, options domain.CollectorOptions, krakenAPI *krakenapi.KrakenAPI, indicators *[]domain.Indicator) *KrakenCollector {
 
 	pair, ok := Pairs[asset]
 
@@ -51,7 +52,16 @@ func NewKrakenCollector(asset string, options domain.CollectorOptions, krakenAPI
 		log.Fatalf("%v does not have a valid kraken pair", asset)
 	}
 
-	return &KrakenCollector{options, krakenAPI, 0, []domain.OnNewAssetPrice{}, time.Time{}, pair, nil}
+	return &KrakenCollector{
+		pair:       pair,
+		options:    options,
+		krakenAPI:  krakenAPI,
+		indicators: indicators,
+	}
+}
+
+func (kc *KrakenCollector) SetIndicators(indicators *[]domain.Indicator) {
+	kc.indicators = indicators
 }
 
 // Start connects to a kraken websocket that send prices variations
@@ -79,9 +89,9 @@ func (kc *KrakenCollector) Start() {
 		],
 		"subscription": {
 			"name": "ohlc",
-			"interval": 1
+			"interval": %d
 		}
-	}`, kc.pair)
+	}`, kc.pair, kc.options.NewPriceTimeRate)
 
 	err = kc.wscon.WriteMessage(
 		websocket.TextMessage,
@@ -114,7 +124,7 @@ func (kc *KrakenCollector) Start() {
 				ohlc := getOHLCFromPayload(payload)
 
 				if currentOHLC != nil && currentOHLC.Open != ohlc.Open {
-					startDate, endDate := GetPreviousIntervalDates(time.Now())
+					startDate, endDate := GetPreviousIntervalDates(time.Now(), kc.options.NewPriceTimeRate)
 
 					currentOHLC.Time = startDate
 					currentOHLC.EndTime = endDate
@@ -174,6 +184,10 @@ func (kc *KrakenCollector) Stop() {
 }
 
 func (kc *KrakenCollector) PublishAssetPrice(ohlc *domain.OHLC) error {
+	for _, indicator := range *kc.indicators {
+		indicator.AddValue(ohlc)
+	}
+
 	for _, observable := range kc.observables {
 		observable(ohlc)
 	}
@@ -201,10 +215,10 @@ func (kc *KrakenCollector) PublishAssetPrice(ohlc *domain.OHLC) error {
 // 	return nil
 // }
 
-func GetPreviousIntervalDates(date time.Time) (time.Time, time.Time) {
+func GetPreviousIntervalDates(date time.Time, intervalDuration int) (time.Time, time.Time) {
 	date = date.Add(time.Second * time.Duration(date.Second()) * -1)
 
-	return date.Add(time.Minute * -1), date
+	return date.Add(time.Minute * -1 * time.Duration(intervalDuration)), date
 }
 
 // Regist add function to be executed when ticker price changes

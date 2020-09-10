@@ -1,7 +1,5 @@
 package domain
 
-import "time"
-
 // DecisionMakerOptions are used to change DecisionMaker behaviour
 type DecisionMakerOptions struct {
 	MaximumBuyAmount      float32 `bson:"maximumBuyAmount,truncate" json:"maximumBuyAmount"`
@@ -47,9 +45,11 @@ type DecisionMakerState struct {
 
 // DecisionMaker makes decisions to buy or sell assets
 type DecisionMaker interface {
-	NewValue(ohlc *OHLC)
-	ShouldBuy(price float32, buyTime time.Time) (bool, error)
-	ShouldSell(asset *Asset, price float32, buyTime time.Time) (bool, error)
-	HowMuchAmountShouldBuy(price float32) (float32, error)
-	GetState() DecisionMakerState
+	ShouldBuy() (bool, float32, error)
+	ShouldSell() (bool, float32, error)
+}
+
+// Strategy uses data to calculate if it is a good time to do an action (buy/sell) and the sureness of doing it
+type Strategy interface {
+	Execute() (bool, float32, error)
 }

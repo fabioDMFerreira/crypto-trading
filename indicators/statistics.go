@@ -1,4 +1,4 @@
-package statistics
+package indicators
 
 import (
 	"math"
@@ -13,19 +13,17 @@ type Statistics struct {
 	average        float64
 	numberOfPoints int
 	variance       float64
-	MACD           *MACDContainer
 }
 
 // NewStatistics returns a Statitics instance
-func NewStatistics(options domain.StatisticsOptions, macd *MACDContainer) *Statistics {
-	return &Statistics{options, []float64{}, 0, 0, 0, macd}
+func NewStatistics(options domain.StatisticsOptions) *Statistics {
+	return &Statistics{options, []float64{}, 0, 0, 0}
 }
 
 // AddPoint recalculate values of interest
 func (s *Statistics) AddPoint(p float64) {
 	s.RecalculateVariance(p)
 	s.RecalculateAverage(p)
-	s.MACD.AddPoint(p)
 
 	if s.options.NumberOfPointsHold > s.numberOfPoints {
 		s.numberOfPoints++
@@ -72,6 +70,11 @@ func (s *Statistics) GetStandardDeviation() float64 {
 	return math.Sqrt(s.variance)
 }
 
+// GetVariance returns the current variation of data sample
+func (s *Statistics) GetVariance() float64 {
+	return math.Sqrt(s.variance)
+}
+
 // GetAverage returns the current standard deviation of data sample
 func (s *Statistics) GetAverage() float64 {
 	return s.average
@@ -80,4 +83,13 @@ func (s *Statistics) GetAverage() float64 {
 // HasRequiredNumberOfPoints check whether the number of points hold are the same of required in options
 func (s *Statistics) HasRequiredNumberOfPoints() bool {
 	return s.numberOfPoints == s.options.NumberOfPointsHold
+}
+
+// GetLastValue returns the last point value added
+func (s *Statistics) GetLastValue() float64 {
+	if len(s.points) == 0 {
+		return 0
+	}
+
+	return s.points[len(s.points)-1]
 }

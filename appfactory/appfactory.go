@@ -18,8 +18,8 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/decisionmaker"
 	"github.com/fabiodmferreira/crypto-trading/domain"
 	"github.com/fabiodmferreira/crypto-trading/eventlogs"
+	"github.com/fabiodmferreira/crypto-trading/indicators"
 	"github.com/fabiodmferreira/crypto-trading/notifications"
-	"github.com/fabiodmferreira/crypto-trading/statistics"
 	"github.com/fabiodmferreira/crypto-trading/trader"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -47,25 +47,25 @@ func SetupApplication(appMetaData *domain.Application, mongoDatabase *mongo.Data
 	eventLogsRepository := eventlogs.NewEventLogsRepository(db.NewRepository(eventLogsCollection), appMetaData.ID)
 
 	assetsPricesService := setupAssetsPricesService(mongoDatabase)
-	pricesStatistics, growthStatistics, accelerationStatistics, volumeStatistics, err := setupPricesStatistics(assetsPricesService, appMetaData.Asset, appMetaData.Options.StatisticsOptions)
+	priceIndicator, volumeIndicator, err := setupIndicators(assetsPricesService, appMetaData.Asset, appMetaData.Options.StatisticsOptions)
 
 	if err != nil {
 		return nil, err
 	}
 
 	notificationsService := setupNotificationsService(mongoDatabase, appMetaData.Options.NotificationOptions, appMetaData.ID)
-	decisionMaker := setupDecisionMaker(appMetaData.Options.DecisionMakerOptions, pricesStatistics, growthStatistics, accelerationStatistics, volumeStatistics, accountService)
-	dbTrader := trader.NewTrader(accountService, broker)
+	decisionMaker := setupDecisionMaker(priceIndicator, volumeIndicator, accountService, appMetaData.Options.DecisionMakerOptions)
+	dbTrader := trader.NewTrader(broker)
 
 	// Create application
-	application := app.NewApp(collector, decisionMaker, dbTrader, accountService)
+	application := app.NewApp(&[]domain.Collector{collector}, decisionMaker, dbTrader, accountService)
 	application.Asset = appMetaData.Asset
 	application.SetEventsLog(eventLogsRepository)
 
 	// Regist events
-	application.RegistOnNewAssetPrice(NotificationJob(notificationsService, eventLogsRepository, accountService))
-	application.RegistOnNewAssetPrice(SaveAssetPrice(appMetaData.Asset, assetsPricesService))
-	application.RegistOnNewAssetPrice(SaveApplicationState(appMetaData.ID, application, applicationExecutionStateRepository))
+	collector.Regist(NotificationJob(notificationsService, eventLogsRepository, accountService))
+	collector.Regist(SaveAssetPrice(appMetaData.Asset, assetsPricesService))
+	collector.Regist(SaveApplicationState(appMetaData.ID, application, applicationExecutionStateRepository))
 
 	return application, nil
 }
@@ -159,14 +159,15 @@ func setupNotificationsService(mongoDatabase *mongo.Database, notificationOption
 }
 
 func setupDecisionMaker(
-	decisionmakerOptions domain.DecisionMakerOptions,
-	pricesStatistics domain.Statistics,
-	growthStatistics domain.Statistics,
-	accelerationStatistics domain.Statistics,
-	volumeStatistics domain.Statistics,
+	priceIndicator *indicators.PriceIndicator,
+	volumeIndicator *indicators.VolumeIndicator,
 	accountService domain.AccountService,
+	options domain.DecisionMakerOptions,
 ) domain.DecisionMaker {
-	return decisionmaker.NewDecisionMaker(accountService, decisionmakerOptions, pricesStatistics, growthStatistics, accelerationStatistics, volumeStatistics)
+	buyStrategy := decisionmaker.NewBuyStrategy(priceIndicator, volumeIndicator, accountService, options)
+	sellStrategy := decisionmaker.NewSellStrategy(priceIndicator, volumeIndicator, accountService, options)
+
+	return decisionmaker.NewDecisionMaker(buyStrategy, sellStrategy)
 }
 
 func NotificationJob(
@@ -270,14 +271,22 @@ func getLastAssetsPrices(asset string, numberOfPoints int, assetsPricesService d
 	return assetsPricesService.GetLastAssetsPrices(asset, numberOfPoints)
 }
 
-func appendAssetsPricesToStatistics(statistics domain.Statistics, lastAssetsPrices *[]domain.AssetPrice) {
+func appendAssetsPricesToStatistics(priceIndicator *indicators.PriceIndicator, lastAssetsPrices *[]domain.AssetPrice) {
 	points := []float64{}
 	for _, assetPrice := range *lastAssetsPrices {
 		points = append(points, float64(assetPrice.Close))
 	}
 	nPoints := len(points)
 	for i := nPoints - 1; i >= 0; i-- {
-		statistics.AddPoint(points[i])
+		priceIndicator.AddValue(
+			&domain.OHLC{
+				Close:  float32(points[i]),
+				Open:   float32(points[i]),
+				High:   float32(points[i]),
+				Low:    float32(points[i]),
+				Volume: 0,
+			},
+		)
 	}
 }
 
@@ -288,27 +297,19 @@ func setupAssetsPricesService(mongoDatabase *mongo.Database) domain.AssetsPrices
 	return assetsprices.NewService(assetsPricesRepository, assetsprices.NewCoindeskRemoteSource(http.Get).FetchRemoteAssetsPrices)
 }
 
-func setupPricesStatistics(assetsPricesService domain.AssetsPricesService, asset string, statisticsOptions domain.StatisticsOptions) (domain.Statistics, domain.Statistics, domain.Statistics, domain.Statistics, error) {
+func setupIndicators(assetsPricesService domain.AssetsPricesService, asset string, statisticsOptions domain.StatisticsOptions) (*indicators.PriceIndicator, *indicators.VolumeIndicator, error) {
 	lastAssetsPrices, err := getLastAssetsPrices(asset, statisticsOptions.NumberOfPointsHold, assetsPricesService)
 
 	if err != nil {
-		return nil, nil, nil, nil, fmt.Errorf("%v", err)
+		return nil, nil, fmt.Errorf("%v", err)
 	}
 
-	pricesStatistics := setupStatistics(statisticsOptions)
-	growthStatistics := setupStatistics(statisticsOptions)
-	accelerationStatistics := setupStatistics(statisticsOptions)
-	volumeStatistics := setupStatistics(statisticsOptions)
+	priceIndicator := indicators.NewPriceIndicator(indicators.NewMetricStatisticsIndicator(statisticsOptions))
+	volumeIndicator := indicators.NewVolumeIndicator(indicators.NewMetricStatisticsIndicator(statisticsOptions))
 
-	appendAssetsPricesToStatistics(pricesStatistics, lastAssetsPrices)
+	appendAssetsPricesToStatistics(priceIndicator, lastAssetsPrices)
 
-	return pricesStatistics, growthStatistics, accelerationStatistics, volumeStatistics, nil
-}
-
-func setupStatistics(statisticsOptions domain.StatisticsOptions) domain.Statistics {
-	macdParams := statistics.MACDParams{Fast: 24, Slow: 12, Lag: 9}
-	macd := statistics.NewMACDContainer(macdParams)
-	return statistics.NewStatistics(statisticsOptions, macd)
+	return priceIndicator, volumeIndicator, nil
 }
 
 func GetBroker(appEnv string, krakenAPI *krakenapi.KrakenAPI) domain.Broker {

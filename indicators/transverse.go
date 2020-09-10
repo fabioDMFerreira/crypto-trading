@@ -1,4 +1,4 @@
-package statistics
+package indicators
 
 // SubSlices subtracts two slices.
 func SubSlices(slice1, slice2 []float64) []float64 {

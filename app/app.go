@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -15,24 +14,26 @@ type App struct {
 	eventLogsRepository domain.EventsLog
 	trader              domain.Trader
 	accountService      domain.AccountService
-	collector           domain.Collector
+	collectors          *[]domain.Collector
 	Asset               string
 }
 
 // NewApp returns an instance of App
 func NewApp(
-	collector domain.Collector,
+	collectors *[]domain.Collector,
 	decisionMaker domain.DecisionMaker,
 	trader domain.Trader,
 	accountService domain.AccountService,
 ) *App {
 	app := &App{
-		collector:      collector,
+		collectors:     collectors,
 		decisionMaker:  decisionMaker,
 		trader:         trader,
 		accountService: accountService,
 	}
-	app.collector.Regist(app.OnNewAssetPrice)
+
+	app.RegistOnNewAssetPrice(app.OnNewAssetPrice)
+
 	return app
 }
 
@@ -50,29 +51,29 @@ func (a *App) log(subject, message string) {
 
 // Start starts collecting data
 func (a *App) Start() {
-	a.collector.Start()
+	for _, collector := range *a.collectors {
+		collector.Start()
+	}
 }
 
 // Stop stops collecting data
 func (a *App) Stop() {
-	a.collector.Stop()
+	for _, collector := range *a.collectors {
+		collector.Stop()
+	}
 }
 
 // RegistOnNewAssetPrice executes function when the collector receives a change
 func (a *App) RegistOnNewAssetPrice(observable domain.OnNewAssetPrice) {
-	a.collector.Regist(observable)
+	for _, collector := range *a.collectors {
+		collector.Regist(observable)
+	}
 }
 
 // DecideToBuy do operations to check if an asset should be bought
 func (a *App) DecideToBuy(price float32, currentTime time.Time) error {
-	ok, err := a.decisionMaker.ShouldBuy(price, currentTime)
+	ok, amount, err := a.decisionMaker.ShouldBuy()
 	if ok && err == nil {
-		amount, err := a.decisionMaker.HowMuchAmountShouldBuy(price)
-
-		if err != nil {
-			return err
-		}
-
 		accountAmount, err := a.accountService.GetAmount()
 
 		if err != nil {
@@ -81,6 +82,18 @@ func (a *App) DecideToBuy(price float32, currentTime time.Time) error {
 
 		if accountAmount > amount*price {
 			err := a.trader.Buy(amount, price, currentTime)
+
+			if err != nil {
+				return err
+			}
+
+			err = a.accountService.Withdraw(amount * price)
+
+			if err != nil {
+				return err
+			}
+
+			_, err = a.accountService.CreateAsset(amount, price, currentTime)
 
 			if err != nil {
 				return err
@@ -104,15 +117,30 @@ func (a *App) DecideToSell(price float32, currentTime time.Time) error {
 		return err
 	}
 
-	for _, asset := range *assets {
-		if ok, err := a.decisionMaker.ShouldSell(&asset, price, currentTime); ok && err == nil {
+	ok, _, err := a.decisionMaker.ShouldSell()
 
-			if err := a.trader.Sell(&asset, price, currentTime); err != nil {
-				return err
+	if ok {
+		for _, asset := range *assets {
+			if asset.BuyPrice+(asset.BuyPrice*0.01) < price {
+				if err := a.trader.Sell(&asset, price, currentTime); err != nil {
+					return err
+				}
+
+				err := a.accountService.SellAsset(asset.ID.Hex(), price, currentTime)
+
+				if err != nil {
+					return err
+				}
+
+				err = a.accountService.Deposit(asset.Amount * price)
+
+				if err != nil {
+					return err
+				}
+
+				message := fmt.Sprintf("Asset sold: {Price: %v Amount: %v Value: %v, Asset: %v}", price, asset.Amount, price*asset.Amount, a.Asset)
+				a.log("sell", message)
 			}
-
-			message := fmt.Sprintf("Asset sold: {Price: %v Amount: %v Value: %v, Asset: %v}", price, asset.Amount, price*asset.Amount, a.Asset)
-			a.log("sell", message)
 		}
 	}
 
@@ -121,8 +149,6 @@ func (a *App) DecideToSell(price float32, currentTime time.Time) error {
 
 // OnNewAssetPrice do operations based on asset new price
 func (a *App) OnNewAssetPrice(ohlc *domain.OHLC) {
-
-	a.decisionMaker.NewValue(ohlc)
 	a.log("Price change", fmt.Sprintf("%v PRICE: %v", a.Asset, ohlc.Close))
 
 	err := a.DecideToBuy(ohlc.Close, ohlc.Time)
@@ -152,64 +178,9 @@ func (a *App) GetAccountAmount() (float32, error) {
 func (a *App) GetState() interface{} {
 	accountAmount, _ := a.GetAccountAmount()
 
-	decisionMakerState := a.decisionMaker.GetState()
 	accountState := struct {
 		AccountAmount float32 `json:"accountAmount"`
 	}{AccountAmount: accountAmount}
 
-	state, _ := merge(accountState, decisionMakerState)
-
-	return state
-}
-
-// merge merges the two JSON-marshalable values x1 and x2,
-// preferring x1 over x2 except where x1 and x2 are
-// JSON objects, in which case the keys from both objects
-// are included and their values merged recursively.
-//
-// It returns an error if x1 or x2 cannot be JSON-marshaled.
-func merge(x1, x2 interface{}) (interface{}, error) {
-	data1, err := json.Marshal(x1)
-	if err != nil {
-		return nil, err
-	}
-	data2, err := json.Marshal(x2)
-	if err != nil {
-		return nil, err
-	}
-	var j1 interface{}
-	err = json.Unmarshal(data1, &j1)
-	if err != nil {
-		return nil, err
-	}
-	var j2 interface{}
-	err = json.Unmarshal(data2, &j2)
-	if err != nil {
-		return nil, err
-	}
-	return merge1(j1, j2), nil
-}
-
-func merge1(x1, x2 interface{}) interface{} {
-	switch x1 := x1.(type) {
-	case map[string]interface{}:
-		x2, ok := x2.(map[string]interface{})
-		if !ok {
-			return x1
-		}
-		for k, v2 := range x2 {
-			if v1, ok := x1[k]; ok {
-				x1[k] = merge1(v1, v2)
-			} else {
-				x1[k] = v2
-			}
-		}
-	case nil:
-		// merge(nil, map[string]interface{...}) -> map[string]interface{...}
-		x2, ok := x2.(map[string]interface{})
-		if ok {
-			return x2
-		}
-	}
-	return x1
+	return accountState
 }

@@ -170,9 +170,9 @@ func startApplicationFactory(mongoDatabase *mongo.Database, krakenAPI *krakenapi
 	return func(metadata *domain.Application, appEnv string) (*app.App, error) {
 		brokerService := appfactory.GetBroker(appEnv, krakenAPI)
 
-		krakenCollector := collectors.NewKrakenCollector(metadata.Asset, metadata.Options.CollectorOptions, krakenAPI)
+		collector := collectors.NewKrakenCollector(metadata.Asset, domain.CollectorOptions{NewPriceTimeRate: 1}, krakenAPI, &[]domain.Indicator{})
 
-		application, err := appfactory.SetupApplication(metadata, mongoDatabase, brokerService, krakenCollector)
+		application, err := appfactory.SetupApplication(metadata, mongoDatabase, brokerService, collector)
 
 		if err != nil {
 			return nil, err
