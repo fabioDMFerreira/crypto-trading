@@ -1,6 +1,7 @@
 package dca
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -81,7 +82,7 @@ func (s *Service) execute(dca *domain.DCAJob) error {
 		s.broker.SetTicker(coinSymbol)
 		err = s.broker.AddBuyOrder(amount/price, price)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed buyng %f of %s: %v", amount/price, coinSymbol, err)
 		}
 
 		err = s.dcaAssetsRepo.Save(&domain.DCAAsset{

@@ -39,13 +39,13 @@ func (kb *KrakenBroker) SetTicker(ticker string) {
 
 // AddBuyOrder request kraken to place a buy order with details passed by arguments
 func (kb *KrakenBroker) AddBuyOrder(amount, price float32) error {
-	amount = utils.RoundFloorTwoDecimals(amount)
+	amount = utils.RoundFloorDecimals(amount, 6)
 	return kb.addOrder(amount, price, "buy")
 }
 
 // AddSellOrder request kraken to place a sell order with details passed by arguments
 func (kb *KrakenBroker) AddSellOrder(amount, price float32) error {
-	amount = utils.RoundFloorTwoDecimals(amount)
+	amount = utils.RoundFloorDecimals(amount, 6)
 	return kb.addOrder(amount, price, "sell")
 }
 

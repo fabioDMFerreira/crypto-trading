@@ -31,7 +31,7 @@ func (d *DCAJob) GetFiatCoinsAmount() map[string]float32 {
 
 	for coinSymbol, coinProportion := range d.Options.CoinsProportion {
 		fiatAmount := float64((d.Options.TotalFIATAmount * coinProportion) / totalCoinsValue)
-		coinsToBuy[coinSymbol] = utils.RoundFloorTwoDecimals(float32(fiatAmount))
+		coinsToBuy[coinSymbol] = utils.RoundFloorDecimals(float32(fiatAmount), 2)
 	}
 
 	return coinsToBuy
