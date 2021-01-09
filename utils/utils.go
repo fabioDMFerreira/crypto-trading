@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"math"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -88,4 +89,9 @@ func merge1(x1, x2 interface{}) interface{} {
 		}
 	}
 	return x1
+}
+
+// RoundFloorTwoDecimals rounds number to 2 decimal places
+func RoundFloorTwoDecimals(n float32) float32 {
+	return float32(math.Floor(float64(n)*100) / 100)
 }

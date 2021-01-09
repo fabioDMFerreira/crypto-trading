@@ -18,6 +18,8 @@ const (
 	ASSETS_PRICES_COLLECTION                = "assetsprices"
 	APPLICATION_EXECUTION_STATES_COLLECTION = "applicationExecutionStates"
 	APPLICATIONS_COLLECTION                 = "applications"
+	DCA_JOBS_COLLECTION                     = "dcaJobs"
+	DCA_ASSETS_COLLECTION                   = "dcaAssets"
 )
 
 func NewMongoQueryContext() (context.Context, context.CancelFunc) {

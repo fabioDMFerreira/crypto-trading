@@ -18,6 +18,7 @@ type Collector interface {
 	Stop()
 	Regist(observable OnNewAssetPrice)
 	SetIndicators(indicators *[]Indicator)
+	GetTicker(tickerSymbol string) (float32, error)
 }
 
 // OHLC is a type with interval asset prices

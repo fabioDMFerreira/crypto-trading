@@ -29,6 +29,11 @@ func NewFileTickerCollector(options domain.CollectorOptions, indicators *[]domai
 	}
 }
 
+// GetTicker is a stub
+func (ftc *FileTickerCollector) GetTicker(tickerSymbol string) (float32, error) {
+	return 0, nil
+}
+
 func (ftc *FileTickerCollector) SetIndicators(indicators *[]domain.Indicator) {
 	ftc.indicators = indicators
 }

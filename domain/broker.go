@@ -4,4 +4,5 @@ package domain
 type Broker interface {
 	AddBuyOrder(amount, price float32) error
 	AddSellOrder(amount, price float32) error
+	SetTicker(ticker string)
 }

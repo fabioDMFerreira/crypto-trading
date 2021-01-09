@@ -26,9 +26,11 @@ type TickerMessage struct {
 }
 
 var Pairs = map[string]string{
-	"BTC": "XBT/EUR",
-	"ETH": "ETH/EUR",
-	"ADA": "ADA/EUR",
+	"BTC":  "XBT/EUR",
+	"ETH":  "ETH/EUR",
+	"ADA":  "ADA/EUR",
+	"ATOM": "ATOM/EUR",
+	"DOT":  "DOT/EUR",
 }
 
 // KrakenCollector collects data from kraken exchange
@@ -60,6 +62,34 @@ func NewKrakenCollector(asset string, options domain.CollectorOptions, krakenAPI
 	}
 }
 
+// GetTicker calls kraken API to get ticker pair price
+func (kc *KrakenCollector) GetTicker(tickerSymbol string) (float32, error) {
+	result, err := kc.krakenAPI.Query("Ticker", map[string]string{
+		"pair": tickerSymbol,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	resultBytes := result.(map[string]interface{})
+
+	for _, v := range resultBytes {
+		tickerResponse := v.(map[string]interface{})
+
+		result := tickerResponse["c"].([]interface{})
+
+		price, err := strconv.ParseFloat(result[0].(string), 32)
+		if err != nil {
+			return 0, err
+		}
+
+		return float32(price), nil
+	}
+
+	return 0, nil
+}
+
+// SetIndicators set indicators that listen for price changes
 func (kc *KrakenCollector) SetIndicators(indicators *[]domain.Indicator) {
 	kc.indicators = indicators
 }
