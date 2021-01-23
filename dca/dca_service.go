@@ -57,13 +57,13 @@ func (s *Service) executeDCA(dcaJob *domain.DCAJob) error {
 		if err != nil {
 			return err
 		}
-	}
 
-	dcaJob.SetNextExecution()
+		dcaJob.SetNextExecution()
 
-	err := s.dcaJobsRepo.Save(dcaJob)
-	if err != nil {
-		return err
+		err = s.dcaJobsRepo.Save(dcaJob)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
