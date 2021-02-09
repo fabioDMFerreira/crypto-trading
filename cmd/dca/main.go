@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/smtp"
 	"os"
 	"time"
 
@@ -12,7 +13,9 @@ import (
 	"github.com/fabiodmferreira/crypto-trading/db"
 	"github.com/fabiodmferreira/crypto-trading/dca"
 	"github.com/fabiodmferreira/crypto-trading/domain"
+	"github.com/fabiodmferreira/crypto-trading/notifications"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -50,6 +53,20 @@ func main() {
 	dcaAssetsCollection := mongoDatabase.Collection(db.DCA_ASSETS_COLLECTION)
 	dcaAssetsRepo := dca.NewAssetsRepository(db.NewRepository(dcaAssetsCollection))
 
+	notificationOptions := domain.NotificationOptions{
+		Receiver:       env.NotificationsReceiver,
+		Sender:         env.NotificationsSender,
+		SenderPassword: env.NotificationsSenderPassword,
+	}
+	notificationsCollection := mongoDatabase.Collection(db.NOTIFICATIONS_COLLECTION)
+	notificationsRepository := notifications.NewRepository(db.NewRepository(notificationsCollection))
+	notificationsService := notifications.NewService(
+		notificationsRepository,
+		notificationOptions,
+		smtp.SendMail,
+		primitive.NilObjectID,
+	)
+
 	// initialize third party instances
 	krakenKey := os.Getenv("KRAKEN_API_KEY")
 	krakenPrivateKey := os.Getenv("KRAKEN_PRIVATE_KEY")
@@ -59,6 +76,8 @@ func main() {
 	trader := broker.NewKrakenBroker(krakenAPI)
 
 	service := dca.NewService(trader, collector, dcaJobsRepo, dcaAssetsRepo)
+
+	service.SetNotificationsService(notificationsService)
 
 	if len(os.Args) > 1 && os.Args[1] == "create" {
 		dcaJob := &domain.DCAJob{
