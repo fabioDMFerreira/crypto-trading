@@ -7,7 +7,7 @@ require (
 	github.com/golang/mock v1.4.3
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.5.3
 	github.com/joho/godotenv v1.3.0
 	go.mongodb.org/mongo-driver v1.5.1
 )
